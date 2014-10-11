@@ -3,12 +3,12 @@ clm
 
 Compiler for matrix based programming language called clm
 
-Matrix Creating
+###Matrix Creation
 
 A = [4:4] //creates a 4x4 matrix and stores in A
 B = {1 2, 3 4} // creates 2x2 matrix with row 1 as {1 2} and row 2 as {3 4}
 
-Function Declarations
+###Function Declarations
 
 //a function with no parameters and no return type
 \foo =
@@ -42,18 +42,20 @@ Function Declarations
   return T
 ;
 
-Function Calling
+###Function Calling
+
+
 //calling a function named foo that has 2 parameters
 foo param1 param2.
 
 //calling a function named foo with no arguments and a return value
 A = foo.
 
-Printing
+###Printing
 //print all expressions, including matrix declarations and function calls
 print A
 print 1 * 2 - 3
 print {1 0,0 1} * B
-
+print foo.
 
 
