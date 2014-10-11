@@ -6,9 +6,10 @@ Compiler for matrix based programming language called clm
 ###Matrix Creation
 
 
-A = [4:4] //creates a 4x4 matrix and stores in A
+```A = [4:4] //creates a 4x4 matrix and stores in A
 
 B = {1 2, 3 4} // creates 2x2 matrix with row 1 as {1 2} and row 2 as {3 4}
+```
 
 ###Function Declarations
 
