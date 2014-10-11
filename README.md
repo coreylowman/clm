@@ -1,14 +1,23 @@
 clm
 ===
 
-Compiler for matrix based programming language called clm
+(In Progress!)Compiler for matrix based programming language called clm
+
+To Do:
+
+1. parsing/code generation: allow matrix decs to have a variable number of rows/cols
+2. parsing/code gneneration: function declarations
+3. parsing/code gneneration: function calls
+4. boolean expressions
+5. optimize stack usage
+6. matrix mult optimization
+7. other stuff? hehe
 
 ###Matrix Creation
 
 
 ```
 A = [4:4] //creates a 4x4 matrix and stores in A
-
 B = {1 2, 3 4} // creates 2x2 matrix with row 1 as {1 2} and row 2 as {3 4}
 ```
 
@@ -16,7 +25,6 @@ B = {1 2, 3 4} // creates 2x2 matrix with row 1 as {1 2} and row 2 as {3 4}
 
 ```
 //a function with no parameters and no return type
-
 \foo =
   print 1
 ;
@@ -24,7 +32,6 @@ B = {1 2, 3 4} // creates 2x2 matrix with row 1 as {1 2} and row 2 as {3 4}
 
 ```
 // a function with an integer parameter and an integer return type
-
 \foo num -> int =
   return num + 1
 ;
@@ -32,7 +39,6 @@ B = {1 2, 3 4} // creates 2x2 matrix with row 1 as {1 2} and row 2 as {3 4}
 
 ```
 // a function taking an integer parameter and return a size by size identity matrix
-
 \foo size -> [size:size] =
 	I = [size:size]
 	for i = 0,size - 1 do
@@ -44,7 +50,6 @@ B = {1 2, 3 4} // creates 2x2 matrix with row 1 as {1 2} and row 2 as {3 4}
 
 ```
 //a function taking an m by n matrix and return a size n column vector
-
 \foo A[m:n] -> [n:1] =
   B = [n:1]
   // some code here...
@@ -54,7 +59,6 @@ B = {1 2, 3 4} // creates 2x2 matrix with row 1 as {1 2} and row 2 as {3 4}
 
 ```
 //a function taking an m by n matrix and return an matrix with n rows and not known at compile time columns
-
 \foo A[m:n] -> [n:?] =
   // some code here
   return T
