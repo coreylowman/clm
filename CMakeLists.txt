@@ -1,0 +1,24 @@
+cmake_minimum_required(VERSION 3.3)
+
+project(CLM)
+
+set(CLM_VERSION_MAJOR 0)
+set(CLM_VERSION_MINOR 3)
+set(CLM_VERSION_PATCH 0)
+set(CLM_VERSION ${CLM_VERSION_MAJOR}.${CLM_VERSION_MINOR}.${CLM_VERSION_PATCH})
+
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}/lib)
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}/lib)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}/bin)
+
+set(CLM_LIB_DIR ${CMAKE_CURRENT_LIST_DIR}/lib/Debug)
+
+option(CLM_BUILD_TESTS "builds the test executable" OFF)
+
+add_subdirectory(util)
+add_subdirectory(lexer)
+add_subdirectory(parser)
+add_subdirectory(symbolGen)
+add_subdirectory(typeCheck)
+add_subdirectory(clm)
+add_subdirectory(tests)
