@@ -5,13 +5,8 @@ clm
 
 To Do:
 
-1. parsing/code generation: allow matrix decs to have a variable number of rows/cols
-2. parsing/code gneneration: function declarations
-3. parsing/code gneneration: function calls
-4. boolean expressions
-5. optimize stack usage
-6. matrix mult optimization
-7. other stuff? hehe
+1. code generation
+2. optimization
 
 ###Matrix Creation
 
@@ -69,17 +64,17 @@ B = {1 2, 3 4} // creates 2x2 matrix with row 1 as {1 2} and row 2 as {3 4}
 
 ```
 //calling a function named foo that has 2 parameters
-foo param1 param2.
+call foo(param1,param2)
 
 //calling a function named foo with no arguments and a return value
-A = foo.
+A = foo()
 ```
 
 ###Printing
 
 ```
 print A
-print 1 * 2 - 3
-print {1 0,0 1} * B
-print foo.
+printl 1 * 2 - 3
+printl {1 0,0 1} * B
+print foo()
 ```
