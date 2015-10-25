@@ -11,7 +11,7 @@ list(APPEND CLM_UTIL_SOURCES
     src/clm_type.c
 )
 
-add_library(clmUtil STATIC ${CLM_UTIL_SOURCES})
+add_library(clmUtil OBJECT ${CLM_UTIL_SOURCES})
 target_include_directories(clmUtil
     PUBLIC include
 )
