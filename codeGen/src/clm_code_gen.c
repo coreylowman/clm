@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "codeGen/clm_code_gen.h"
+#include "codeGen/clm_asm_headers.h"
 #include "util/clm_expression.h"
 #include "util/clm_statement.h"
 #include "util/clm_type.h"
@@ -15,35 +16,14 @@ typedef struct{
 
 static CodeGenData data;
 
-static const char ASM_HEADER[] = "format PE console\n\
-entry start\n\
-\n\
-include 'win32a.inc'\n\
-include 'macro/import32.inc'\n\
-\n\
-section '.rdata' data readable\n\
-        print_int db '%d',32,0\n\
-        print_int_nl db '%d',32,10,0\n\
-        print_char db '%c',13,10,0\n\
-\n\
-section '.idata' data readable import\n\
-        library kernel32, 'kernel32.dll', \\\n\
-                msvcrt,   'msvcrt.dll'\n\
-        import kernel32, ExitProcess, 'ExitProcess'\n\
-        import msvcrt, printf, 'printf'\n\
-\n\
-section '.code' code executable\n";
-
-static const char ASM_EXIT_PROCESS[] = "invoke ExitProcess, 0\n";
-static const char ASM_START[] = "start:\n";
-static const char ASM_DATA[] = "section '.data' data readable writable\n";
-
 #define EAX "eax"
 #define EBX "ebx"
 #define ECX "ecx"
 #define EDX "edx"
 #define ESP "esp"
 #define EBP "ebp"
+#define T_EAX "T_EAX"
+#define T_EBX "T_EBX"
 
 static void writeLine(const char *line){
     data.code = realloc(data.code, strlen(data.code) + strlen(line) + 1);
@@ -93,6 +73,7 @@ static void asm_dec(const char *arg);
 static void asm_neg(const char *arg);
 
 static void asm_mov(const char *dest, const char *src);
+static void asm_xchg(const char *arg1, const char *arg2);
 
 static void asm_and(const char *arg1, const char *arg2);
 static void asm_or(const char *arg1, const char *arg2);
@@ -108,16 +89,34 @@ static void asm_jmp_le(const char *label);
 static void asm_jmp_eq(const char *label);
 static void asm_jmp_neq(const char *label);
 
-static void asm_label(const char *name);
+static void asm_label(const char *name){
+    char buffer[32];
+    sprintf(buffer, "%s:", name);
+    writeLine(buffer);
+}
 
-static void asm_call(const char *name);
-static void asm_ret();
+static void asm_call(const char *name){
+    char buffer[32];
+    sprintf(buffer, "call %s", name);
+    writeLine(buffer);
+}
+
+static void asm_ret(){
+    char buffer[32];
+    sprintf(buffer, "ret");
+    writeLine(buffer);
+}
 
 static void asm_print_int(const char *arg);
 static void asm_print_int_nl(const char *arg);
 static void asm_print_char(const char *arg);
 static void asm_print_char_nl(const char *arg);
 
+/*
+ *
+ *  FUNCTION FORWARD DECLARATIONS
+ *
+ */
 static void gen_arith(ClmArithExp *node);
 static void gen_bool(ClmBoolExp *node);
 static void gen_unary(ClmUnaryExp *node);
@@ -252,6 +251,7 @@ static void gen_unary(ClmUnaryExp *node){
     //TODO foreach element... neg it
         break;
     case UNARY_OP_TRANSPOSE:
+    //TODO transpose it!
         break;
     case UNARY_OP_NOT:
         asm_xor("dword [" ESP "]", "1");
@@ -299,7 +299,31 @@ static void gen_expression(ClmExpNode *node){
     case EXP_TYPE_INDEX:
         break;
     case EXP_TYPE_MAT_DEC:
+    {
+        int i;
+        if(node->matDecExp->arr != NULL){
+            for(i = node->matDecExp->length - 1; i >= 0;i--){
+                //TODO... push f or push i?
+                asm_push_f(node->matDecExp->arr[i]);
+            }
+            asm_push_i(node->matDecExp->cols);
+            asm_push_i(node->matDecExp->rows);
+            asm_push_i((int) expression_type);
+        }else{
+            if(node->matDecExp->rowVar != NULL){
+
+            }else{
+
+            }
+
+            if(node->matDecExp->colVar != NULL){
+
+            }else{
+
+            }            
+        }
         break;
+    }
     case EXP_TYPE_PARAM:
         break;
     case EXP_TYPE_UNARY:
@@ -412,14 +436,13 @@ static void gen_statement(ClmStmtNode *node){
         // return type
         // <- esp
 
-        //TODO does saving them in ebx/eax work? what if we create a global to
-        //hold them?
+        //note: T_EAX and T_EBX are globals defined in clm_asm_headers.h
         asm_mov(ESP, EBP); //reset stack pointer to above the function
-        asm_pop(EBX); //pop the old frame pointer into ebx
-        asm_pop(EAX); //pop the stack address of the next instruction to execute after call finishes
+        asm_pop(T_EBX); //pop the old frame pointer into t_ebx
+        asm_pop(T_EAX); //pop the stack address of the next instruction to execute after call finishes
         gen_expression(node->returnExp);
-        asm_mov(EBP,EBX); //move the old frame pointer into ebp
-        asm_push(EAX); //push the stack address of the next instruction to execute after call finishes
+        asm_mov(EBP,T_EBX); //move the old frame pointer into ebp
+        asm_push(T_EAX); //push the stack address of the next instruction to execute after call finishes
         asm_ret(); //return
         break;
     }
@@ -445,12 +468,17 @@ static void gen_statements(ClmArrayList *statements){
     }
 }
 
+static void gen_macros(){
+
+}
+
 const char *clm_code_gen_main(ClmArrayList *statements, ClmScope *globalScope){
     data.scope = globalScope;
     data.labelID = 0;
     data.inFunction = 0;
     data.code = malloc(strlen(ASM_HEADER) + 1);
     strcpy(data.code, ASM_HEADER);
+
     gen_functions(statements);
 
     //TODO make it start in the main function!
