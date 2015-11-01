@@ -1,5 +1,6 @@
 list(APPEND CLM_LEXER_SOURCES
     src/clm_lexer.c
+    include/lexer/clm_lexer.h
 )
 
 add_library(clmLexer OBJECT ${CLM_LEXER_SOURCES})

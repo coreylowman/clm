@@ -1,5 +1,6 @@
 list(APPEND CLM_SYMBOL_GEN_SOURCES
     src/clm_symbol_gen.c
+    include/symbolGen/clm_symbol_gen.h
 )
 
 add_library(clmSymbolGen OBJECT ${CLM_SYMBOL_GEN_SOURCES})
