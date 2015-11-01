@@ -22,4 +22,6 @@ ClmScope *clm_scope_find_child(ClmScope *scope,void *startNode);
 
 void clm_scope_push(ClmScope *scope,ClmSymbol *symbol);
 
+int clm_scope_next_local_offset(ClmScope *scope);
+
 #endif

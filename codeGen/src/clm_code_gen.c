@@ -478,7 +478,6 @@ static void gen_statement(ClmStmtNode *node){
         asm_mov(EBP, ESP);
 
         //TODO subtract the local variable sizes from esp
-        //also... should matrices be passed as an address?
 
         data.inFunction = 1;
         data.scope = funcScope;
