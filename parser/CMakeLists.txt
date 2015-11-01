@@ -1,5 +1,6 @@
 list(APPEND CLM_PARSER_SOURCES
     src/clm_parser.c
+    include/parser/clm_parser.h
 )
 
 add_library(clmParser OBJECT ${CLM_PARSER_SOURCES})

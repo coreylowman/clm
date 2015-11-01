@@ -1,5 +1,6 @@
 list(APPEND CLM_TYPE_CHECK_SOURCES
     src/clm_type_check.c
+    include/typeCheck/clm_type_check.h
 )
 
 add_library(clmTypeCheck OBJECT ${CLM_TYPE_CHECK_SOURCES})

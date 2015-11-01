@@ -1,6 +1,9 @@
 list(APPEND CLM_TESTS_SOURCES
     src/clm_test_main.c
     src/clm_test_lexer.c
+    
+    include/tests/clm_test_main.h
+    include/tests/clm_test_lexer.h
 
     $<TARGET_OBJECTS:clmUtil>
     $<TARGET_OBJECTS:clmLexer>
