@@ -80,3 +80,21 @@ ClmScope *clm_scope_find_child(ClmScope *scope,void *startNode){
 void clm_scope_push(ClmScope *scope,ClmSymbol *symbol){
     clm_array_list_push(scope->symbols,symbol);
 }
+
+int clm_scope_next_local_offset(ClmScope *scope){    
+    if(scope->symbols->length == 0) return 0;
+
+    ClmSymbol *last_sym = scope->symbols->data[scope->symbols->length - 1];
+    
+    if(last_sym->isParam){
+        return 0;
+    }else{
+        //every local will be a type and a value
+        //including matrices!
+        //matrices will hold a pointer to the memory location of them!
+        //note: contant sized matrices will be optimized at compile time
+        // so they won't be passed around...
+        // but something like [1 2,3 4] * [m:n] will not be optimzed away!
+        return last_sym->offset + 8;
+    }
+}

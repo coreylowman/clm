@@ -78,6 +78,8 @@ static void gen_statement_symbols(ClmScope *scope, ClmStmtNode *node){
 
         if (clm_exp_has_no_inds(lhs) && symbol == NULL){
             ClmSymbol *symbol = clm_symbol_new(lhs->indExp->id,clm_type_of_exp(rhs,scope),node);
+            symbol->isParam = 0;
+            symbol->offset = clm_scope_next_local_offset(scope);
             clm_scope_push(scope, symbol);
         }else if (symbol == NULL){
             clm_error(node->lineNo,node->colNo,
@@ -109,6 +111,17 @@ static void gen_statement_symbols(ClmScope *scope, ClmStmtNode *node){
             for (i = 0; i < node->funcDecStmt->parameters->length; i++){
                 ClmExpNode *param = node->funcDecStmt->parameters->data[i];
                 symbol = clm_symbol_new(param->paramExp->name, param->paramExp->type, param);
+                symbol->isParam = 1;
+                // framepointer + 8 is first param
+                // matrices are passed as an address
+                // val <- ebp + 20
+                // type <- ebp + 16
+                // val <- ebp + 12
+                // type <- ebp + 8 //params
+                // func:
+
+                //i * 8 because each param takes up 2 places on the stack
+                symbol->offset = i * 8 + 8;
                 clm_scope_push(functionScope, symbol);
             }
         }
@@ -123,6 +136,8 @@ static void gen_statement_symbols(ClmScope *scope, ClmStmtNode *node){
         ClmScope *loopScope = clm_scope_new(scope,node);
         if (!clm_scope_contains(loopScope, node->loopStmt->varId)){
             ClmSymbol *symbol = clm_symbol_new(node->loopStmt->varId,CLM_TYPE_INT,node);
+            symbol->isParam = 0;
+            symbol->offset = clm_scope_next_local_offset(loopScope);
             clm_scope_push(loopScope,symbol);
         }
         gen_expnode_symbols(loopScope, node->loopStmt->start);

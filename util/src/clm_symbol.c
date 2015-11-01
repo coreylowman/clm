@@ -9,6 +9,7 @@ ClmSymbol *clm_symbol_new(const char *name,ClmType type, void *declaration){
     symbol->type = type;
     symbol->declaration = declaration;
     symbol->offset = 0;
+    symbol->isParam = 0;
     return symbol;
 }
 
@@ -26,19 +27,22 @@ void clm_symbol_print(ClmSymbol *symbol, int level){
     while(q-- > 0) printf("  ");
     switch(symbol->type){
         case CLM_TYPE_INT:
-            printf("Symbol name : %s, type : int",symbol->name);
+            printf("Symbol name : %s, type : int, param : %d, offset : ",symbol->name,symbol->isParam,symbol->offset);
             break;
         case CLM_TYPE_MATRIX:
-            printf("Symbol name : %s, type : matrix",symbol->name);
+            printf("Symbol name : %s, type : matrix, param : %d, offset : ",symbol->name,symbol->isParam,symbol->offset);
             break;
         case CLM_TYPE_STRING:
-            printf("Symbol name : %s, type : string",symbol->name);
+            printf("Symbol name : %s, type : string, param : %d, offset : ",symbol->name,symbol->isParam,symbol->offset);
             break;
         case CLM_TYPE_FLOAT:
-            printf("Symbol name : %s, type : float",symbol->name);
+            printf("Symbol name : %s, type : float, param : %d, offset : ",symbol->name,symbol->isParam,symbol->offset);
             break;
         case CLM_TYPE_FUNCTION:
-            printf("Symbol name : %s, type : function",symbol->name);
+            printf("Symbol name : %s, type : function, param : %d, offset : ",symbol->name,symbol->isParam,symbol->offset);
+            break;
+        case CLM_TYPE_NONE:
+            printf("Symbol name : %s, type : none, param : %d, offset : ", symbol->name,symbol->isParam,symbol->offset);
             break;
     }
 }
