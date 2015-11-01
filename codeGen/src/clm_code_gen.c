@@ -60,26 +60,63 @@ static void asm_push_c(char val){
     writeLine(buffer);
 }
 
-static void asm_add(const char *dest, const char *other);
-static void asm_sub(const char *dest, const char *other);
-static void asm_imul(const char *dest, const char *other);
+static void asm_add(const char *dest, const char *other){
+    char buffer[32];
+    sprintf(buffer, "add %s,%s\n", dest, other);
+    writeLine(buffer);
+}
+
+static void asm_sub(const char *dest, const char *other){
+    char buffer[32];
+    sprintf(buffer, "sub %s,%s\n", dest, other);
+    writeLine(buffer);
+}
+
+static void asm_imul(const char *dest, const char *other){
+    char buffer[32];
+    sprintf(buffer, "imul %s,%s\n", dest, other);
+    writeLine(buffer);
+}
 
 static void asm_fadd(const char *dest, const char *other);
 static void asm_fsub(const char *dest, const char *other);
 static void asm_fmul(const char *dest, const char *other);
 
-static void asm_inc(const char *arg);
-static void asm_dec(const char *arg);
-static void asm_neg(const char *arg);
+static void asm_inc(const char *arg){
+    char buffer[32];
+    sprintf(buffer, "inc %s\n", arg);
+    writeLine(buffer);
+}
 
-static void asm_mov(const char *dest, const char *src);
+static void asm_dec(const char *arg){
+    char buffer[32];
+    sprintf(buffer, "dec %s\n", arg);
+    writeLine(buffer);
+}
+
+static void asm_neg(const char *arg){
+    char buffer[32];
+    sprintf(buffer, "dec %s\n", arg);
+    writeLine(buffer);
+}
+
+static void asm_mov(const char *dest, const char *src){
+    char buffer[32];
+    sprintf(buffer, "mov %s,%s\n", dest, src);
+    writeLine(buffer);
+}
+
 static void asm_xchg(const char *arg1, const char *arg2);
 
 static void asm_and(const char *arg1, const char *arg2);
 static void asm_or(const char *arg1, const char *arg2);
 static void asm_xor(const char *arg1, const char *arg2);
 
-static void asm_cmp(const char *arg2, const char *arg2);
+static void asm_cmp(const char *arg1, const char *arg2){
+    char buffer[32];
+    sprintf(buffer, "cmp %s,%s\n", arg1,arg2);
+    writeLine(buffer);
+}
 
 static void asm_jmp(const char *label);
 static void asm_jmp_g(const char *label);
@@ -107,10 +144,20 @@ static void asm_ret(){
     writeLine(buffer);
 }
 
+
+static void asm_print_mat(const char *arg);
+static void asm_print_mat_nl(const char *arg);
+static void asm_print_float(const char *arg);
+static void asm_print_float_nl(const char *arg);
 static void asm_print_int(const char *arg);
 static void asm_print_int_nl(const char *arg);
 static void asm_print_char(const char *arg);
 static void asm_print_char_nl(const char *arg);
+
+static void next_label(char *buffer){
+    int id = data.labelID++;
+    sprintf(buffer, "label%d", id);
+}
 
 /*
  *
@@ -126,11 +173,6 @@ static void gen_statement(ClmStmtNode *node);
 
 static void gen_functions(ClmArrayList *statements);
 static void gen_statements(ClmArrayList *statements);
-
-static void next_label(char *buffer){
-    int id = data.labelID++;
-    sprintf(buffer, "label%d", id);
-}
 
 // stack will look like this
 // right
@@ -155,20 +197,26 @@ static void gen_arith(ClmArithExp *node){
 static void gen_bool(ClmBoolExp *node){
     switch(node->op){
     case BOOL_OP_AND:
-        asm_pop(EAX);
-        asm_pop(EBX);
+        asm_pop(EAX); //pop type into eax
+        asm_pop(EAX); //ovewrite type with val
+        asm_pop(EBX); //pop type into ebx
+        asm_pop(EBX); //overwrite type iwth val
         asm_and(EAX, EBX);
         asm_push(EAX);
         break;
     case BOOL_OP_OR:
         asm_pop(EAX);
+        asm_pop(EAX);
+        asm_pop(EBX);
         asm_pop(EBX);
         asm_or(EAX, EBX);
         asm_push(EAX);
         break;
     case BOOL_OP_EQ:
+    //TODO equals!
         break;
     case BOOL_OP_NEQ:
+    //TODO not equals! should be the same as eq but with neg
         break;
     case BOOL_OP_GT:
     {
@@ -178,6 +226,8 @@ static void gen_bool(ClmBoolExp *node){
         next_label(end_label);
 
         asm_pop(EAX);
+        asm_pop(EAX);
+        asm_pop(EBX);
         asm_pop(EBX);
         asm_cmp(EAX, EBX);
         asm_jmp_le(false_label);
@@ -196,6 +246,8 @@ static void gen_bool(ClmBoolExp *node){
         next_label(end_label);
 
         asm_pop(EAX);
+        asm_pop(EAX);
+        asm_pop(EBX);
         asm_pop(EBX);
         asm_cmp(EAX, EBX);
         asm_jmp_ge(false_label);
@@ -214,6 +266,8 @@ static void gen_bool(ClmBoolExp *node){
         next_label(end_label);
 
         asm_pop(EAX);
+        asm_pop(EAX);
+        asm_pop(EBX);
         asm_pop(EBX);
         asm_cmp(EAX, EBX);
         asm_jmp_l(false_label);
@@ -232,6 +286,8 @@ static void gen_bool(ClmBoolExp *node){
         next_label(end_label);
 
         asm_pop(EAX);
+        asm_pop(EAX);
+        asm_pop(EBX);
         asm_pop(EBX);
         asm_cmp(EAX, EBX);
         asm_jmp_g(false_label);
@@ -310,6 +366,7 @@ static void gen_expression(ClmExpNode *node){
             asm_push_i(node->matDecExp->rows);
             asm_push_i((int) expression_type);
         }else{
+            //TODO figure out where to allocate this??
             if(node->matDecExp->rowVar != NULL){
 
             }else{
@@ -329,6 +386,32 @@ static void gen_expression(ClmExpNode *node){
     case EXP_TYPE_UNARY:
         gen_expression(node->unaryExp->node);
         gen_unary(node->unaryExp);
+        break;
+    }
+}
+
+//TODO... have print macro
+static void gen_print(ClmExpNode *node, int newline){
+    switch(node->type){
+    case EXP_TYPE_INT:
+        break;
+    case EXP_TYPE_FLOAT:
+        break;
+    case EXP_TYPE_STRING:
+        break;
+    case EXP_TYPE_ARITH:
+        break;
+    case EXP_TYPE_BOOL:
+        break;
+    case EXP_TYPE_CALL:
+        break;
+    case EXP_TYPE_INDEX:
+        break;
+    case EXP_TYPE_MAT_DEC:
+        break;
+    case EXP_TYPE_PARAM:
+        break;
+    case EXP_TYPE_UNARY:
         break;
     }
 }
@@ -425,6 +508,7 @@ static void gen_statement(ClmStmtNode *node){
         break;
     }
     case STMT_TYPE_PRINT:
+        gen_print(node->printStmt->expression, node->printStmt->newline);
         break;
     case STMT_TYPE_RET:
         //reset the stack pointer,
