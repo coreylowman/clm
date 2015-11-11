@@ -7,5 +7,6 @@
 
 ClmType clm_type_of_exp(ClmExpNode *node, ClmScope *scope);
 int clm_type_is_number(ClmType type);
+int clm_type_is_matrix(ClmType type);
 
 #endif

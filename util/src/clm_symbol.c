@@ -32,6 +32,9 @@ void clm_symbol_print(ClmSymbol *symbol, int level){
         case CLM_TYPE_MATRIX:
             printf("Symbol name : %s, type : matrix, param : %d, offset : ",symbol->name,symbol->isParam,symbol->offset);
             break;
+        case CLM_TYPE_MATRIX_POINTER:
+            printf("Symbol name : %s, type : matrix *, param : %d, offset : ",symbol->name,symbol->isParam,symbol->offset);
+            break;
         case CLM_TYPE_STRING:
             printf("Symbol name : %s, type : string, param : %d, offset : ",symbol->name,symbol->isParam,symbol->offset);
             break;
