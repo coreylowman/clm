@@ -35,11 +35,11 @@ static int arith_op_is_valid_for(ClmArithOp op, ClmType left, ClmType right){
         return 1;
     }else if(clm_type_is_number(left) && clm_type_is_number(right)){
         return 1;
-    }else if(clm_type_is_number(left) && right == CLM_TYPE_MATRIX){
+    }else if(clm_type_is_number(left) && clm_type_is_matrix(right)){
         if(op == ARITH_OP_MULT){
             return 1;
         }
-    }else if(left == CLM_TYPE_MATRIX && clm_type_is_number(right)){
+    }else if(clm_type_is_matrix(left) && clm_type_is_number(right)){
         if(op == ARITH_OP_MULT || op == ARITH_OP_DIV){
             return 1;
         }
@@ -71,7 +71,7 @@ static int bool_op_is_valid_for(ClmBoolOp op, ClmType left, ClmType right){
         }
     }else if(clm_type_is_number(left) && clm_type_is_number(right)){
         return 1;
-    }else if(left == right){
+    }else if(clm_type_is_matrix(left) && clm_type_is_matrix(left)){
         return 1;
     }
     return 0;
@@ -165,7 +165,7 @@ static void type_check_expression(ClmExpNode *node,ClmScope *scope){
             type_check_expression(node->indExp->rowIndex,scope);
             type_check_expression(node->indExp->colIndex,scope);
 
-            if(!clm_exp_has_no_inds(node) && clm_type_of_exp(node,scope) != CLM_TYPE_MATRIX){
+            if(!clm_exp_has_no_inds(node) && !clm_type_is_matrix(clm_type_of_exp(node,scope))){
                 //error... only matrices should be indexed into
                 clm_error(node->lineNo,node->colNo,
                     "Unexpected indices... only matrices can be indexed into");

@@ -149,7 +149,7 @@ static ClmExpNode *consume_parameter(){
                 node->paramExp->colVar = clm_string_copy(data.prevTokenRaw);
             }
             expect(LEX_RCURL);
-            node->paramExp->type = CLM_TYPE_MATRIX;
+            node->paramExp->type = CLM_TYPE_MATRIX_POINTER;
         }else{
             if(accept(LEX_INT_WORD)){
                 node->paramExp->type = CLM_TYPE_INT;

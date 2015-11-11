@@ -39,3 +39,7 @@ ClmType clm_type_of_exp(ClmExpNode *node, ClmScope *scope){
 int clm_type_is_number(ClmType type){
     return type == CLM_TYPE_INT || type == CLM_TYPE_FLOAT;
 }
+
+int clm_type_is_matrix(ClmType type){
+    return type == CLM_TYPE_MATRIX || type == CLM_TYPE_MATRIX_POINTER;
+}
