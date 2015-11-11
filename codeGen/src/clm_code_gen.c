@@ -147,12 +147,12 @@ static void asm_ret(){
 
 static void asm_print_mat(const char *arg);
 static void asm_print_mat_nl(const char *arg);
-static void asm_print_float(const char *arg);
-static void asm_print_float_nl(const char *arg);
-static void asm_print_int(const char *arg);
-static void asm_print_int_nl(const char *arg);
-static void asm_print_char(const char *arg);
-static void asm_print_char_nl(const char *arg);
+static void asm_print_float(float f);
+static void asm_print_float_nl(float f);
+static void asm_print_int(int i);
+static void asm_print_int_nl(int i);
+static void asm_print_char(char c);
+static void asm_print_char_nl(char c);
 
 static void next_label(char *buffer){
     int id = data.labelID++;
@@ -182,6 +182,7 @@ static void gen_statements(ClmArrayList *statements);
 // <- esp
 // so [esp-4] is the left type, and [edx-4] is the right type
 static void gen_arith(ClmArithExp *node){
+    //TODO all of these
     switch(node->op){
     case ARITH_OP_ADD:
         break;
@@ -305,6 +306,19 @@ static void gen_unary(ClmUnaryExp *node){
     switch(node->op){
     case UNARY_OP_MINUS:
     //TODO foreach element... neg it
+    //cols
+    //rows
+    //type 
+    // <- esp
+    //mov ecx, [esp + 8]
+    //mul ecx, [esp + 12] ; now ecx contains rows * cols
+    //loop0:
+    //dec ecx
+    //cmp ecx, -1
+    //je loop1
+    //neg dword [esp + ecx]
+    //jmp loop0
+    //loop1:
         break;
     case UNARY_OP_TRANSPOSE:
     //TODO transpose it!
@@ -353,10 +367,13 @@ static void gen_expression(ClmExpNode *node){
         break;
     }
     case EXP_TYPE_INDEX:
+    //TODO index should push the vals onto stack
+    //make a macro?
+    //different things whether the matrix is a pointer or a constant matrix?    
         break;
     case EXP_TYPE_MAT_DEC:
     {
-        int i;
+        int i;        
         if(node->matDecExp->arr != NULL){
             for(i = node->matDecExp->length - 1; i >= 0;i--){
                 //TODO... push f or push i?
@@ -367,21 +384,37 @@ static void gen_expression(ClmExpNode *node){
             asm_push_i((int) expression_type);
         }else{
             //TODO figure out where to allocate this??
+            //WAIT! we don't need to allocate???
+            //just have a for loop that pushes 0 onto the stack
+            //d'oh
             if(node->matDecExp->rowVar != NULL){
-
+                //mov eax,[ebp+$offset]
             }else{
-
+                //mov eax,$rowInd
             }
 
             if(node->matDecExp->colVar != NULL){
-
+                //mul ebx,[ebp+$offset]
             }else{
-
-            }            
+                //mul ebx,$colInd
+            }
+            //mov ecx, eax
+            //mul ecx, ebx ;;now ecx contains rows * cols
+            //loop0:
+            //dec ecx
+            //cmp ecx,0
+            //jeq loop1
+            //push 0
+            //jmp loop0
+            //loop1:
+            //push ebx
+            //push eax
+            //push $type
         }
         break;
     }
     case EXP_TYPE_PARAM:
+    //TODO ?
         break;
     case EXP_TYPE_UNARY:
         gen_expression(node->unaryExp->node);
@@ -394,8 +427,16 @@ static void gen_expression(ClmExpNode *node){
 static void gen_print(ClmExpNode *node, int newline){
     switch(node->type){
     case EXP_TYPE_INT:
+        if(newline)
+            asm_print_int_nl(node->ival);
+        else
+            asm_print_int(node->ival);
         break;
     case EXP_TYPE_FLOAT:
+        if(newline)
+            asm_print_float_nl(node->fval);
+        else
+            asm_print_float(node->fval);
         break;
     case EXP_TYPE_STRING:
         break;
@@ -478,6 +519,8 @@ static void gen_statement(ClmStmtNode *node){
         asm_mov(EBP, ESP);
 
         //TODO subtract the local variable sizes from esp
+        //will be 2 * 4 * num_params
+        //TODO figure out strings though!
 
         data.inFunction = 1;
         data.scope = funcScope;
@@ -496,9 +539,9 @@ static void gen_statement(ClmStmtNode *node){
     case STMT_TYPE_LOOP:
     {
         //TODO where to store these????
-        gen_expression(node->loopStmt->start);
-        gen_expression(node->loopStmt->end);
-        gen_expression(node->loopStmt->delta);
+        gen_expression(node->loopStmt->start);// don't need to store this - just evaluate and put into loop var
+        gen_expression(node->loopStmt->end); // don't need to store this - just evaulate every loop
+        gen_expression(node->loopStmt->delta); // may optimize to just use inc or dec - but in general, just re evaluate it
 
         ClmScope *loopScope = clm_scope_find_child(scope, node);
         data.scope = loopScope;
