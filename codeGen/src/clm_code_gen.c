@@ -367,10 +367,55 @@ static void gen_expression(ClmExpNode *node){
         break;
     }
     case EXP_TYPE_INDEX:
-    //TODO index should push the vals onto stack
-    //make a macro?
-    //different things whether the matrix is a pointer or a constant matrix?    
+    {
+        char index_str[64];
+        ClmSymbol *var = clm_scope_find(data.scope, node->indExp->id);
+        switch(var->type){
+        case CLM_TYPE_INT:
+        case CLM_TYPE_FLOAT:
+            sprintf(index_str, "dword [ebp+%d]",var->offset);
+            asm_push(index_str);
+            break;
+        case CLM_TYPE_MATRIX:
+        {
+            ClmExpNode *rowIndex = node->indExp->rowIndex;
+            ClmExpNode *colIndex = node->indExp->colIndex;
+            if(rowIndex == NULL && colIndex == NULL){
+                //TODO push whole matrix on stack
+            }else if(rowIndex == NULL){
+                //TODO push a whole row onto the stack
+            }else if(colIndex == NULL){
+                //TODO push a whole col onto the stack
+            }else{
+                //TODO push one val onto the stack
+            }
+            break;
+        }
+        case CLM_TYPE_MATRIX_POINTER:
+        {
+            ClmExpNode *rowIndex = node->indExp->rowIndex;
+            ClmExpNode *colIndex = node->indExp->colIndex;
+            if(rowIndex == NULL && colIndex == NULL){
+                //TODO push whole matrix on stack
+            }else if(rowIndex == NULL){
+                //TODO push a whole row onto the stack
+            }else if(colIndex == NULL){
+                //TODO push a whole col onto the stack
+            }else{
+                //TODO push one val onto the stack
+            }
+            break;
+        }
+        case CLM_TYPE_STRING:
+            //uhh
+            break;
+        case CLM_TYPE_FUNCTION:
+        case CLM_TYPE_NONE:
+            //shouldn't get here...
+            break;
+        }
         break;
+    }
     case EXP_TYPE_MAT_DEC:
     {
         int i;        
@@ -387,29 +432,45 @@ static void gen_expression(ClmExpNode *node){
             //WAIT! we don't need to allocate???
             //just have a for loop that pushes 0 onto the stack
             //d'oh
+            char index_str[32];            
             if(node->matDecExp->rowVar != NULL){
-                //mov eax,[ebp+$offset]
+                //mov eax,[ebp+offset]
+                ClmSymbol *sym = clm_scope_find(data.scope, node->matDecExp->rowVar);
+                sprintf(index_str, "[ebp+%d]", sym->offset);
+                asm_mov(EAX, index_str);
             }else{
                 //mov eax,$rowInd
+                sprintf(index_str, "%d", node->matDecExp->rows);
+                asm_mov(EAX, index_str);
             }
 
             if(node->matDecExp->colVar != NULL){
-                //mul ebx,[ebp+$offset]
+                //mul ebx,[ebp+offset]
+                ClmSymbol *sym = clm_scope_find(data.scope, node->matDecExp->colVar);
+                sprintf(index_str, "[ebp+%d]", sym->offset);
+                asm_mov(EBX, index_str);
             }else{
                 //mul ebx,$colInd
+                sprintf(index_str, "%d", node->matDecExp->cols);
+                asm_mov(EBX, index_str);
             }
-            //mov ecx, eax
-            //mul ecx, ebx ;;now ecx contains rows * cols
-            //loop0:
-            //dec ecx
-            //cmp ecx,0
-            //jeq loop1
-            //push 0
-            //jmp loop0
-            //loop1:
-            //push ebx
-            //push eax
-            //push $type
+            char start_label[32];
+            next_label(start_label);
+            char end_label[32];
+            next_label(end_label);
+
+            asm_mov(ECX,EBX);
+            asm_imul(ECX, EBX);
+            asm_label(start_label);
+            asm_dec(ECX);
+            asm_cmp(ECX, "0");
+            asm_jmp_eq(end_label);
+            asm_push_i(0);
+            asm_jmp(start_label);
+            asm_label(end_label);
+            asm_push(EBX);
+            asm_push(EAX);
+            asm_push((int) expression_type);
         }
         break;
     }
@@ -518,8 +579,10 @@ static void gen_statement(ClmStmtNode *node){
         asm_push(EBP);
         asm_mov(EBP, ESP);
 
-        //TODO subtract the local variable sizes from esp
-        //will be 2 * 4 * num_params
+        int local_var_size = 2 * 4 * node->funcDecStmt->parameters->length;
+        char local_var_size_str[32];
+        sprintf(local_var_size_str, "%d", local_var_size);
+        asm_sub(ESP, local_var_size_str);
         //TODO figure out strings though!
 
         data.inFunction = 1;
@@ -543,10 +606,19 @@ static void gen_statement(ClmStmtNode *node){
         gen_expression(node->loopStmt->end); // don't need to store this - just evaulate every loop
         gen_expression(node->loopStmt->delta); // may optimize to just use inc or dec - but in general, just re evaluate it
 
+        //loopVar <- start
+        //loop0:
+        //gen_expression(end)
+        //pop eax
+        //cmp start,eax
+        //je loop1    
+
         ClmScope *loopScope = clm_scope_find_child(scope, node);
         data.scope = loopScope;
         gen_statements(node->loopStmt->body);
         data.scope = loopScope->parent;
+
+        //loop1:
         break;
     }
     case STMT_TYPE_PRINT:
