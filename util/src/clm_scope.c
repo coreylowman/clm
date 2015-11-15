@@ -95,6 +95,6 @@ int clm_scope_next_local_offset(ClmScope *scope){
         //note: contant sized matrices will be optimized at compile time
         // so they won't be passed around...
         // but something like [1 2,3 4] * [m:n] will not be optimzed away!
-        return last_sym->offset + 8;
+        return last_sym->offset - 8;
     }
 }
