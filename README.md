@@ -27,17 +27,18 @@ B = {1 2, 3 4} // creates 2x2 matrix with row 1 as {1 2} and row 2 as {3 4}
 
 ```
 // a function with an integer parameter and an integer return type
-\foo num -> int =
+\foo num:int -> int =
   return num + 1
 ;
 ```
 
 ```
 // a function taking an integer parameter and return a size by size identity matrix
-\foo size -> [size:size] =
+\foo size:int -> [size:size] =
 	I = [size:size]
-	for i = 0,size - 1 do
-		I @ i,i = 1
+	// or: for i = 0 to size - 1 by 1
+	for i = 0 to size - 1 do
+		I[i,i] = 1
 	;
 	return I
 ;
@@ -73,6 +74,7 @@ A = foo()
 ###Printing
 
 ```
+//printl prints the expression with a newline after it
 print A
 printl 1 * 2 - 3
 printl {1 0,0 1} * B
