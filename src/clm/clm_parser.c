@@ -122,8 +122,6 @@ static int consume_param_size(){
 static int consume_return_size(){
     if(accept(LEX_INT)){
         return atoi(data.prevTokenRaw);
-    }else if(accept(LEX_QUESTION)){
-        return -1;
     }
     expect(LEX_ID);
     return 0;
@@ -172,9 +170,12 @@ static ClmExpNode *consume_lhs(){
 
     ClmExpNode *rowIndex = NULL,*colIndex = NULL;
     if(accept(LEX_LBRACK)){
-        rowIndex = consume_expression();
+        //accepts A[x,y] A[,y] A[x,] A[,]
+        if(next()->sym != LEX_COMMA)
+            rowIndex = consume_expression();
         expect(LEX_COMMA);
-        colIndex = consume_expression();
+        if(next()->sym != LEX_RBRACK)
+            colIndex = consume_expression();
         expect(LEX_RBRACK);
     }
 
@@ -267,8 +268,8 @@ static ClmStmtNode *consume_statement(){
                 returnType = CLM_TYPE_FLOAT;
             }else if(accept(LEX_STRING_WORD)){ //\x ... -> string
                 returnType = CLM_TYPE_STRING;
-            }else {                         //\x ... -> {m:n}
-                expect(LEX_LCURL);
+            }else {                         //\x ... -> [m:n]
+                expect(LEX_LBRACK);
                 r = consume_return_size();
                 if(!r)
                     rv = data.prevTokenRaw;
@@ -276,7 +277,7 @@ static ClmStmtNode *consume_statement(){
                 c = consume_return_size();
                 if(!c)
                     cv = data.prevTokenRaw;
-                expect(LEX_RCURL);
+                expect(LEX_RBRACK);
 
                 returnType = CLM_TYPE_MATRIX;
             }
@@ -436,7 +437,7 @@ static ClmExpNode *consume_expression_6(){
             return exp;
         }
     }
-    else if (accept(LEX_LCURL)){       
+    else if (accept(LEX_LBRACK)){       
         int rows = 0, cols = 0;
         char *rowVar = NULL, *colVar = NULL;
         if (accept(LEX_ID)){
@@ -454,13 +455,13 @@ static ClmExpNode *consume_expression_6(){
             expect(LEX_INT);
             cols = atoi(data.prevTokenRaw);
         }
-        expect(LEX_RCURL);
+        expect(LEX_RBRACK);
 
         ClmExpNode *exp = clm_exp_new_empty_mat_dec(rows,cols,rowVar, colVar);
         exp->lineNo = lineNo; exp->colNo = colNo;
         return exp;
     }
-    else if (accept(LEX_LBRACK)){
+    else if (accept(LEX_RCURL)){
         int cols, num = 0;
         float *list;      
         int start = prev()->lineNo;       
@@ -496,14 +497,11 @@ static ClmExpNode *consume_expression_6(){
 				}
             }
         }
-        expect(LEX_RBRACK);
+        expect(LEX_RCURL);
         
         ClmExpNode *exp = clm_exp_new_mat_dec(list, num, cols);
         exp->lineNo = lineNo; exp->colNo = colNo;
         return exp;
-    }
-    else if (accept(LEX_HASH)){
-        return NULL;
     }
     else{
         clm_error(curr()->lineNo, curr()->colNo,
