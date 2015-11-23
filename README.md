@@ -10,10 +10,18 @@ To Do:
 
 ###Matrix Creation
 
-
 ```
 A = [4:4] //creates a 4x4 matrix and stores in A
 B = {1 2, 3 4} // creates 2x2 matrix with row 1 as {1 2} and row 2 as {3 4}
+```
+
+###Matrix Indexing
+```
+A = [4:4]
+A[0,1] //first row, second column
+A[2,] //third row
+A[,3] //fourth column
+
 ```
 
 ###Function Declarations
@@ -36,7 +44,6 @@ B = {1 2, 3 4} // creates 2x2 matrix with row 1 as {1 2} and row 2 as {3 4}
 // a function taking an integer parameter and return a size by size identity matrix
 \foo size:int -> [size:size] =
 	I = [size:size]
-	// or: for i = 0 to size - 1 by 1
 	for i = 0 to size - 1 do
 		I[i,i] = 1
 	;
@@ -54,9 +61,13 @@ B = {1 2, 3 4} // creates 2x2 matrix with row 1 as {1 2} and row 2 as {3 4}
 ```
 
 ```
-//a function taking an m by n matrix and return an matrix with n rows and not known at compile time columns
-\foo A[m:n] -> [n:?] =
-  // some code here
+//a function taking an m by n matrix and return an matrix with n rows and an unknown amount of columns
+\foo A[m:n] -> [n:q] =
+  ...
+  q = (...)
+  ...
+  T = (...)
+  ...
   return T
 ;
 ```
