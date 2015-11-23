@@ -212,9 +212,6 @@ static ClmLexerToken *get_token(){
         }else if(tok_str_eq(word,        "~")){
             token->sym = LEX_TILDA;
             data.curInd += strlen("~");
-        }else if(tok_str_eq(word,        "?")){
-            token->sym = LEX_QUESTION;
-            data.curInd += strlen("?");
         }else if(tok_str_eq(word,        ".")){
             token->sym = LEX_PERIOD;
             data.curInd += strlen(".");
@@ -239,9 +236,6 @@ static ClmLexerToken *get_token(){
         }else if(tok_str_eq(word,        ")")){
             token->sym = LEX_RPAREN;
             data.curInd += strlen(")");
-        }else if(tok_str_eq(word,        "#")){
-            token->sym = LEX_HASH;
-            data.curInd += strlen("#");
         }else if(tok_str_eq(word,        ",")){
             token->sym = LEX_COMMA;
             data.curInd += strlen(",");
@@ -324,7 +318,7 @@ const char *clm_lexer_sym_to_string(ClmLexerSymbol s){
     const char *ClmLexerSymbol_String[] = {
     "ADD", "AND", "ASSIGN", "AT", "BACKSLASH", "BY", "CALL", 
     "COLON", "COMMA", "DIV", "DO", "ELSE", "END", "EQ", "FLOAT",
-    "FLOAT_WORD", "FOR", "GT", "GTE", "HASH", "ID", "IF", "INT",
+    "FLOAT_WORD", "FOR", "GT", "GTE", "ID", "IF", "INT",
     "INT_WORD", "LBRACK", "LCURL", "LPAREN", "LT", "LTE", "MULT",
     "NEQ", "NOT", "OR", "PERIOD", "PRINT", "PRINTL", "QUESTION",
     "RBRACK", "RCURL", "RETURN", "RPAREN", "SEMI", "STRING",
