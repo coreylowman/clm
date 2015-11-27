@@ -210,11 +210,21 @@ static ClmStmtNode *consume_statement(){
         stmt->lineNo = lineNo; stmt->colNo = colNo;
         return stmt;
     }else if(accept(LEX_FOR)){            
-        expect(LEX_ID); char *name = data.prevTokenRaw;        
+        expect(LEX_ID);
+        char *name = data.prevTokenRaw;        
         expect(LEX_ASSIGN);
+        int startInclusive = 0;
+        if(accept(LEX_LBRACK))
+            startInclusive = 1;
+        else expect(LEX_LPAREN);
+
         ClmExpNode *start = consume_expression();
-        expect(LEX_TO);
+        expect(LEX_COMMA);
         ClmExpNode *end = consume_expression();
+        int endInclusive = 0;
+        if(accept(LEX_RBRACK))
+            endInclusive = 1;
+        else expect(LEX_RPAREN);
 
         ClmExpNode *delta;
         if(accept(LEX_BY)){
@@ -226,8 +236,9 @@ static ClmStmtNode *consume_statement(){
         expect(LEX_DO);
         ClmArrayList *body = consume_statements(0);
 
-        ClmStmtNode *stmt = clm_stmt_new_loop(name,start,end,delta,body);
+        ClmStmtNode *stmt = clm_stmt_new_loop(name,start,end,delta,body, startInclusive, endInclusive);
         stmt->lineNo = lineNo; stmt->colNo = colNo;
+
         return stmt;
     }else if(accept(LEX_IF)){
         ClmExpNode *condition = consume_expression();
@@ -253,7 +264,11 @@ static ClmStmtNode *consume_statement(){
         ClmArrayList *params = clm_array_list_new(clm_exp_free);
         ClmExpNode *param = consume_parameter();
         while(param){
-            clm_array_list_push(params, param);
+			clm_array_list_push(params, param);
+
+			if (curr()->sym == LEX_SUB || curr()->sym == LEX_ASSIGN) break;
+			else expect(LEX_COMMA);
+            
             param = consume_parameter();
         }
 

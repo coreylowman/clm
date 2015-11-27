@@ -39,6 +39,8 @@ typedef struct ClmFuncDecStmt {
 
 typedef struct ClmLoopStmt {
     char *varId;
+    int startInclusive;
+    int endInclusive;
     ClmExpNode *start;
     ClmExpNode *end;
     ClmExpNode *delta;
@@ -69,7 +71,7 @@ ClmStmtNode *clm_stmt_new_assign(ClmExpNode *lhs,ClmExpNode *rhs);
 ClmStmtNode *clm_stmt_new_call(ClmExpNode *callExpr);
 ClmStmtNode *clm_stmt_new_cond(ClmExpNode *condition,ClmArrayList *trueBody,ClmArrayList *falseBody);
 ClmStmtNode *clm_stmt_new_dec(char *name,ClmArrayList *params,ClmType returnType, int returnRows,char *returnRowsVars,int returnCols,char *returnColsVar, ClmArrayList *functionBody);
-ClmStmtNode *clm_stmt_new_loop(char *varId,ClmExpNode *start,ClmExpNode *end,ClmExpNode *delta,ClmArrayList *loopBody);
+ClmStmtNode *clm_stmt_new_loop(char *varId,ClmExpNode *start,ClmExpNode *end,ClmExpNode *delta,ClmArrayList *loopBody, int startInclusive, int endInclusive);
 ClmStmtNode *clm_stmt_new_print(ClmExpNode *expression,int appendNewline);
 ClmStmtNode *clm_stmt_new_return(ClmExpNode *returnExpr);
 
