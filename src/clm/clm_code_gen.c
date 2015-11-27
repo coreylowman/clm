@@ -26,6 +26,12 @@ static CodeGenData data;
 #define T_EAX "T_EAX"
 #define T_EBX "T_EBX"
 
+static void comment(const char *line){
+    char buffer[128];
+    sprintf(buffer, "; %s\n", line);
+    writeLine(buffer);
+}
+
 static void writeLine(const char *line){
     data.code = realloc(data.code, strlen(data.code) + strlen(line) + 1);
     strcat(data.code, line);
@@ -415,6 +421,8 @@ static void gen_bool(ClmBoolExp *node){
 static void gen_unary(ClmUnaryExp *node){
     switch(node->operand){
     case UNARY_OP_MINUS:
+    //TODO... this is just the matrix case
+    //also need the rest of the negatable objects
     //TODO foreach element... neg it
     //cols
     //rows
@@ -431,7 +439,7 @@ static void gen_unary(ClmUnaryExp *node){
     //loop1:
         break;
     case UNARY_OP_TRANSPOSE:
-    //TODO transpose it!
+    //https://en.wikipedia.org/wiki/In-place_matrix_transposition    
         break;
     case UNARY_OP_NOT:
         asm_xor("dword [" ESP "]", "1");
@@ -484,9 +492,7 @@ static void gen_lhs(ClmExpNode *node){
         break;
     case CLM_TYPE_MATRIX:
     {
-        ClmExpNode *rowIndex = node->indExp->rowIndex;
-        ClmExpNode *colIndex = node->indExp->colIndex;
-        if(rowIndex == NULL && colIndex == NULL){
+        if(node->indExp->rowIndex == NULL && node->indExp->colIndex == NULL){
             //TODO pop whole matrix off stack
 			char start_label[32];
 			char end_label[32];
@@ -507,19 +513,19 @@ static void gen_lhs(ClmExpNode *node){
 
 			asm_jmp(start_label);
 			asm_label(end_label);
-        }else if(rowIndex == NULL){
+        }else if(node->indExp->rowIndex == NULL){
             //TODO pop a whole row off the stack
-        }else if(colIndex == NULL){
+        }else if(node->indExp->colIndex == NULL){
             //TODO pop a whole col off the stack
         }else{
             //TODO pop one val off the stack
-            gen_expression(colIndex);			
-            gen_expression(rowIndex);
+            gen_expression(node->indExp->colIndex);			
+            gen_expression(node->indExp->rowIndex);
 			asm_pop(EAX); //pop type
-            asm_pop(EAX);
+            asm_pop(EAX); //pop rows into eax
 			asm_pop(EBX); //pop type
-			asm_pop(EBX);
-            asm_imul(EAX, EBX);
+			asm_pop(EBX); //pop cols into ebx
+            asm_imul(EAX, EBX); //eax = eax * ebx
             asm_imul(EAX, "4"); //now eax contains row * col * 4
             //var->offset points at type... 3 elements above is the first item in the matrix
             sprintf(index_str, "dword [ebp+%d+eax]", var->offset + 12);
@@ -529,13 +535,11 @@ static void gen_lhs(ClmExpNode *node){
     }
     case CLM_TYPE_MATRIX_POINTER:
     {
-        ClmExpNode *rowIndex = node->indExp->rowIndex;
-        ClmExpNode *colIndex = node->indExp->colIndex;
-        if(rowIndex == NULL && colIndex == NULL){
+        if(node->indExp->rowIndex == NULL && node->indExp->colIndex == NULL){
             //TODO push whole matrix on stack
-        }else if(rowIndex == NULL){
+        }else if(node->indExp->rowIndex == NULL){
             //TODO push a whole row onto the stack
-        }else if(colIndex == NULL){
+        }else if(node->indExp->colIndex == NULL){
             //TODO push a whole col onto the stack
         }else{
             //TODO push one val onto the stack
@@ -608,7 +612,7 @@ static void gen_expression(ClmExpNode *node){
         case CLM_TYPE_MATRIX:
         {
             if(node->indExp->rowIndex == NULL && node->indExp->colIndex == NULL){
-                //TODO push whole matrix on stack
+                //TODO push whole matrix on stack                
             }else if(node->indExp->rowIndex == NULL){
                 //TODO push a whole row onto the stack
             }else if(node->indExp->colIndex == NULL){
@@ -662,7 +666,7 @@ static void gen_expression(ClmExpNode *node){
         if(node->matDecExp->arr != NULL){
             for(i = node->matDecExp->length - 1; i >= 0;i--){
                 //TODO... push f or push i?
-                asm_push_f(node->matDecExp->arr[i]);
+                asm_push_i(node->matDecExp->arr[i]);
             }
             asm_push_i(node->matDecExp->cols);
             asm_push_i(node->matDecExp->rows);
@@ -697,8 +701,8 @@ static void gen_expression(ClmExpNode *node){
                 asm_mov(EBX, index_str);
             }
             char start_label[32];
-            next_label(start_label);
             char end_label[32];
+            next_label(start_label);
             next_label(end_label);
 
             asm_mov(ECX,EBX);
@@ -901,13 +905,11 @@ static void gen_statement(ClmStmtNode *node){
 			sprintf(index_str, "dword [ebp+%d]", sym->offset);
 			asm_mov_i(index_str, (int)sym->type);
 
-			writeLine("; setting val on stack\n");
 			//setting the value of the local var
 			sprintf(index_str, "dword [ebp+%d]", sym->offset - 4);
 			asm_mov_i(index_str, 0);
 
 			if (clm_type_is_matrix(sym->type)){
-				writeLine("; local var is matrix\n");
 				next_label(start_label);
 				next_label(end_label);
 
