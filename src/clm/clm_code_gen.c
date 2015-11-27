@@ -67,6 +67,12 @@ static void asm_add(const char *dest, const char *other){
     writeLine(buffer);
 }
 
+static void asm_add_i(const char *dest, int i){
+    char buffer[32];
+    sprintf(buffer, "add %s,%d\n", dest, i);
+    writeLine(buffer);
+}
+
 static void asm_sub(const char *dest, const char *other){
     char buffer[32];
     sprintf(buffer, "sub %s,%s\n", dest, other);
@@ -466,10 +472,15 @@ static void gen_lhs(ClmExpNode *node){
 
     switch(var->type){
     case CLM_TYPE_INT:
-    case CLM_TYPE_FLOAT:
-		asm_pop(EAX); //pop type
-        sprintf(index_str, "dword [ebp+%d]",var->offset);
+        asm_pop(EAX); //pop type
+        if(var->isParam)
+            sprintf(index_str, "dword [ebp+%d]",var->offset + 4);
+        else
+            sprintf(index_str, "dword [ebp+%d]",var->offset - 4);
         asm_pop(index_str);
+        break;
+    case CLM_TYPE_FLOAT:
+		//TODO floats
         break;
     case CLM_TYPE_MATRIX:
     {
@@ -584,48 +595,51 @@ static void gen_expression(ClmExpNode *node){
         ClmSymbol *var = clm_scope_find(data.scope, node->indExp->id);
         switch(var->type){
         case CLM_TYPE_INT:
-        case CLM_TYPE_FLOAT:
-            sprintf(index_str, "dword [ebp+%d]",var->offset);
+            if(var->isParam)
+                sprintf(index_str, "dword [ebp+%d]",var->offset + 4);
+            else
+                sprintf(index_str, "dword [ebp+%d]",var->offset - 4);
             asm_push(index_str);
+            asm_push_i((int) var->type);
+            break;
+        case CLM_TYPE_FLOAT:
+            //TODO floats
             break;
         case CLM_TYPE_MATRIX:
         {
-            ClmExpNode *rowIndex = node->indExp->rowIndex;
-            ClmExpNode *colIndex = node->indExp->colIndex;
-            if(rowIndex == NULL && colIndex == NULL){
+            if(node->indExp->rowIndex == NULL && node->indExp->colIndex == NULL){
                 //TODO push whole matrix on stack
-            }else if(rowIndex == NULL){
+            }else if(node->indExp->rowIndex == NULL){
                 //TODO push a whole row onto the stack
-            }else if(colIndex == NULL){
+            }else if(node->indExp->colIndex == NULL){
                 //TODO push a whole col onto the stack
             }else{
                 //TODO push one val onto the stack
-				gen_expression(colIndex);
-				gen_expression(rowIndex);
+				gen_expression(node->indExp->colIndex);
+				gen_expression(node->indExp->rowIndex);
 				asm_pop(EAX); //pop type
-				asm_pop(EAX);
+				asm_pop(EAX); //pop row index into eax
 				asm_pop(EBX); //pop type
-				asm_pop(EBX);
+				asm_pop(EBX); //pop col index into ebx
 				asm_imul(EAX, EBX);
 				asm_imul(EAX, "4"); //now eax contains row * col * 4
 				//var->offset points at type... 3 elements above is the first item in the matrix
 				//sprintf(index_str, "dword [ebp+%d+eax]", var->offset + 12);
 				sprintf(index_str, "[ebp+%d]", var->offset + 4);
 				asm_mov(EBX, index_str);
-				asm_push("dword [ebx+eax]");
+                //asm_add(EAX, EBX); //eax now contains              
+				asm_push("dword [eax]");
 				asm_push_i((int)CLM_TYPE_INT);
             }
             break;
         }
         case CLM_TYPE_MATRIX_POINTER:
         {
-            ClmExpNode *rowIndex = node->indExp->rowIndex;
-            ClmExpNode *colIndex = node->indExp->colIndex;
-            if(rowIndex == NULL && colIndex == NULL){
+            if(node->indExp->rowIndex == NULL && node->indExp->colIndex == NULL){
                 //TODO push whole matrix on stack
-            }else if(rowIndex == NULL){
+            }else if(node->indExp->rowIndex == NULL){
                 //TODO push a whole row onto the stack
-            }else if(colIndex == NULL){
+            }else if(node->indExp->colIndex == NULL){
                 //TODO push a whole col onto the stack
             }else{
                 //TODO push one val onto the stack
@@ -712,7 +726,6 @@ static void gen_expression(ClmExpNode *node){
     }
 }
 
-//TODO... have print macro
 static void gen_print(ClmExpNode *node, int newline){
     switch(node->type){
     case EXP_TYPE_INT:
@@ -735,61 +748,64 @@ static void gen_print(ClmExpNode *node, int newline){
     case EXP_TYPE_CALL:
 		gen_expression(node);
 		//TODO print result
+        ClmSymbol *function = clm_scope_find(data.scope, node->callExp->name);
+        switch(function->type){
+        case CLM_TYPE_INT:
+            break;
+        case CLM_TYPE_MATRIX:
+            break;
+        case CLM_TYPE_MATRIX_POINTER:
+            break;
+        case CLM_TYPE_STRING:
+            break;
+        case CLM_TYPE_FLOAT:
+            break;
+        }
         break;
 	case EXP_TYPE_INDEX:
 	{
 		char index_str[32];
-		ClmSymbol *var = clm_scope_find(data.scope, node->indExp->id);
-		gen_expression(node);
+		ClmSymbol *var = clm_scope_find(data.scope, node->indExp->id);		
 		switch (var->type){
 		case CLM_TYPE_INT:
-			asm_pop(EAX);
+            gen_expression(node);
+			asm_pop(EAX); //pop type
+            asm_pop(EAX); //pop val into eax
 			asm_print_int(EAX, newline);
             break;
 		case CLM_TYPE_FLOAT:
-			asm_pop(EAX);
+            gen_expression(node);
+			asm_pop(EAX); //pop type
+            asm_pop(EAX); //pop val into eax
 			asm_print_float(EAX, newline);
 			break;
 		case CLM_TYPE_MATRIX:
-		{
-			if (node->indExp->rowIndex == NULL && node->indExp->colIndex == NULL){
-				//TODO pop whole matrix off stack
-			}else if (node->indExp->rowIndex == NULL){
-				//TODO pop a whole row off the stack
-			}else if (node->indExp->colIndex == NULL){
-				//TODO pop a whole col off the stack
-			}else{
-				//TODO pop one val onto the stack
-				asm_pop(EAX); //pop type
-				asm_pop(EAX); //pop val
-				asm_print_int(EAX, newline);
-			}
-			break;
-		}
 		case CLM_TYPE_MATRIX_POINTER:
 		{
-			ClmExpNode *rowIndex = node->indExp->rowIndex;
-			ClmExpNode *colIndex = node->indExp->colIndex;
-			if (rowIndex == NULL && colIndex == NULL){
-				//TODO push whole matrix on stack
-			}
-			else if (rowIndex == NULL){
-				//TODO push a whole row onto the stack
-			}
-			else if (colIndex == NULL){
-				//TODO push a whole col onto the stack
-			}
-			else{
-				//TODO push one val onto the stack
-			}
+            //these two types should be the same...
+            //they are generated differently...
+            //but gen_expression will push all the vals onto the stack
+            gen_expression(node);
+            if (node->indExp->rowIndex != NULL && node->indExp->colIndex != NULL){
+                asm_pop(EAX); //pop type
+                asm_pop(EAX); //pop val
+                asm_print_int(EAX, newline);
+            }else{
+                //for all other cases we wil have to pop the rows and cols
+                //off the stack
+                //TODO print matrix
+            }
 			break;
 		}
 		case CLM_TYPE_STRING:
-			//uhh
+			//this will be similar to printing a matrix, but will always be
+            //one dimensional, so will just pop off length and then do a for
+            //loop to print each char
+            //TODO print string
 			break;
 		case CLM_TYPE_FUNCTION:
 		case CLM_TYPE_NONE:
-			//shouldn't get here...
+			//can't print these :)
 			break;
 		}
 		break;
@@ -940,13 +956,19 @@ static void gen_statement(ClmStmtNode *node){
         char end_label[32];
         next_label(start_label);
         next_label(end_label);
-        
+
+        ClmSymbol *var = clm_scope_find(data.scope, node->loopStmt->varId);
+        char loop_var[32];
+        sprintf(loop_var, "dword [ebp+%d]", var->offset);
+
         gen_expression(node->loopStmt->start);// don't need to store this - just evaluate and put into loop var
-        //TODO pop into loopVar
+        asm_pop(loop_var);
+        //TODO start/end inclusive
         asm_label(start_label);
         gen_expression(node->loopStmt->end); // don't need to store this - just evaulate every loop
+
         asm_pop(EAX);
-        asm_cmp("", EAX); //TODO compare to loopVar
+        asm_cmp(loop_var, EAX);
         asm_jmp_eq(end_label);
 
         ClmScope *loopScope = clm_scope_find_child(data.scope, node);
@@ -954,12 +976,22 @@ static void gen_statement(ClmStmtNode *node){
         gen_statements(node->loopStmt->body);
         data.scope = loopScope->parent;
 
-        gen_expression(node->loopStmt->delta); // may optimize to just use inc or dec - but in general, just re evaluate it
-        asm_pop(EAX);
-        asm_add("", EAX); //TODO add to loopVar
-        asm_jmp(start_label);
-        asm_label(end_label);
+        if(node->loopStmt->delta->type == EXP_TYPE_INT
+            && node->loopStmt->delta->ival == 1){
+            asm_inc(loop_var);
+        }else if(node->loopStmt->delta->type == EXP_TYPE_INT
+            && node->loopStmt->delta->ival == -1){
+            asm_dec(loop_var);
+        }else if(node->loopStmt->delta->type == EXP_TYPE_INT){
+            asm_add_i(loop_var, node->loopStmt->delta->ival);
+        }else{
+            gen_expression(node->loopStmt->delta);
+            asm_pop(EAX);
+            asm_add(loop_var, EAX);
+        }
 
+        asm_jmp(start_label);
+        asm_label(end_label);        
         break;
     }
     case STMT_TYPE_PRINT:
