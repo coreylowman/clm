@@ -11,7 +11,7 @@ To Do:
 ###Matrix Creation
 
 ```
-A = [4:4] //creates a 4x4 matrix and stores in A
+A = [4:4] //creates a 4x4 matrix filled with 0's and stores in A
 B = {1 2, 3 4} // creates 2x2 matrix with row 1 as {1 2} and row 2 as {3 4}
 ```
 
@@ -22,6 +22,38 @@ A[0,1] //first row, second column
 A[2,] //third row
 A[,3] //fourth column
 
+```
+
+###For loops
+```
+for i = [0,5] do
+  print i
+;
+=> 012345
+
+for i = [0,5) do
+  print i
+;
+=> 01234
+
+for i = (0,5] do
+  print i
+;
+=> 12345
+
+for i = (0,5) do
+  print i
+;
+=> 1234
+```
+
+In addition, you can specify the delta of the range by using the 'by' keyword:
+
+```
+for i = (5, 0] by -1 do
+  print i
+;
+=> 43210
 ```
 
 ###Function Declarations
@@ -44,7 +76,7 @@ A[,3] //fourth column
 // a function taking an integer parameter and return a size by size identity matrix
 \foo size:int -> [size:size] =
 	I = [size:size]
-	for i = 0 to size - 1 do
+	for i = [0, size) do
 		I[i,i] = 1
 	;
 	return I

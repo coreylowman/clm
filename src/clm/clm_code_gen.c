@@ -962,14 +962,25 @@ static void gen_statement(ClmStmtNode *node){
         sprintf(loop_var, "dword [ebp+%d]", var->offset);
 
         gen_expression(node->loopStmt->start);// don't need to store this - just evaluate and put into loop var
+        if(!node->loopStmt->startInclusive){
+            gen_expression(node->loopStmt->delta);
+            asm_pop(EAX); //pop type of delta
+            asm_pop(EAX); //pop val of delta
+            asm_pop(EBX); //pop type of start
+            asm_pop(EBX); //pop val of start
+            asm_add(EBX, EAX);
+            asm_push(EBX); //push start back on stack
+        }
         asm_pop(loop_var);
-        //TODO start/end inclusive
         asm_label(start_label);
         gen_expression(node->loopStmt->end); // don't need to store this - just evaulate every loop
 
         asm_pop(EAX);
+
         asm_cmp(loop_var, EAX);
-        asm_jmp_eq(end_label);
+        if(node->loopStmt->endInclusive)
+            asm_jmp_g(end_label);
+        else asm_jmp_ge(end_label);
 
         ClmScope *loopScope = clm_scope_find_child(data.scope, node);
         data.scope = loopScope;
