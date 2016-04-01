@@ -1,5 +1,5 @@
-#ifndef CLM_ASM_HEADERS_H_
-#define CLM_ASM_HEADERS_H_
+#ifndef CLM_ASM_H_
+#define CLM_ASM_H_
 
 static const char ASM_HEADER[] = "format PE console\n"
 "entry start\n"
@@ -97,5 +97,47 @@ static const char ASM_START[] = "start:\n";
 static const char ASM_DATA[] = "section '.data' data readable writable\n"
 "T_EAX dd 0\n"
 "T_EBX dd 0\n";
+
+void asm_comment(const char *line);
+void asm_pop(const char *dest);
+void asm_push(const char *src);
+void asm_push_i(int val);
+void asm_push_f(float val);
+void asm_push_c(char val);
+void asm_add(const char *dest, const char *other);
+void asm_add_i(const char *dest, int i);
+void asm_sub(const char *dest, const char *other);
+void asm_imul(const char *dest, const char *other);
+void asm_fadd(const char *dest, const char *other);
+void asm_fsub(const char *dest, const char *other);
+void asm_fmul(const char *dest, const char *other);
+void asm_inc(const char *arg);
+void asm_dec(const char *arg);
+void asm_neg(const char *arg);
+void asm_mov(const char *dest, const char *src);
+void asm_mov_i(const char *dest, int i);
+void asm_lea(const char *dest, const char *src);
+void asm_xchg(const char *arg1, const char *arg2);
+void asm_and(const char *arg1, const char *arg2);
+void asm_or(const char *arg1, const char *arg2);
+void asm_xor(const char *arg1, const char *arg2);
+void asm_cmp(const char *arg1, const char *arg2);
+void asm_jmp(const char *label);
+void asm_jmp_g(const char *label);
+void asm_jmp_ge(const char *label);
+void asm_jmp_l(const char *label);
+void asm_jmp_le(const char *label);
+void asm_jmp_eq(const char *label);
+void asm_jmp_neq(const char *label);
+void asm_label(const char *name);
+void asm_call(const char *name);
+void asm_ret();
+void asm_print_mat(const char *src, int nl);
+void asm_print_const_mat(float *arr, int num_elements, int nl);
+void asm_print_const_float(float f, int nl);
+void asm_print_int(const char *src, int nl);
+void asm_print_const_int(int i, int nl);
+void asm_print_char(const char *src, int nl);
+void asm_print_const_char(char c, int nl);
 
 #endif

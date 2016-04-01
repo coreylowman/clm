@@ -1,6 +1,7 @@
 list(APPEND CLM_SOURCES
     clm.c
-    clm_asm_headers.h
+    clm_asm.h
+    clm_asm.c
     clm_code_gen.c
     clm_code_gen.h
     clm_lexer.c

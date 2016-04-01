@@ -81,15 +81,15 @@ void clm_lexer_print(ClmArrayList *tokens){
     clm_array_list_foreach(tokens,lexer_token_print);
 }
 
-ClmArrayList *clm_lexer_main(const char *fileContents){    
+ClmArrayList *clm_lexer_main(const char *file_contents){    
     data.curInd = 0;
     data.lineNo = 1;
     data.colNo = 0;
     data.numTokens = 0;
-    data.programString = clm_string_copy(fileContents);
+    data.programString = clm_string_copy(file_contents);
     data.tokens = clm_array_list_new(lexer_token_free);
 
-    data.programLength = clm_string_length(fileContents);
+    data.programLength = strlen(file_contents);
     
     while (valid() && data.programString[data.curInd] != '\0'){
         ClmLexerToken *token = get_token();
