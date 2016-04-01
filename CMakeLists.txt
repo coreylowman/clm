@@ -15,10 +15,5 @@ set(CLM_LIB_DIR ${CMAKE_CURRENT_LIST_DIR}/lib/Debug)
 
 option(CLM_BUILD_TESTS "builds the test executable" OFF)
 
-add_subdirectory(util)
-add_subdirectory(lexer)
-add_subdirectory(parser)
-add_subdirectory(symbolGen)
-add_subdirectory(typeCheck)
-add_subdirectory(clm)
-add_subdirectory(tests)
+add_subdirectory(src/util)
+add_subdirectory(src/clm)
