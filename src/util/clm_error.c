@@ -5,14 +5,14 @@
 #include <stdio.h>
 #include "clm_error.h"
 
-extern char *fileName;
+extern char *file_name;
 extern int CLM_BUILD_TESTS;
 
 void clm_error(int line, int col, const char *fmt, ...){
 	va_list ap;
 	va_start(ap, fmt);
 	
-	printf("%s:%d:%d:",fileName,line,col);
+	printf("%s:%d:%d:",file_name,line,col);
     
 #ifdef _WIN32
     HANDLE console_handle = GetStdHandle(STD_OUTPUT_HANDLE);

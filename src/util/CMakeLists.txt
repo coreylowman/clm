@@ -5,8 +5,6 @@ list(APPEND CLM_UTIL_SOURCES
     clm_error.h
     clm_expression.c
     clm_expression.h
-    clm_file.c
-    clm_file.h
     clm_scope.c
     clm_scope.h
     clm_statement.c

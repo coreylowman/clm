@@ -31,7 +31,3 @@ int clm_string_equals_n(const char *string1,const char *string2, size_t n){
     else if (string2 == NULL) return 0;
     else return !strncmp(string1,string2,n);
 }
-
-int clm_string_length(const char *string){
-    return strlen(string);
-}
