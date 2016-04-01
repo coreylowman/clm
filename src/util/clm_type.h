@@ -1,7 +1,7 @@
 #ifndef CLM_TYPE_H_
 #define CLM_TYPE_H_
 
-typedef enum {
+typedef enum ClmType {
   CLM_TYPE_INT,
   CLM_TYPE_MATRIX,
   CLM_TYPE_MATRIX_POINTER,

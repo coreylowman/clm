@@ -2,10 +2,10 @@
 #define CLM_STATEMENT_H_
 
 #include "clm_expression.h"
-#include "clm_array_list.h"
+#include "array_list.h"
 #include "clm_type.h"
 
-typedef enum ClmStmtType {
+typedef enum StmtType {
   STMT_TYPE_ASSIGN,
   STMT_TYPE_CALL,
   STMT_TYPE_CONDITIONAL,
@@ -13,70 +13,68 @@ typedef enum ClmStmtType {
   STMT_TYPE_LOOP,
   STMT_TYPE_PRINT,
   STMT_TYPE_RET
-} ClmStmtType;
-
-typedef struct ClmAssignStmt {
-  ClmExpNode *lhs;
-  ClmExpNode *rhs;
-} ClmAssignStmt;
-
-typedef struct ClmConditionStmt {
-  ClmExpNode *condition;
-  ClmArrayList *trueBody;  // array list of ClmStmtNode
-  ClmArrayList *falseBody; // array list of ClmStmtNode
-} ClmConditionStmt;
-
-typedef struct ClmFuncDecStmt {
-  char *name;
-  ClmArrayList *parameters; // array list of ClmExpNode
-  ClmType returnType;
-  int returnRows;
-  char *returnRowsVar;
-  int returnCols;
-  char *returnColsVar;
-  ClmArrayList *body; // array list of ClmStmtNode
-} ClmFuncDecStmt;
-
-typedef struct ClmLoopStmt {
-  char *varId;
-  int startInclusive;
-  int endInclusive;
-  ClmExpNode *start;
-  ClmExpNode *end;
-  ClmExpNode *delta;
-  ClmArrayList *body; // array list of ClmStmtNode
-} ClmLoopStmt;
-
-typedef struct ClmPrintStmt {
-  ClmExpNode *expression;
-  int appendNewline;
-} ClmPrintStmt;
+} StmtType;
 
 typedef struct ClmStmtNode {
-  ClmStmtType type;
+  StmtType type;
+
   union {
-    ClmAssignStmt *assignStmt;
+    struct {
+      ClmExpNode *lhs;
+      ClmExpNode *rhs;
+    } assignStmt;
+
+    struct {
+      ClmExpNode *condition;
+      ArrayList *trueBody;  // array list of ClmStmtNode
+      ArrayList *falseBody; // array list of ClmStmtNode
+    } conditionStmt;
+
     ClmExpNode *callExpr;
-    ClmConditionStmt *conditionStmt;
-    ClmFuncDecStmt *funcDecStmt;
-    ClmLoopStmt *loopStmt;
-    ClmPrintStmt *printStmt;
+
+    struct {
+      char *name;
+      ArrayList *parameters; // array list of ClmExpNode
+      ClmType returnType;
+      int returnRows;
+      char *returnRowsVar;
+      int returnCols;
+      char *returnColsVar;
+      ArrayList *body; // array list of ClmStmtNode
+    } funcDecStmt;
+
+    struct {
+      char *varId;
+      int startInclusive;
+      int endInclusive;
+      ClmExpNode *start;
+      ClmExpNode *end;
+      ClmExpNode *delta;
+      ArrayList *body; // array list of ClmStmtNode
+    } loopStmt;
+
+    struct {
+      ClmExpNode *expression;
+      int appendNewline;
+    } printStmt;
+
     ClmExpNode *returnExpr;
   };
+
   int lineNo;
   int colNo;
 } ClmStmtNode;
 
 ClmStmtNode *clm_stmt_new_assign(ClmExpNode *lhs, ClmExpNode *rhs);
 ClmStmtNode *clm_stmt_new_call(ClmExpNode *callExpr);
-ClmStmtNode *clm_stmt_new_cond(ClmExpNode *condition, ClmArrayList *trueBody,
-                               ClmArrayList *falseBody);
-ClmStmtNode *clm_stmt_new_dec(char *name, ClmArrayList *params,
-                              ClmType returnType, int returnRows,
-                              char *returnRowsVars, int returnCols,
-                              char *returnColsVar, ClmArrayList *functionBody);
+ClmStmtNode *clm_stmt_new_cond(ClmExpNode *condition, ArrayList *trueBody,
+                               ArrayList *falseBody);
+ClmStmtNode *clm_stmt_new_dec(char *name, ArrayList *params, ClmType returnType,
+                              int returnRows, char *returnRowsVars,
+                              int returnCols, char *returnColsVar,
+                              ArrayList *functionBody);
 ClmStmtNode *clm_stmt_new_loop(char *varId, ClmExpNode *start, ClmExpNode *end,
-                               ClmExpNode *delta, ClmArrayList *loopBody,
+                               ClmExpNode *delta, ArrayList *loopBody,
                                int startInclusive, int endInclusive);
 ClmStmtNode *clm_stmt_new_print(ClmExpNode *expression, int appendNewline);
 ClmStmtNode *clm_stmt_new_return(ClmExpNode *returnExpr);

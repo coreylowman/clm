@@ -4,7 +4,7 @@
 #include "tests/clm_test_utils.h"
 #include "lexer/clm_lexer.h"
 #include "util/clm_string.h"
-#include "util/clm_array_list.h"
+#include "util/array_list.h"
 
 int clm_test_lexer() {
   int result = 1;
@@ -22,7 +22,7 @@ int clm_test_lexer_ids() {
                         "1not_this_one\n"
                         "__nore~thisOne\n";
 
-  ClmArrayList *tokens_list = clm_lexer_main(program);
+  ArrayList *tokens_list = clm_lexer_main(program);
   ClmLexerToken **tokens = tokens_list->data;
 
   CLM_ASSERT(tokens_list->length == 10);
@@ -46,7 +46,7 @@ int clm_test_lexer_ids() {
              clm_string_equals(tokens[8]->raw, "thisOne"));
   CLM_ASSERT(tokens[9]->sym == LEX_END);
 
-  clm_array_list_free(tokens_list);
+  array_list_free(tokens_list);
   return 1;
 }
 
@@ -59,7 +59,7 @@ int clm_test_lexer_numbers() {
                         ".1.1.2\n"
                         "4.3.2.31\n";
 
-  ClmArrayList *tokens_list = clm_lexer_main(program);
+  ArrayList *tokens_list = clm_lexer_main(program);
   ClmLexerToken **tokens = tokens_list->data;
 
   CLM_ASSERT(tokens_list->length == 8);
@@ -79,7 +79,7 @@ int clm_test_lexer_numbers() {
              clm_string_equals(tokens[6]->raw, "2.31"));
   CLM_ASSERT(tokens[7]->sym == LEX_END);
 
-  clm_array_list_free(tokens_list);
+  array_list_free(tokens_list);
   return 1;
 }
 
@@ -128,7 +128,7 @@ int clm_test_lexer_keywords() {
                         "~\n"
                         "to\n";
 
-  ClmArrayList *tokens_list = clm_lexer_main(program);
+  ArrayList *tokens_list = clm_lexer_main(program);
   ClmLexerToken **tokens = tokens_list->data;
 
   CLM_ASSERT(tokens_list->length == 44);
@@ -175,6 +175,6 @@ int clm_test_lexer_keywords() {
   CLM_ASSERT(tokens[40]->sym == LEX_TO);
   CLM_ASSERT(tokens[41]->sym == LEX_END);
 
-  clm_array_list_free(tokens_list);
+  array_list_free(tokens_list);
   return 1;
 }

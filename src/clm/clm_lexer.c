@@ -12,7 +12,7 @@ typedef struct ClmLexerData {
   int lineNo;
   int colNo;
   int numTokens;
-  ClmArrayList *tokens; // array list of ClmLexerToken
+  ArrayList *tokens; // array list of ClmLexerToken
 } ClmLexerData;
 
 #define tok_str_eq(x, s) clm_string_equals_n((x), (s), strlen(s))
@@ -60,24 +60,24 @@ static void lexer_token_print(void *data) {
   printf("%s : { %s }\n", clm_lexer_sym_to_string(token->sym), token->raw);
 }
 
-void clm_lexer_print(ClmArrayList *tokens) {
-  clm_array_list_foreach(tokens, lexer_token_print);
+void clm_lexer_print(ArrayList *tokens) {
+  array_list_foreach(tokens, lexer_token_print);
 }
 
-ClmArrayList *clm_lexer_main(const char *file_contents) {
+ArrayList *clm_lexer_main(const char *file_contents) {
   data.curInd = 0;
   data.lineNo = 1;
   data.colNo = 0;
   data.numTokens = 0;
   data.programString = file_contents;
-  data.tokens = clm_array_list_new(lexer_token_free);
+  data.tokens = array_list_new(lexer_token_free);
 
   data.programLength = strlen(file_contents);
 
   while (valid() && data.programString[data.curInd] != '\0') {
     ClmLexerToken *token = get_token();
     if (token != NULL)
-      clm_array_list_push(data.tokens, token);
+      array_list_push(data.tokens, token);
   }
 
   ClmLexerToken *end = malloc(sizeof(*end));
@@ -85,7 +85,7 @@ ClmArrayList *clm_lexer_main(const char *file_contents) {
   end->raw = clm_string_copy("end");
   end->lineNo = 0;
   end->colNo = 0;
-  clm_array_list_push(data.tokens, end);
+  array_list_push(data.tokens, end);
 
   return data.tokens;
 }

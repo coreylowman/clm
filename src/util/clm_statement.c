@@ -4,12 +4,10 @@
 #include "clm_string.h"
 
 ClmStmtNode *clm_stmt_new_assign(ClmExpNode *lhs, ClmExpNode *rhs) {
-  ClmAssignStmt *assignStmt = malloc(sizeof(*assignStmt));
-  assignStmt->lhs = lhs;
-  assignStmt->rhs = rhs;
   ClmStmtNode *node = malloc(sizeof(*node));
   node->type = STMT_TYPE_ASSIGN;
-  node->assignStmt = assignStmt;
+  node->assignStmt.lhs = lhs;
+  node->assignStmt.rhs = rhs;
   return node;
 }
 
@@ -20,61 +18,53 @@ ClmStmtNode *clm_stmt_new_call(ClmExpNode *callExpr) {
   return node;
 }
 
-ClmStmtNode *clm_stmt_new_cond(ClmExpNode *condition, ClmArrayList *trueBody,
-                               ClmArrayList *falseBody) {
-  ClmConditionStmt *conditionStmt = malloc(sizeof(*conditionStmt));
-  conditionStmt->condition = condition;
-  conditionStmt->trueBody = trueBody;
-  conditionStmt->falseBody = falseBody;
+ClmStmtNode *clm_stmt_new_cond(ClmExpNode *condition, ArrayList *trueBody,
+                               ArrayList *falseBody) {
   ClmStmtNode *node = malloc(sizeof(*node));
   node->type = STMT_TYPE_CONDITIONAL;
-  node->conditionStmt = conditionStmt;
+  node->conditionStmt.condition = condition;
+  node->conditionStmt.trueBody = trueBody;
+  node->conditionStmt.falseBody = falseBody;
   return node;
 }
 
-ClmStmtNode *clm_stmt_new_dec(char *name, ClmArrayList *params,
-                              ClmType returnType, int returnRows,
-                              char *returnRowsVars, int returnCols,
-                              char *returnColsVar, ClmArrayList *body) {
-  ClmFuncDecStmt *funcDecStmt = malloc(sizeof(*funcDecStmt));
-  funcDecStmt->name = clm_string_copy(name);
-  funcDecStmt->parameters = params;
-  funcDecStmt->returnType = returnType;
-  funcDecStmt->returnRows = returnRows;
-  funcDecStmt->returnRowsVar = clm_string_copy(returnRowsVars);
-  funcDecStmt->returnCols = returnCols;
-  funcDecStmt->returnColsVar = clm_string_copy(returnColsVar);
-  funcDecStmt->body = body;
+ClmStmtNode *clm_stmt_new_dec(char *name, ArrayList *params, ClmType returnType,
+                              int returnRows, char *returnRowsVars,
+                              int returnCols, char *returnColsVar,
+                              ArrayList *body) {
   ClmStmtNode *node = malloc(sizeof(*node));
   node->type = STMT_TYPE_FUNC_DEC;
-  node->funcDecStmt = funcDecStmt;
+  node->funcDecStmt.name = clm_string_copy(name);
+  node->funcDecStmt.parameters = params;
+  node->funcDecStmt.returnType = returnType;
+  node->funcDecStmt.returnRows = returnRows;
+  node->funcDecStmt.returnRowsVar = clm_string_copy(returnRowsVars);
+  node->funcDecStmt.returnCols = returnCols;
+  node->funcDecStmt.returnColsVar = clm_string_copy(returnColsVar);
+  node->funcDecStmt.body = body;
   return node;
 }
 
 ClmStmtNode *clm_stmt_new_loop(char *varId, ClmExpNode *start, ClmExpNode *end,
-                               ClmExpNode *delta, ClmArrayList *body,
+                               ClmExpNode *delta, ArrayList *body,
                                int startInclusive, int endInclusive) {
-  ClmLoopStmt *loopStmt = malloc(sizeof(*loopStmt));
-  loopStmt->varId = clm_string_copy(varId);
-  loopStmt->start = start;
-  loopStmt->end = end;
-  loopStmt->delta = delta;
-  loopStmt->body = body;
-  loopStmt->startInclusive = startInclusive;
-  loopStmt->endInclusive = endInclusive;
   ClmStmtNode *node = malloc(sizeof(*node));
   node->type = STMT_TYPE_LOOP;
-  node->loopStmt = loopStmt;
+  node->loopStmt.varId = clm_string_copy(varId);
+  node->loopStmt.start = start;
+  node->loopStmt.end = end;
+  node->loopStmt.delta = delta;
+  node->loopStmt.body = body;
+  node->loopStmt.startInclusive = startInclusive;
+  node->loopStmt.endInclusive = endInclusive;
   return node;
 }
 
 ClmStmtNode *clm_stmt_new_print(ClmExpNode *expression, int appendNewline) {
-  ClmPrintStmt *printStmt = malloc(sizeof(*printStmt));
-  printStmt->expression = expression;
-  printStmt->appendNewline = appendNewline;
   ClmStmtNode *node = malloc(sizeof(*node));
   node->type = STMT_TYPE_PRINT;
-  node->printStmt = printStmt;
+  node->printStmt.expression = expression;
+  node->printStmt.appendNewline = appendNewline;
   return node;
 }
 
@@ -92,36 +82,31 @@ void clm_stmt_free(void *data) {
   ClmStmtNode *node = (ClmStmtNode *)data;
   switch (node->type) {
   case STMT_TYPE_ASSIGN:
-    clm_exp_free(node->assignStmt->lhs);
-    clm_exp_free(node->assignStmt->rhs);
-    free(node->assignStmt);
+    clm_exp_free(node->assignStmt.lhs);
+    clm_exp_free(node->assignStmt.rhs);
     break;
   case STMT_TYPE_CALL:
     clm_exp_free(node->callExpr);
     break;
   case STMT_TYPE_CONDITIONAL:
-    clm_exp_free(node->conditionStmt->condition);
-    clm_array_list_free(node->conditionStmt->trueBody);
-    clm_array_list_free(node->conditionStmt->falseBody);
-    free(node->conditionStmt);
+    clm_exp_free(node->conditionStmt.condition);
+    array_list_free(node->conditionStmt.trueBody);
+    array_list_free(node->conditionStmt.falseBody);
     break;
   case STMT_TYPE_FUNC_DEC:
-    free(node->funcDecStmt->name);
-    clm_array_list_free(node->funcDecStmt->parameters);
-    clm_array_list_free(node->funcDecStmt->body);
-    free(node->funcDecStmt);
+    free(node->funcDecStmt.name);
+    array_list_free(node->funcDecStmt.parameters);
+    array_list_free(node->funcDecStmt.body);
     break;
   case STMT_TYPE_LOOP:
-    free(node->loopStmt->varId);
-    clm_exp_free(node->loopStmt->start);
-    clm_exp_free(node->loopStmt->end);
-    clm_exp_free(node->loopStmt->delta);
-    clm_array_list_free(node->loopStmt->body);
-    free(node->loopStmt);
+    free(node->loopStmt.varId);
+    clm_exp_free(node->loopStmt.start);
+    clm_exp_free(node->loopStmt.end);
+    clm_exp_free(node->loopStmt.delta);
+    array_list_free(node->loopStmt.body);
     break;
   case STMT_TYPE_PRINT:
-    clm_exp_free(node->printStmt->expression);
-    free(node->printStmt);
+    clm_exp_free(node->printStmt.expression);
     break;
   case STMT_TYPE_RET:
     clm_exp_free(node->returnExpr);
@@ -145,14 +130,14 @@ void clm_stmt_print(void *data, int level) {
     while (q-- > 0)
       printf("  ");
     printf("lhs:");
-    clm_exp_print(node->assignStmt->lhs, level + 2);
+    clm_exp_print(node->assignStmt.lhs, level + 2);
 
     q = level + 1;
     printf("\n");
     while (q-- > 0)
       printf("  ");
     printf("rhs:");
-    clm_exp_print(node->assignStmt->rhs, level + 2);
+    clm_exp_print(node->assignStmt.rhs, level + 2);
     break;
   case STMT_TYPE_CALL:
     printf("type : func call\n");
@@ -170,89 +155,88 @@ void clm_stmt_print(void *data, int level) {
     while (q-- > 0)
       printf("  ");
     printf("condition:");
-    clm_exp_print(node->conditionStmt->condition, level + 2);
+    clm_exp_print(node->conditionStmt.condition, level + 2);
 
     q = level + 1;
     printf("\n");
     while (q-- > 0)
       printf("  ");
     printf("truebody:");
-    clm_array_list_foreach_2(node->conditionStmt->trueBody, level + 2,
-                             clm_stmt_print);
+    array_list_foreach_2(node->conditionStmt.trueBody, level + 2,
+                         clm_stmt_print);
 
     q = level + 1;
     printf("\n");
     while (q-- > 0)
       printf("  ");
     printf("falsebody:");
-    clm_array_list_foreach_2(node->conditionStmt->falseBody, level + 2,
-                             clm_stmt_print);
+    array_list_foreach_2(node->conditionStmt.falseBody, level + 2,
+                         clm_stmt_print);
     break;
   case STMT_TYPE_FUNC_DEC:
-    printf("type : func dec, name : %s\n", node->funcDecStmt->name);
+    printf("type : func dec, name : %s\n", node->funcDecStmt.name);
 
     q = level + 1;
     while (q-- > 0)
       printf("  ");
-    printf("return type : %d, ", node->funcDecStmt->returnType);
-    printf("ret rows : %d | %s, ", node->funcDecStmt->returnRows,
-           node->funcDecStmt->returnRowsVar);
-    printf("ret cols : %d | %s", node->funcDecStmt->returnCols,
-           node->funcDecStmt->returnColsVar);
+    printf("return type : %d, ", node->funcDecStmt.returnType);
+    printf("ret rows : %d | %s, ", node->funcDecStmt.returnRows,
+           node->funcDecStmt.returnRowsVar);
+    printf("ret cols : %d | %s", node->funcDecStmt.returnCols,
+           node->funcDecStmt.returnColsVar);
 
     q = level + 1;
     printf("\n");
     while (q-- > 0)
       printf("  ");
     printf("parameters:");
-    clm_array_list_foreach_2(node->funcDecStmt->parameters, level + 2,
-                             clm_exp_print);
+    array_list_foreach_2(node->funcDecStmt.parameters, level + 2,
+                         clm_exp_print);
 
     q = level + 1;
     printf("\n");
     while (q-- > 0)
       printf("  ");
     printf("body:");
-    clm_array_list_foreach_2(node->funcDecStmt->body, level + 2,
-                             clm_stmt_print);
+    array_list_foreach_2(node->funcDecStmt.body, level + 2, clm_stmt_print);
     break;
   case STMT_TYPE_LOOP:
-    printf("type : loop, var : %s\n", node->loopStmt->varId);
+    printf("type : loop, var : %s\n", node->loopStmt.varId);
 
     q = level + 1;
     while (q-- > 0)
       printf("  ");
     printf("start:");
-    clm_exp_print(node->loopStmt->start, level + 2);
+    clm_exp_print(node->loopStmt.start, level + 2);
 
     q = level + 1;
     printf("\n");
     while (q-- > 0)
       printf("  ");
     printf("delta:");
-    clm_exp_print(node->loopStmt->delta, level + 2);
+    clm_exp_print(node->loopStmt.delta, level + 2);
 
     q = level + 1;
     printf("\n");
     while (q-- > 0)
       printf("  ");
     printf("end:");
-    clm_exp_print(node->loopStmt->end, level + 2);
+    clm_exp_print(node->loopStmt.end, level + 2);
 
     q = level + 1;
     printf("\n");
     while (q-- > 0)
       printf("  ");
     printf("body:");
-    clm_array_list_foreach_2(node->loopStmt->body, level + 2, clm_stmt_print);
+    array_list_foreach_2(node->loopStmt.body, level + 2, clm_stmt_print);
     break;
   case STMT_TYPE_PRINT:
-    printf("type : print, newline : %d\n", node->printStmt->appendNewline);
+    printf("type : print, newline : %d\n", node->printStmt.appendNewline);
     q = level + 1;
     while (q-- > 0)
       printf("  ");
     printf("expression:");
-    clm_exp_print(node->printStmt->expression, level + 2);
+    clm_exp_print(node->printStmt.expression, level + 2);
     break;
   case STMT_TYPE_RET:
     printf("type : return\n");

@@ -1,8 +1,8 @@
 #include <stdlib.h>
-#include "clm_array_list.h"
+#include "array_list.h"
 
-ClmArrayList *clm_array_list_new(void (*free_element)(void *element)) {
-  ClmArrayList *array = malloc(sizeof(*array));
+ArrayList *array_list_new(void (*free_element)(void *element)) {
+  ArrayList *array = malloc(sizeof(*array));
   array->length = 0;
   array->capacity = 16;
   array->data = malloc(array->capacity * sizeof(*(array->data)));
@@ -14,11 +14,11 @@ ClmArrayList *clm_array_list_new(void (*free_element)(void *element)) {
   return array;
 }
 
-void clm_array_list_free(void *data) {
+void array_list_free(void *data) {
   if (data == NULL)
     return;
 
-  ClmArrayList *array = (ClmArrayList *)data;
+  ArrayList *array = (ArrayList *)data;
   int i;
   for (i = array->length - 1; i >= 0; i--) {
     array->free_element(array->data[i]);
@@ -27,7 +27,7 @@ void clm_array_list_free(void *data) {
   free(array);
 }
 
-void clm_array_list_push(ClmArrayList *array, void *data) {
+void array_list_push(ArrayList *array, void *data) {
   if (array->length == array->capacity) {
     int i = array->capacity;
     array->capacity = 2 * array->capacity;
@@ -41,7 +41,7 @@ void clm_array_list_push(ClmArrayList *array, void *data) {
   array->length += 1;
 }
 
-void clm_array_list_foreach(ClmArrayList *array, void (*func)(void *data)) {
+void array_list_foreach(ArrayList *array, void (*func)(void *data)) {
   if (array == NULL)
     return;
   int i = 0;
@@ -50,8 +50,8 @@ void clm_array_list_foreach(ClmArrayList *array, void (*func)(void *data)) {
   }
 }
 
-void clm_array_list_foreach_2(ClmArrayList *array, int level,
-                              void (*func)(void *data, int l)) {
+void array_list_foreach_2(ArrayList *array, int level,
+                          void (*func)(void *data, int l)) {
   if (array == NULL)
     return;
   int i = 0;

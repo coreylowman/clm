@@ -1,6 +1,6 @@
 list(APPEND CLM_UTIL_SOURCES
-    clm_array_list.c
-    clm_array_list.h
+    array_list.c
+    array_list.h
     clm_error.c
     clm_error.h
     clm_expression.c

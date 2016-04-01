@@ -5,11 +5,11 @@
 
 ClmScope *clm_scope_new(ClmScope *parent, void *startNode) {
   ClmScope *scope = malloc(sizeof(*scope));
-  scope->symbols = clm_array_list_new(clm_symbol_free);
+  scope->symbols = array_list_new(clm_symbol_free);
   scope->parent = parent;
   if (parent != NULL)
-    clm_array_list_push(scope->parent->children, scope);
-  scope->children = clm_array_list_new(clm_scope_free);
+    array_list_push(scope->parent->children, scope);
+  scope->children = array_list_new(clm_scope_free);
   scope->startNode = startNode;
   return scope;
 }
@@ -20,8 +20,8 @@ void clm_scope_free(void *data) {
   ClmScope *scope = (ClmScope *)data;
   scope->parent = NULL;
   scope->startNode = NULL;
-  clm_array_list_free(scope->symbols);
-  clm_array_list_free(scope->children);
+  array_list_free(scope->symbols);
+  array_list_free(scope->children);
   free(scope);
 }
 
@@ -36,13 +36,13 @@ void clm_scope_print(void *data, int level) {
   while (q-- > 0)
     printf("  ");
   printf("Symbols:");
-  clm_array_list_foreach_2(scope->symbols, level + 2, clm_symbol_print);
+  array_list_foreach_2(scope->symbols, level + 2, clm_symbol_print);
   printf("\n");
   q = level + 1;
   while (q-- > 0)
     printf("  ");
   printf("Children :");
-  clm_array_list_foreach_2(scope->children, level + 2, clm_scope_print);
+  array_list_foreach_2(scope->children, level + 2, clm_scope_print);
 }
 
 int clm_scope_contains(ClmScope *scope, const char *name) {
@@ -85,7 +85,7 @@ ClmScope *clm_scope_find_child(ClmScope *scope, void *startNode) {
 }
 
 void clm_scope_push(ClmScope *scope, ClmSymbol *symbol) {
-  clm_array_list_push(scope->symbols, symbol);
+  array_list_push(scope->symbols, symbol);
 }
 
 int clm_scope_next_local_offset(ClmScope *scope) {

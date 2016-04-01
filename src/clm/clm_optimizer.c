@@ -6,7 +6,7 @@ static void foldMatrices(ClmExpNode *node, int *changed);
 static void reduceDoubleUnary(ClmExpNode *node, int *changed);
 static void reduceIdArithmetic(ClmExpNode *node, int *changed);
 
-static void eliminateDeadCode(ClmArrayList *statements, int *changed);
-static void reduceConditionals(ClmArrayList *statements, int *changed);
+static void eliminateDeadCode(ArrayList *statements, int *changed);
+static void reduceConditionals(ArrayList *statements, int *changed);
 
-void clm_optimizer_main(ClmArrayList *statements, ClmScope *globalScope);
+void clm_optimizer_main(ArrayList *statements, ClmScope *globalScope);

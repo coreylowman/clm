@@ -3,17 +3,17 @@
 #include "clm_string.h"
 #include "clm_expression.h"
 
-const char *clm_arith_op_to_string(ClmArithOp op) {
+const char *arith_op_to_string(ArithOp op) {
   const char *strings[] = {"ADD", "SUB", "MULT", "DIV"};
   return strings[(int)op];
 }
 
-const char *clm_bool_op_to_string(ClmBoolOp op) {
+const char *bool_op_to_string(BoolOp op) {
   const char *strings[] = {"AND", "OR", "EQ", "NEQ", "GT", "LT", "GTE", "LTE"};
   return strings[(int)op];
 }
 
-const char *clm_unary_op_to_string(ClmUnaryOp op) {
+const char *unary_op_to_string(UnaryOp op) {
   const char *strings[] = {"MINUS", "TRANSPOSE", "NOT"};
   return strings[(int)op];
 }
@@ -39,104 +39,88 @@ ClmExpNode *clm_exp_new_string(const char *str) {
   return node;
 }
 
-ClmExpNode *clm_exp_new_arith(ClmArithOp operand, ClmExpNode *right,
+ClmExpNode *clm_exp_new_arith(ArithOp operand, ClmExpNode *right,
                               ClmExpNode *left) {
-  ClmArithExp *arithExp = malloc(sizeof(*arithExp));
-  arithExp->operand = operand;
-  arithExp->right = right;
-  arithExp->left = left;
   ClmExpNode *node = malloc(sizeof(*node));
   node->type = EXP_TYPE_ARITH;
-  node->arithExp = arithExp;
+  node->arithExp.operand = operand;
+  node->arithExp.right = right;
+  node->arithExp.left = left;
   return node;
 }
 
-ClmExpNode *clm_exp_new_bool(ClmBoolOp operand, ClmExpNode *right,
+ClmExpNode *clm_exp_new_bool(BoolOp operand, ClmExpNode *right,
                              ClmExpNode *left) {
-  ClmBoolExp *boolExp = malloc(sizeof(*boolExp));
-  boolExp->operand = operand;
-  boolExp->right = right;
-  boolExp->left = left;
   ClmExpNode *node = malloc(sizeof(*node));
   node->type = EXP_TYPE_BOOL;
-  node->boolExp = boolExp;
+  node->boolExp.operand = operand;
+  node->boolExp.right = right;
+  node->boolExp.left = left;
   return node;
 }
 
-ClmExpNode *clm_exp_new_call(char *name, ClmArrayList *params) {
-  ClmCallExp *callExp = malloc(sizeof(*callExp));
-  callExp->name = clm_string_copy(name);
-  callExp->params = params;
+ClmExpNode *clm_exp_new_call(char *name, ArrayList *params) {
   ClmExpNode *node = malloc(sizeof(*node));
   node->type = EXP_TYPE_CALL;
-  node->callExp = callExp;
+  node->callExp.name = clm_string_copy(name);
+  node->callExp.params = params;
   return node;
 }
 
 ClmExpNode *clm_exp_new_index(const char *id, ClmExpNode *rowIndex,
                               ClmExpNode *colIndex) {
-  ClmIndexExp *indExp = malloc(sizeof(*indExp));
-  indExp->id = clm_string_copy(id);
-  indExp->rowIndex = rowIndex;
-  indExp->colIndex = colIndex;
   ClmExpNode *node = malloc(sizeof(*node));
   node->type = EXP_TYPE_INDEX;
-  node->indExp = indExp;
+  node->indExp.id = clm_string_copy(id);
+  node->indExp.rowIndex = rowIndex;
+  node->indExp.colIndex = colIndex;
   return node;
 }
 
 ClmExpNode *clm_exp_new_mat_dec(float *arr, int length, int cols) {
-  ClmMatDecExp *matDecExp = malloc(sizeof(*matDecExp));
-  matDecExp->arr = arr;
-  matDecExp->length = length;
-  matDecExp->rows = length / cols;
-  matDecExp->cols = cols;
-  matDecExp->rowVar = NULL;
-  matDecExp->colVar = NULL;
   ClmExpNode *node = malloc(sizeof(*node));
   node->type = EXP_TYPE_MAT_DEC;
-  node->matDecExp = matDecExp;
+  node->matDecExp.arr = arr;
+  node->matDecExp.length = length;
+  node->matDecExp.rows = length / cols;
+  node->matDecExp.cols = cols;
+  node->matDecExp.rowVar = NULL;
+  node->matDecExp.colVar = NULL;
   return node;
 }
 
 ClmExpNode *clm_exp_new_empty_mat_dec(int rows, int cols, const char *rowVar,
                                       const char *colVar) {
-  ClmMatDecExp *matDecExp = malloc(sizeof(*matDecExp));
-  matDecExp->arr = NULL;
-  matDecExp->length = 0;
-  matDecExp->rows = rows;
-  matDecExp->cols = cols;
-  matDecExp->rowVar = clm_string_copy(rowVar);
-  matDecExp->colVar = clm_string_copy(colVar);
   ClmExpNode *node = malloc(sizeof(*node));
   node->type = EXP_TYPE_MAT_DEC;
-  node->matDecExp = matDecExp;
+  node->matDecExp.arr = NULL;
+  node->matDecExp.length = 0;
+  node->matDecExp.rows = rows;
+  node->matDecExp.cols = cols;
+  node->matDecExp.rowVar = clm_string_copy(rowVar);
+  node->matDecExp.colVar = clm_string_copy(colVar);
   return node;
 }
 
 ClmExpNode *clm_exp_new_param(const char *name, ClmType type, int rows,
                               int cols, const char *rowVar,
                               const char *colVar) {
-  ClmParamExp *paramExp = malloc(sizeof(*paramExp));
-  paramExp->name = clm_string_copy(name);
-  paramExp->type = type;
-  paramExp->rows = rows;
-  paramExp->cols = cols;
-  paramExp->rowVar = clm_string_copy(rowVar);
-  paramExp->colVar = clm_string_copy(colVar);
   ClmExpNode *node = malloc(sizeof(*node));
   node->type = EXP_TYPE_PARAM;
-  node->paramExp = paramExp;
+  node->paramExp.name = clm_string_copy(name);
+  node->paramExp.type = type;
+  node->paramExp.rows = rows;
+  node->paramExp.cols = cols;
+  node->paramExp.rowVar = clm_string_copy(rowVar);
+  node->paramExp.colVar = clm_string_copy(colVar);
   return node;
 }
 
-ClmExpNode *clm_exp_new_unary(ClmUnaryOp operand, ClmExpNode *node) {
-  ClmUnaryExp *unaryExp = malloc(sizeof(*unaryExp));
-  unaryExp->operand = operand;
-  unaryExp->node = node;
+ClmExpNode *clm_exp_new_unary(UnaryOp operand, ClmExpNode *node) {
   ClmExpNode *unaryNode = malloc(sizeof(*unaryNode));
   unaryNode->type = EXP_TYPE_UNARY;
-  unaryNode->unaryExp = unaryExp;
+  node->unaryExp.operand = operand;
+  node->unaryExp.node = node;
   return unaryNode;
 }
 
@@ -153,76 +137,56 @@ void clm_exp_free(void *data) {
     free(node->str);
     break;
   case EXP_TYPE_ARITH:
-    clm_exp_free(node->arithExp->left);
-    clm_exp_free(node->arithExp->right);
-    free(node->arithExp);
+    clm_exp_free(node->arithExp.left);
+    clm_exp_free(node->arithExp.right);
     break;
   case EXP_TYPE_BOOL:
-    clm_exp_free(node->boolExp->left);
-    clm_exp_free(node->boolExp->right);
-    free(node->boolExp);
+    clm_exp_free(node->boolExp.left);
+    clm_exp_free(node->boolExp.right);
     break;
   case EXP_TYPE_CALL:
-    free(node->callExp->name);
-    clm_array_list_free(node->callExp->params);
-    free(node->callExp);
+    free(node->callExp.name);
+    array_list_free(node->callExp.params);
     break;
   case EXP_TYPE_INDEX:
-    free(node->indExp->id);
-    clm_exp_free(node->indExp->rowIndex);
-    clm_exp_free(node->indExp->colIndex);
-    free(node->indExp);
+    free(node->indExp.id);
+    clm_exp_free(node->indExp.rowIndex);
+    clm_exp_free(node->indExp.colIndex);
     break;
   case EXP_TYPE_MAT_DEC:
-    free(node->matDecExp->arr);
-    free(node->matDecExp->rowVar);
-    free(node->matDecExp->colVar);
-    free(node->matDecExp);
+    free(node->matDecExp.arr);
+    free(node->matDecExp.rowVar);
+    free(node->matDecExp.colVar);
     break;
   case EXP_TYPE_PARAM:
-    free(node->paramExp->name);
-    free(node->paramExp->rowVar);
-    free(node->paramExp->colVar);
-    free(node->paramExp);
+    free(node->paramExp.name);
+    free(node->paramExp.rowVar);
+    free(node->paramExp.colVar);
     break;
   case EXP_TYPE_UNARY:
-    clm_exp_free(node->unaryExp->node);
-    free(node->unaryExp);
+    clm_exp_free(node->unaryExp.node);
     break;
   }
   free(node);
 }
 
 void clm_exp_unbox_right(ClmExpNode *node) {
+  // TODO make sure this works
   switch (node->type) {
   case EXP_TYPE_ARITH: {
-    ClmExpNode *unboxed;
-    unboxed = node->arithExp->right;
+    clm_exp_free(node->arithExp.left);
 
-    clm_exp_free(node->arithExp->left);
-    node->arithExp->right = NULL;
-    free(node->arithExp);
-
-    node->type = unboxed->type;
-    // no matter what type unboxed is, the data will be at id's offset in the
-    // struct
-    node->str = unboxed->str;
+    ClmExpNode *unboxed = node->arithExp.right;
+    *node = *unboxed;
 
     free(unboxed);
     break;
   }
   case EXP_TYPE_BOOL: {
-    ClmExpNode *unboxed;
-    unboxed = node->boolExp->right;
+    clm_exp_free(node->boolExp.left);
 
-    clm_exp_free(node->boolExp->left);
-    node->boolExp->right = NULL;
-    free(node->boolExp);
-
-    node->type = unboxed->type;
-    // no matter what type unboxed is, the data will be at id's offset in the
-    // struct
-    node->str = unboxed->str;
+    ClmExpNode *unboxed = node->boolExp.right;
+    *node = *unboxed;
 
     free(unboxed);
     break;
@@ -233,35 +197,22 @@ void clm_exp_unbox_right(ClmExpNode *node) {
 }
 
 void clm_exp_unbox_left(ClmExpNode *node) {
+  // TODO make sure this works
   switch (node->type) {
   case EXP_TYPE_ARITH: {
-    ClmExpNode *unboxed;
-    unboxed = node->arithExp->left;
+    clm_exp_free(node->arithExp.right);
 
-    clm_exp_free(node->arithExp->right);
-    node->arithExp->left = NULL;
-    free(node->arithExp);
-
-    node->type = unboxed->type;
-    // no matter what type unboxed is, the data will be at id's offset in the
-    // struct
-    node->str = unboxed->str;
+    ClmExpNode *unboxed = node->arithExp.left;
+    *node = *unboxed;
 
     free(unboxed);
     break;
   }
   case EXP_TYPE_BOOL: {
-    ClmExpNode *unboxed;
-    unboxed = node->boolExp->left;
+    clm_exp_free(node->boolExp.right);
 
-    clm_exp_free(node->boolExp->right);
-    node->boolExp->left = NULL;
-    free(node->boolExp);
-
-    node->type = unboxed->type;
-    // no matter what type unboxed is, the data will be at id's offset in the
-    // struct
-    node->str = unboxed->str;
+    ClmExpNode *unboxed = node->boolExp.left;
+    *node = *unboxed;
 
     free(unboxed);
     break;
@@ -272,16 +223,9 @@ void clm_exp_unbox_left(ClmExpNode *node) {
 }
 
 void clm_exp_unbox_unary(ClmExpNode *node) {
-  ClmExpNode *unboxed;
-  unboxed = node->unaryExp->node;
-  node->unaryExp->node = NULL;
-  free(node->unaryExp);
-
-  node->type = unboxed->type;
-  // no matter what type unboxed is, the data will be at id's offset in the
-  // struct
-  node->str = unboxed->str;
-
+  // TODO make sure this works
+  ClmExpNode *unboxed = node->unaryExp.node;
+  *node = *unboxed;
   free(unboxed);
 }
 
@@ -303,95 +247,95 @@ void clm_exp_print(void *data, int level) {
     printf("type : string, val : %s", node->str);
     break;
   case EXP_TYPE_ARITH:
-    printf("type : arith, op : %d\n", node->arithExp->operand);
+    printf("type : arith, op : %d\n", node->arithExp.operand);
     q = level + 1;
     while (q-- > 0)
       printf("  ");
     printf("right:");
-    clm_exp_print(node->arithExp->right, level + 2);
+    clm_exp_print(node->arithExp.right, level + 2);
 
     q = level + 1;
     printf("\n");
     while (q-- > 0)
       printf("  ");
     printf("left:");
-    clm_exp_print(node->arithExp->left, level + 2);
+    clm_exp_print(node->arithExp.left, level + 2);
     break;
   case EXP_TYPE_BOOL:
-    printf("type : bool, op : %d\n", node->boolExp->operand);
+    printf("type : bool, op : %d\n", node->boolExp.operand);
 
     q = level + 1;
     while (q-- > 0)
       printf("  ");
     printf("right:");
-    clm_exp_print(node->boolExp->right, level + 2);
+    clm_exp_print(node->boolExp.right, level + 2);
 
     q = level + 1;
     printf("\n");
     while (q-- > 0)
       printf("  ");
     printf("left:");
-    clm_exp_print(node->boolExp->left, level + 2);
+    clm_exp_print(node->boolExp.left, level + 2);
     break;
   case EXP_TYPE_CALL:
-    printf("type : func call, name : %s", node->callExp->name);
+    printf("type : func call, name : %s", node->callExp.name);
     printf(", params : ");
-    clm_array_list_foreach_2(node->callExp->params, level + 2, clm_exp_print);
+    array_list_foreach_2(node->callExp.params, level + 2, clm_exp_print);
     break;
   case EXP_TYPE_INDEX:
-    printf("type : index, id : %s\n", node->indExp->id);
+    printf("type : index, id : %s\n", node->indExp.id);
 
     q = level + 1;
     while (q-- > 0)
       printf("  ");
     printf("rowIndex:");
-    clm_exp_print(node->indExp->rowIndex, level + 2);
+    clm_exp_print(node->indExp.rowIndex, level + 2);
 
     q = level + 1;
     printf("\n");
     while (q-- > 0)
       printf("  ");
     printf("colIndex:");
-    clm_exp_print(node->indExp->colIndex, level + 2);
+    clm_exp_print(node->indExp.colIndex, level + 2);
     break;
   case EXP_TYPE_MAT_DEC:
-    if (node->matDecExp->arr == NULL) {
-      printf("type : mat dec, rows : %d", node->matDecExp->rows);
-      printf(", cols : %d", node->matDecExp->cols);
-      printf(", rowVar : %s", node->matDecExp->rowVar);
-      printf(", colVar : %s", node->matDecExp->colVar);
+    if (node->matDecExp.arr == NULL) {
+      printf("type : mat dec, rows : %d", node->matDecExp.rows);
+      printf(", cols : %d", node->matDecExp.cols);
+      printf(", rowVar : %s", node->matDecExp.rowVar);
+      printf(", colVar : %s", node->matDecExp.colVar);
     } else {
       int i;
       printf("type : mat dec, data : ");
-      for (i = 0; i < node->matDecExp->rows * node->matDecExp->cols - 1; i++) {
-        printf("%f ", node->matDecExp->arr[i]);
+      for (i = 0; i < node->matDecExp.rows * node->matDecExp.cols - 1; i++) {
+        printf("%f ", node->matDecExp.arr[i]);
       }
-      printf("%f", node->matDecExp->arr[i]);
-      printf(", rows : %d, cols : %d", node->matDecExp->rows,
-             node->matDecExp->cols);
+      printf("%f", node->matDecExp.arr[i]);
+      printf(", rows : %d, cols : %d", node->matDecExp.rows,
+             node->matDecExp.cols);
     }
     break;
   case EXP_TYPE_PARAM:
-    printf("type : param, name : %s", node->paramExp->name);
-    printf(", rows : %d", node->paramExp->rows);
-    printf(", cols : %d", node->paramExp->cols);
-    printf(", rowVar : %s", node->paramExp->rowVar);
-    printf(", colVar : %s", node->paramExp->colVar);
+    printf("type : param, name : %s", node->paramExp.name);
+    printf(", rows : %d", node->paramExp.rows);
+    printf(", cols : %d", node->paramExp.cols);
+    printf(", rowVar : %s", node->paramExp.rowVar);
+    printf(", colVar : %s", node->paramExp.colVar);
     break;
   case EXP_TYPE_UNARY:
-    printf("type : unary, op : %d\n", node->unaryExp->operand);
+    printf("type : unary, op : %d\n", node->unaryExp.operand);
     q = level + 1;
     while (q-- > 0)
       printf("  ");
     printf("expression:");
-    clm_exp_print(node->unaryExp->node, level + 2);
+    clm_exp_print(node->unaryExp.node, level + 2);
     break;
   }
 }
 
 int clm_exp_has_no_inds(ClmExpNode *node) {
   if (node->type == EXP_TYPE_INDEX) {
-    return node->indExp->rowIndex == NULL && node->indExp->colIndex == NULL;
+    return node->indExp.rowIndex == NULL && node->indExp.colIndex == NULL;
   }
   return 0;
 }

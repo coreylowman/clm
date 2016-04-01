@@ -10,7 +10,7 @@
 #include <string.h>
 #include <time.h>
 
-#include "util/clm_array_list.h"
+#include "util/array_list.h"
 #include "util/clm_scope.h"
 #include "util/clm_string.h"
 #include "util/clm_error.h"
@@ -56,10 +56,10 @@ int main(int argc, char *argv[]) {
   if (contents == NULL)
     clm_error(0, 0, "No file with name %s", file_name);
 
-  ClmArrayList *tokens = clm_lexer_main(contents);
+  ArrayList *tokens = clm_lexer_main(contents);
   // clm_lexer_print(tokens);
 
-  ClmArrayList *parseTree = clm_parser_main(tokens);
+  ArrayList *parseTree = clm_parser_main(tokens);
   // clm_parser_print(parseTree);
 
   ClmScope *globalScope = clm_symbol_gen_main(parseTree);
@@ -72,8 +72,8 @@ int main(int argc, char *argv[]) {
   printf("\n%s\n", asm_source);
 
   free(contents);
-  clm_array_list_free(tokens);
-  clm_array_list_free(parseTree);
+  array_list_free(tokens);
+  array_list_free(parseTree);
   clm_scope_free(globalScope);
 
   return 0;

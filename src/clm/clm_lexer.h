@@ -1,7 +1,7 @@
 #ifndef CLM_LEXER_H_
 #define CLM_LEXER_H_
 
-#include "util/clm_array_list.h"
+#include "util/array_list.h"
 
 typedef enum ClmLexerSymbol {
   LEX_ADD,
@@ -59,8 +59,8 @@ typedef struct ClmLexerToken {
   int colNo;
 } ClmLexerToken;
 
-ClmArrayList *clm_lexer_main(const char *fileContents);
-void clm_lexer_print(ClmArrayList *data);
+ArrayList *clm_lexer_main(const char *fileContents);
+void clm_lexer_print(ArrayList *data);
 const char *clm_lexer_sym_to_string(ClmLexerSymbol s);
 
 #endif

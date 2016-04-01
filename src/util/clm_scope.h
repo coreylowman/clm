@@ -1,13 +1,13 @@
 #ifndef CLM_SCOPE_H_
 #define CLM_SCOPE_H_
 
-#include "clm_array_list.h"
+#include "array_list.h"
 #include "clm_symbol.h"
 
 typedef struct ClmScope {
-  ClmArrayList *symbols; // ClmArrayList of ClmSymbol
+  ArrayList *symbols; // ArrayList of ClmSymbol
   struct ClmScope *parent;
-  ClmArrayList *children; // ClmArrayList of ClmScope
+  ArrayList *children; // ArrayList of ClmScope
   void *startNode;
 } ClmScope;
 

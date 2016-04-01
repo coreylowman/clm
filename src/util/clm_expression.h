@@ -1,17 +1,17 @@
 #ifndef CLM_EXPRESSION_H_
 #define CLM_EXPRESSION_H_
 
-#include "clm_array_list.h"
+#include "array_list.h"
 #include "clm_type.h"
 
-typedef enum ClmArithOp {
+typedef enum ArithOp {
   ARITH_OP_ADD,
   ARITH_OP_SUB,
   ARITH_OP_MULT,
   ARITH_OP_DIV
-} ClmArithOp;
+} ArithOp;
 
-typedef enum ClmBoolOp {
+typedef enum BoolOp {
   BOOL_OP_AND,
   BOOL_OP_OR,
   BOOL_OP_EQ,
@@ -20,19 +20,19 @@ typedef enum ClmBoolOp {
   BOOL_OP_LT,
   BOOL_OP_GTE,
   BOOL_OP_LTE
-} ClmBoolOp;
+} BoolOp;
 
-typedef enum ClmUnaryOp {
+typedef enum UnaryOp {
   UNARY_OP_MINUS,
   UNARY_OP_TRANSPOSE,
   UNARY_OP_NOT
-} ClmUnaryOp;
+} UnaryOp;
 
-const char *clm_arith_op_to_string(ClmArithOp op);
-const char *clm_bool_op_to_string(ClmBoolOp op);
-const char *clm_unary_op_to_string(ClmUnaryOp op);
+const char *arith_op_to_string(ArithOp op);
+const char *bool_op_to_string(BoolOp op);
+const char *unary_op_to_string(UnaryOp op);
 
-typedef enum ClmExpType {
+typedef enum ExpType {
   EXP_TYPE_INT,
   EXP_TYPE_FLOAT,
   EXP_TYPE_STRING,
@@ -43,68 +43,65 @@ typedef enum ClmExpType {
   EXP_TYPE_MAT_DEC,
   EXP_TYPE_PARAM,
   EXP_TYPE_UNARY
-} ClmExpType;
-
-typedef struct ClmArithExp {
-  ClmArithOp operand;
-  struct ClmExpNode *right;
-  struct ClmExpNode *left;
-} ClmArithExp;
-
-typedef struct ClmBoolExp {
-  ClmBoolOp operand;
-  struct ClmExpNode *right;
-  struct ClmExpNode *left;
-} ClmBoolExp;
-
-typedef struct ClmCallExp {
-  char *name;
-  ClmArrayList *params; // array list of ClmExpNode
-} ClmCallExp;
-
-typedef struct ClmIndexExp {
-  char *id;
-  struct ClmExpNode *rowIndex;
-  struct ClmExpNode *colIndex;
-} ClmIndexExp;
-
-typedef struct ClmMatDecExp {
-  float *arr;
-  int length;
-  int rows; // for constant sized matrix
-  int cols;
-  char *rowVar; // for variable sized matrix
-  char *colVar;
-} ClmMatDecExp;
-
-typedef struct ClmParamExp {
-  char *name;
-  ClmType type;
-  int rows;
-  int cols;
-  char *rowVar;
-  char *colVar;
-} ClmParamExp;
-
-typedef struct ClmUnaryExp {
-  ClmUnaryOp operand;
-  struct ClmExpNode *node;
-} ClmUnaryExp;
+} ExpType;
 
 typedef struct ClmExpNode {
-  ClmExpType type;
+  ExpType type;
+
   union {
-    int ival;   // a constant
-    float fval; // a float constant
-    char *str;  // a string...
-    ClmArithExp *arithExp;
-    ClmBoolExp *boolExp;
-    ClmCallExp *callExp;
-    ClmIndexExp *indExp;
-    ClmMatDecExp *matDecExp;
-    ClmParamExp *paramExp;
-    ClmUnaryExp *unaryExp;
+    int ival;
+
+    float fval;
+
+    char *str;
+
+    struct {
+      ArithOp operand;
+      struct ClmExpNode *right;
+      struct ClmExpNode *left;
+    } arithExp;
+
+    struct {
+      BoolOp operand;
+      struct ClmExpNode *right;
+      struct ClmExpNode *left;
+    } boolExp;
+
+    struct {
+      char *name;
+      ArrayList *params; // array list of ClmExpNode
+    } callExp;
+
+    struct {
+      char *id;
+      struct ClmExpNode *rowIndex;
+      struct ClmExpNode *colIndex;
+    } indExp;
+
+    struct {
+      float *arr;
+      int length;
+      int rows; // for constant sized matrix
+      int cols;
+      char *rowVar; // for variable sized matrix
+      char *colVar;
+    } matDecExp;
+
+    struct {
+      char *name;
+      ClmType type;
+      int rows;
+      int cols;
+      char *rowVar;
+      char *colVar;
+    } paramExp;
+
+    struct {
+      UnaryOp operand;
+      struct ClmExpNode *node;
+    } unaryExp;
   };
+
   int lineNo;
   int colNo;
 } ClmExpNode;
@@ -112,11 +109,11 @@ typedef struct ClmExpNode {
 ClmExpNode *clm_exp_new_int(int val);
 ClmExpNode *clm_exp_new_float(float fval);
 ClmExpNode *clm_exp_new_string(const char *str);
-ClmExpNode *clm_exp_new_arith(ClmArithOp operand, ClmExpNode *right,
+ClmExpNode *clm_exp_new_arith(ArithOp operand, ClmExpNode *right,
                               ClmExpNode *left);
-ClmExpNode *clm_exp_new_bool(ClmBoolOp operand, ClmExpNode *right,
+ClmExpNode *clm_exp_new_bool(BoolOp operand, ClmExpNode *right,
                              ClmExpNode *left);
-ClmExpNode *clm_exp_new_call(char *functionName, ClmArrayList *params);
+ClmExpNode *clm_exp_new_call(char *functionName, ArrayList *params);
 ClmExpNode *clm_exp_new_index(const char *id, ClmExpNode *rowIndex,
                               ClmExpNode *colIndex);
 ClmExpNode *clm_exp_new_mat_dec(float *arr, int length, int cols);
@@ -124,7 +121,7 @@ ClmExpNode *clm_exp_new_empty_mat_dec(int rows, int cols, const char *rowVar,
                                       const char *colVar);
 ClmExpNode *clm_exp_new_param(const char *name, ClmType type, int rows,
                               int cols, const char *rowVar, const char *colVar);
-ClmExpNode *clm_exp_new_unary(ClmUnaryOp operand, ClmExpNode *node);
+ClmExpNode *clm_exp_new_unary(UnaryOp operand, ClmExpNode *node);
 
 void clm_exp_free(void *data);
 
