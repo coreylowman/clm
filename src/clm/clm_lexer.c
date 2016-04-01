@@ -6,7 +6,7 @@
 #include "util/clm_string.h"
 
 typedef struct ClmLexerData {
-  char *programString;
+  const char *programString;
   int programLength;
   int curInd;
   int lineNo;
@@ -69,7 +69,7 @@ ClmArrayList *clm_lexer_main(const char *file_contents) {
   data.lineNo = 1;
   data.colNo = 0;
   data.numTokens = 0;
-  data.programString = clm_string_copy(file_contents);
+  data.programString = file_contents;
   data.tokens = clm_array_list_new(lexer_token_free);
 
   data.programLength = strlen(file_contents);
@@ -86,8 +86,6 @@ ClmArrayList *clm_lexer_main(const char *file_contents) {
   end->lineNo = 0;
   end->colNo = 0;
   clm_array_list_push(data.tokens, end);
-
-  free(data.programString);
 
   return data.tokens;
 }
@@ -143,7 +141,7 @@ static ClmLexerToken *get_token() {
 
     token->sym = LEX_STRING;
   } else {
-    char *word = data.programString + start;
+    const char *word = data.programString + start;
     if (tok_str_eq(word, "for")) {
       token->sym = LEX_FOR;
       data.curInd += strlen("for");

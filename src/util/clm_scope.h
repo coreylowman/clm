@@ -13,7 +13,7 @@ typedef struct ClmScope {
 
 ClmScope *clm_scope_new(ClmScope *parent, void *startNode);
 void clm_scope_free(void *data);
-void clm_scope_print(ClmScope *scope, int level);
+void clm_scope_print(void *data, int level);
 
 int clm_scope_contains(ClmScope *scope, const char *name);
 

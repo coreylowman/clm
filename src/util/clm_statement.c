@@ -130,7 +130,8 @@ void clm_stmt_free(void *data) {
   free(node);
 }
 
-void clm_stmt_print(ClmStmtNode *node, int level) {
+void clm_stmt_print(void *data, int level) {
+  ClmStmtNode *node = data;
   int q = level;
   printf("\n");
   while (q-- > 0)

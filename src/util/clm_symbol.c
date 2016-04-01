@@ -22,7 +22,8 @@ void clm_symbol_free(void *data) {
   free(symbol);
 }
 
-void clm_symbol_print(ClmSymbol *symbol, int level) {
+void clm_symbol_print(void *data, int level) {
+  ClmSymbol *symbol = data;
   int q = level;
   printf("\n");
   while (q-- > 0)

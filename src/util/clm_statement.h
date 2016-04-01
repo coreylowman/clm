@@ -81,7 +81,7 @@ ClmStmtNode *clm_stmt_new_loop(char *varId, ClmExpNode *start, ClmExpNode *end,
 ClmStmtNode *clm_stmt_new_print(ClmExpNode *expression, int appendNewline);
 ClmStmtNode *clm_stmt_new_return(ClmExpNode *returnExpr);
 
-void clm_stmt_print(ClmStmtNode *node, int level);
+void clm_stmt_print(void *data, int level);
 
 void clm_stmt_free(void *data);
 

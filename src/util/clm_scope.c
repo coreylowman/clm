@@ -25,7 +25,8 @@ void clm_scope_free(void *data) {
   free(scope);
 }
 
-void clm_scope_print(ClmScope *scope, int level) {
+void clm_scope_print(void *data, int level) {
+  ClmScope *scope = data;
   int q = level;
   printf("\n");
   while (q-- > 0)

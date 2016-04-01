@@ -10,6 +10,7 @@ typedef enum ClmArithOp {
   ARITH_OP_MULT,
   ARITH_OP_DIV
 } ClmArithOp;
+
 typedef enum ClmBoolOp {
   BOOL_OP_AND,
   BOOL_OP_OR,
@@ -20,6 +21,7 @@ typedef enum ClmBoolOp {
   BOOL_OP_GTE,
   BOOL_OP_LTE
 } ClmBoolOp;
+
 typedef enum ClmUnaryOp {
   UNARY_OP_MINUS,
   UNARY_OP_TRANSPOSE,
@@ -30,7 +32,7 @@ const char *clm_arith_op_to_string(ClmArithOp op);
 const char *clm_bool_op_to_string(ClmBoolOp op);
 const char *clm_unary_op_to_string(ClmUnaryOp op);
 
-typedef enum {
+typedef enum ClmExpType {
   EXP_TYPE_INT,
   EXP_TYPE_FLOAT,
   EXP_TYPE_STRING,
@@ -130,7 +132,7 @@ void clm_exp_unbox_right(ClmExpNode *node);
 void clm_exp_unbox_left(ClmExpNode *node);
 void clm_exp_unbox_unary(ClmExpNode *node);
 
-void clm_exp_print(ClmExpNode *node, int level);
+void clm_exp_print(void *data, int level);
 
 int clm_exp_has_no_inds(ClmExpNode *node);
 

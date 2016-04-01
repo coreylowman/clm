@@ -14,6 +14,6 @@ typedef struct ClmSymbol {
 ClmSymbol *clm_symbol_new(const char *name, ClmType type, void *declaration);
 void clm_symbol_free(void *data);
 
-void clm_symbol_print(ClmSymbol *symbol, int level);
+void clm_symbol_print(void *data, int level);
 
 #endif

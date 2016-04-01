@@ -285,7 +285,8 @@ void clm_exp_unbox_unary(ClmExpNode *node) {
   free(unboxed);
 }
 
-void clm_exp_print(ClmExpNode *node, int level) {
+void clm_exp_print(void *data, int level) {
+  ClmExpNode *node = data;
   int q = level;
   printf("\n");
   while (q-- > 0)
