@@ -32,6 +32,7 @@ static void next_label(char *buffer){
 }
 
 void writeLine(const char *line){
+    // TODO instead of realloc each time... keep track of capacity and double it each time (make sure to append \0)
     data.code = realloc(data.code, strlen(data.code) + strlen(line) + 1);
     strcat(data.code, line);
 }
@@ -83,6 +84,7 @@ static void gen_arith_int_int(ClmArithOp op){
 		asm_push_i((int)CLM_TYPE_INT);
 		break;
 	case ARITH_OP_DIV:
+	        // TODO
 		// asm_pop(EAX);
 		// asm_pop(EAX);
 		// asm_pop(EBX);
@@ -148,8 +150,8 @@ typedef void (*asm_func1)(const char *);
 	cmp lele, rele
 	jneq false_label
 
-	for(ecx = lele - 1, ecx != 0, ecx--)
-		eax = 16 + ecx * 4
+	for(ecx = lele - 1, ecx >= 0, ecx--)
+		eax = 16 + (ecx - 1) * 4
 		cmp [esp + eax], [edx + eax]
 		jneq false_label
 
@@ -192,7 +194,7 @@ static void gen_bool_eq_mat_mat(int eq){
 
 	asm_label(cmp_label);
 	asm_cmp(ECX, "0");
-	asm_jmp_eq(true_label);
+	asm_jmp_l(true_label);
 
 	// eax = 16 + 4 * ecx
 	asm_mov(EAX, ECX);
@@ -267,6 +269,8 @@ static void gen_bool(ClmBoolExp *node){
 		break;
 	case BOOL_OP_GT:
 	{
+		// TODO collapse all of these comparisons into one block and just assign a cmp func
+		// based on the case... all of the following cases are exactly the same except the jmp condition
 		char end_label[256];
 		char false_label[256];
 		next_label(false_label);
@@ -360,13 +364,13 @@ static void gen_unary(ClmUnaryExp *node){
 		// <- esp
 		//mov ecx, [esp + 8]
 		//mul ecx, [esp + 12] ; now ecx contains rows * cols
-		//loop0:
 		//dec ecx
-		//cmp ecx, -1
-		//je loop1
+		//cmp_label:
+		//cmp ecx, 0
+		//jl end_label
 		//neg dword [esp + ecx]
-		//jmp loop0
-		//loop1:
+		//jmp cmp_label
+		//end_label:
 		break;
 	case UNARY_OP_TRANSPOSE:
 		//https://en.wikipedia.org/wiki/In-place_matrix_transposition    
@@ -405,6 +409,17 @@ static void gen_matrix_size(ClmExpNode *node){
 
 }
 
+// TODO make a function that will pop an int into a dest
+// TODO use this function
+// void pop_int(const char *dest) {
+//     // pop type
+//     asm_pop(dest);
+//     // overwrite type with int value
+//     asm_pop(dest);
+// }
+// TODO make other functions for poping values?
+
+// TODO rename this pop_into_var
 static void gen_lhs(ClmExpNode *node){
 	//it is an index node - otherwise it is a type check fail
 	char index_str[64];
@@ -784,7 +799,7 @@ static void gen_statement(ClmStmtNode *node){
 	{
 		gen_expression(node->conditionStmt->condition);
 
-		if (node->conditionStmt->falseBody != NULL){
+		if (node->conditionStmt->falseBody == NULL){
 			char end_label[32];
 			next_label(end_label);
 			ClmScope *trueScope = clm_scope_find_child(data.scope, node->conditionStmt->trueBody);
@@ -925,10 +940,12 @@ static void gen_statement(ClmStmtNode *node){
 			asm_push(EBX); //push start back on stack
 		}
 		asm_pop(loop_var);
+		// TODO need to pop twice here?
 		asm_label(start_label);
 		gen_expression(node->loopStmt->end); // don't need to store this - just evaulate every loop
 
 		asm_pop(EAX);
+		// TODO need to pop twice here?
 
 		asm_cmp(loop_var, EAX);
 		if (node->loopStmt->endInclusive)
