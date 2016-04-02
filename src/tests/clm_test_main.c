@@ -1,4 +1,4 @@
-#include "tests/clm_test_lexer.h"
+#include "clm_test_lexer.h"
 
 char *fileName;
 int CLM_BUILD_TESTS = 1;

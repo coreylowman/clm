@@ -1,7 +1,9 @@
-#include "clm_statement.h"
-#include "clm_string.h"
 #include <stdio.h>
 #include <stdlib.h>
+
+#include "util/string_util.h"
+
+#include "clm_statement.h"
 
 ClmStmtNode *clm_stmt_new_assign(ClmExpNode *lhs, ClmExpNode *rhs) {
   ClmStmtNode *node = malloc(sizeof(*node));
@@ -34,13 +36,13 @@ ClmStmtNode *clm_stmt_new_dec(char *name, ArrayList *params, ClmType returnType,
                               ArrayList *body) {
   ClmStmtNode *node = malloc(sizeof(*node));
   node->type = STMT_TYPE_FUNC_DEC;
-  node->funcDecStmt.name = clm_string_copy(name);
+  node->funcDecStmt.name = string_copy(name);
   node->funcDecStmt.parameters = params;
   node->funcDecStmt.returnType = returnType;
   node->funcDecStmt.returnRows = returnRows;
-  node->funcDecStmt.returnRowsVar = clm_string_copy(returnRowsVars);
+  node->funcDecStmt.returnRowsVar = string_copy(returnRowsVars);
   node->funcDecStmt.returnCols = returnCols;
-  node->funcDecStmt.returnColsVar = clm_string_copy(returnColsVar);
+  node->funcDecStmt.returnColsVar = string_copy(returnColsVar);
   node->funcDecStmt.body = body;
   return node;
 }
@@ -50,7 +52,7 @@ ClmStmtNode *clm_stmt_new_loop(char *varId, ClmExpNode *start, ClmExpNode *end,
                                int startInclusive, int endInclusive) {
   ClmStmtNode *node = malloc(sizeof(*node));
   node->type = STMT_TYPE_LOOP;
-  node->loopStmt.varId = clm_string_copy(varId);
+  node->loopStmt.varId = string_copy(varId);
   node->loopStmt.start = start;
   node->loopStmt.end = end;
   node->loopStmt.delta = delta;

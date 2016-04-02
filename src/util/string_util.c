@@ -1,7 +1,8 @@
-#include "clm_string.h"
 #include <string.h>
 
-char *clm_string_copy(const char *string) {
+#include "string_util.h"
+
+char *string_copy(const char *string) {
   if (string == NULL)
     return NULL;
   char *newString = NULL;
@@ -10,7 +11,7 @@ char *clm_string_copy(const char *string) {
   return newString;
 }
 
-char *clm_string_copy_n(const char *string, size_t n) {
+char *string_copy_n(const char *string, size_t n) {
   if (string == NULL)
     return NULL;
   char *newString = NULL;
@@ -20,7 +21,7 @@ char *clm_string_copy_n(const char *string, size_t n) {
   return newString;
 }
 
-int clm_string_equals(const char *string1, const char *string2) {
+int string_equals(const char *string1, const char *string2) {
   if (string1 == NULL && string2 == NULL)
     return 1;
   else if (string1 == NULL)
@@ -31,7 +32,7 @@ int clm_string_equals(const char *string1, const char *string2) {
     return !strcmp(string1, string2);
 }
 
-int clm_string_equals_n(const char *string1, const char *string2, size_t n) {
+int string_equals_n(const char *string1, const char *string2, size_t n) {
   if (string1 == NULL && string2 == NULL)
     return 1;
   else if (string1 == NULL)

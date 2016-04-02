@@ -1,13 +1,14 @@
-#include "clm_code_gen.h"
-#include "clm_asm.h"
-#include "util/clm_expression.h"
-#include "util/clm_statement.h"
-#include "util/clm_type.h"
-#include "util/clm_type_of.h"
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+#include "clm_asm.h"
+#include "clm_code_gen.h"
+#include "clm_expression.h"
+#include "clm_statement.h"
+#include "clm_type.h"
+#include "clm_type_of.h"
 
 typedef struct {
   char *code;

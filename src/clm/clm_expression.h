@@ -1,8 +1,9 @@
 #ifndef CLM_EXPRESSION_H_
 #define CLM_EXPRESSION_H_
 
-#include "array_list.h"
 #include "clm_type.h"
+
+#include "util/array_list.h"
 
 typedef enum ArithOp {
   ARITH_OP_ADD,

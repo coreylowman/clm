@@ -1,22 +1,8 @@
 list(APPEND CLM_UTIL_SOURCES
     array_list.c
     array_list.h
-    clm_error.c
-    clm_error.h
-    clm_expression.c
-    clm_expression.h
-    clm_scope.c
-    clm_scope.h
-    clm_statement.c
-    clm_statement.h
-    clm_string.c
-    clm_string.h
-    clm_symbol.c
-    clm_symbol.h
-    clm_type.c
-    clm_type.h
-    clm_type_of.c
-    clm_type_of.h
+    string_util.c
+    string_util.h
 )
 
 add_library(clmUtil OBJECT ${CLM_UTIL_SOURCES})

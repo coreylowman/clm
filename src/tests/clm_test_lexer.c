@@ -1,10 +1,12 @@
-#include "tests/clm_test_lexer.h"
-#include "lexer/clm_lexer.h"
-#include "tests/clm_test_utils.h"
-#include "util/array_list.h"
-#include "util/clm_string.h"
 #include <stdio.h>
 #include <stdlib.h>
+
+#include "lexer/clm_lexer.h"
+#include "util/array_list.h"
+#include "util/string.h"
+
+#include "clm_test_lexer.h"
+#include "clm_test_utils.h"
 
 int clm_test_lexer() {
   int result = 1;
@@ -27,23 +29,20 @@ int clm_test_lexer_ids() {
 
   CLM_ASSERT(tokens_list->length == 10);
   CLM_ASSERT(tokens[0]->sym == LEX_ID &&
-             clm_string_equals(tokens[0]->raw, "thisIsAGoodID"));
+             string_equals(tokens[0]->raw, "thisIsAGoodID"));
   CLM_ASSERT(tokens[1]->sym == LEX_ID &&
-             clm_string_equals(tokens[1]->raw, "this_one_is_too"));
+             string_equals(tokens[1]->raw, "this_one_is_too"));
   CLM_ASSERT(tokens[2]->sym == LEX_ID &&
-             clm_string_equals(tokens[2]->raw, "_and_this_1"));
-  CLM_ASSERT(tokens[3]->sym == LEX_ID &&
-             clm_string_equals(tokens[3]->raw, "_2"));
-  CLM_ASSERT(tokens[4]->sym == LEX_INT &&
-             clm_string_equals(tokens[4]->raw, "1"));
+             string_equals(tokens[2]->raw, "_and_this_1"));
+  CLM_ASSERT(tokens[3]->sym == LEX_ID && string_equals(tokens[3]->raw, "_2"));
+  CLM_ASSERT(tokens[4]->sym == LEX_INT && string_equals(tokens[4]->raw, "1"));
   CLM_ASSERT(tokens[5]->sym == LEX_ID &&
-             clm_string_equals(tokens[5]->raw, "not_this_one"));
+             string_equals(tokens[5]->raw, "not_this_one"));
   CLM_ASSERT(tokens[6]->sym == LEX_ID &&
-             clm_string_equals(tokens[6]->raw, "__nore"));
-  CLM_ASSERT(tokens[7]->sym == LEX_TILDA &&
-             clm_string_equals(tokens[7]->raw, "~"));
+             string_equals(tokens[6]->raw, "__nore"));
+  CLM_ASSERT(tokens[7]->sym == LEX_TILDA && string_equals(tokens[7]->raw, "~"));
   CLM_ASSERT(tokens[8]->sym == LEX_ID &&
-             clm_string_equals(tokens[8]->raw, "thisOne"));
+             string_equals(tokens[8]->raw, "thisOne"));
   CLM_ASSERT(tokens[9]->sym == LEX_END);
 
   array_list_free(tokens_list);
@@ -64,19 +63,18 @@ int clm_test_lexer_numbers() {
 
   CLM_ASSERT(tokens_list->length == 8);
   CLM_ASSERT(tokens[0]->sym == LEX_INT &&
-             clm_string_equals(tokens[0]->raw, "12345"));
-  CLM_ASSERT(tokens[1]->sym == LEX_SUB &&
-             clm_string_equals(tokens[1]->raw, "-"));
+             string_equals(tokens[0]->raw, "12345"));
+  CLM_ASSERT(tokens[1]->sym == LEX_SUB && string_equals(tokens[1]->raw, "-"));
   CLM_ASSERT(tokens[2]->sym == LEX_FLOAT &&
-             clm_string_equals(tokens[2]->raw, "3412."));
+             string_equals(tokens[2]->raw, "3412."));
   CLM_ASSERT(tokens[3]->sym == LEX_FLOAT &&
-             clm_string_equals(tokens[3]->raw, ".0112"));
+             string_equals(tokens[3]->raw, ".0112"));
   CLM_ASSERT(tokens[4]->sym == LEX_FLOAT &&
-             clm_string_equals(tokens[4]->raw, "2345.0012"));
+             string_equals(tokens[4]->raw, "2345.0012"));
   CLM_ASSERT(tokens[5]->sym == LEX_FLOAT &&
-             clm_string_equals(tokens[5]->raw, "1.2"));
+             string_equals(tokens[5]->raw, "1.2"));
   CLM_ASSERT(tokens[6]->sym == LEX_FLOAT &&
-             clm_string_equals(tokens[6]->raw, "2.31"));
+             string_equals(tokens[6]->raw, "2.31"));
   CLM_ASSERT(tokens[7]->sym == LEX_END);
 
   array_list_free(tokens_list);

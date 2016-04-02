@@ -1,9 +1,11 @@
-#include "clm_lexer.h"
-#include "util/clm_error.h"
-#include "util/clm_string.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+#include "util/string_util.h"
+
+#include "clm_error.h"
+#include "clm_lexer.h"
 
 typedef struct ClmLexerData {
   const char *programString;
@@ -15,7 +17,7 @@ typedef struct ClmLexerData {
   ArrayList *tokens; // array list of ClmLexerToken
 } ClmLexerData;
 
-#define tok_str_eq(x, s) clm_string_equals_n((x), (s), strlen(s))
+#define tok_str_eq(x, s) string_equals_n((x), (s), strlen(s))
 
 static ClmLexerData data;
 
@@ -82,7 +84,7 @@ ArrayList *clm_lexer_main(const char *file_contents) {
 
   ClmLexerToken *end = malloc(sizeof(*end));
   end->sym = LEX_END;
-  end->raw = clm_string_copy("end");
+  end->raw = string_copy("end");
   end->lineNo = 0;
   end->colNo = 0;
   array_list_push(data.tokens, end);
@@ -294,8 +296,7 @@ static ClmLexerToken *get_token() {
       token->sym = LEX_ID;
     }
   }
-  token->raw =
-      clm_string_copy_n(data.programString + start, data.curInd - start);
+  token->raw = string_copy_n(data.programString + start, data.curInd - start);
   return token;
 }
 

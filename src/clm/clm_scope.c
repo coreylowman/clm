@@ -1,7 +1,9 @@
-#include "clm_scope.h"
-#include "clm_string.h"
 #include <stdio.h>
 #include <stdlib.h>
+
+#include "util/string_util.h"
+
+#include "clm_scope.h"
 
 ClmScope *clm_scope_new(ClmScope *parent, void *startNode) {
   ClmScope *scope = malloc(sizeof(*scope));
@@ -52,7 +54,7 @@ int clm_scope_contains(ClmScope *scope, const char *name) {
   int i;
   for (i = 0; i < scope->symbols->length; i++) {
     ClmSymbol *curr = scope->symbols->data[i];
-    if (clm_string_equals(curr->name, name)) {
+    if (string_equals(curr->name, name)) {
       return 1;
     }
   }
@@ -66,7 +68,7 @@ ClmSymbol *clm_scope_find(ClmScope *scope, const char *name) {
   int i;
   for (i = 0; i < scope->symbols->length; i++) {
     ClmSymbol *curr = scope->symbols->data[i];
-    if (clm_string_equals(curr->name, name)) {
+    if (string_equals(curr->name, name)) {
       return curr;
     }
   }

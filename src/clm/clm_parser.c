@@ -1,9 +1,10 @@
-#include "clm_parser.h"
+#include "util/string_util.h"
+
+#include "clm_error.h"
+#include "clm_expression.h"
 #include "clm_lexer.h"
-#include "util/clm_error.h"
-#include "util/clm_expression.h"
-#include "util/clm_statement.h"
-#include "util/clm_string.h"
+#include "clm_parser.h"
+#include "clm_statement.h"
 
 typedef struct ClmParserData {
   ArrayList *parseTree; // ArrayList of ClmStmtNode
@@ -130,12 +131,12 @@ static ClmExpNode *consume_parameter() {
     if (accept(LEX_LCURL)) {
       node->paramExp.rows = consume_param_size();
       if (!node->paramExp.rows) {
-        node->paramExp.rowVar = clm_string_copy(data.prevTokenRaw);
+        node->paramExp.rowVar = string_copy(data.prevTokenRaw);
       }
       expect(LEX_COLON);
       node->paramExp.cols = consume_param_size();
       if (!node->paramExp.cols) {
-        node->paramExp.colVar = clm_string_copy(data.prevTokenRaw);
+        node->paramExp.colVar = string_copy(data.prevTokenRaw);
       }
       expect(LEX_RCURL);
       node->paramExp.type = CLM_TYPE_MATRIX;

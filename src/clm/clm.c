@@ -12,14 +12,14 @@
 #include <time.h>
 
 #include "util/array_list.h"
-#include "util/clm_error.h"
-#include "util/clm_scope.h"
-#include "util/clm_string.h"
+#include "util/string_util.h"
 
 #include "clm_code_gen.h"
+#include "clm_error.h"
 #include "clm_lexer.h"
 #include "clm_optimizer.h"
 #include "clm_parser.h"
+#include "clm_scope.h"
 #include "clm_symbol_gen.h"
 #include "clm_type_check.h"
 

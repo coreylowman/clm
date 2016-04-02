@@ -1,7 +1,8 @@
 #ifndef CLM_SCOPE_H_
 #define CLM_SCOPE_H_
 
-#include "array_list.h"
+#include "util/array_list.h"
+
 #include "clm_symbol.h"
 
 typedef struct ClmScope {

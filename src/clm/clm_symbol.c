@@ -1,11 +1,13 @@
-#include "clm_symbol.h"
-#include "clm_string.h"
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "util/string_util.h"
+
+#include "clm_symbol.h"
+
 ClmSymbol *clm_symbol_new(const char *name, ClmType type, void *declaration) {
   ClmSymbol *symbol = malloc(sizeof(*symbol));
-  symbol->name = clm_string_copy(name);
+  symbol->name = string_copy(name);
   symbol->type = type;
   symbol->declaration = declaration;
   symbol->offset = 0;

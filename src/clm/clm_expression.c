@@ -1,7 +1,9 @@
-#include "clm_expression.h"
-#include "clm_string.h"
 #include <stdio.h>
 #include <stdlib.h>
+
+#include "util/string_util.h"
+
+#include "clm_expression.h"
 
 const char *arith_op_to_string(ArithOp op) {
   const char *strings[] = {"ADD", "SUB", "MULT", "DIV"};
@@ -35,7 +37,7 @@ ClmExpNode *clm_exp_new_float(float fval) {
 ClmExpNode *clm_exp_new_string(const char *str) {
   ClmExpNode *node = malloc(sizeof(*node));
   node->type = EXP_TYPE_STRING;
-  node->str = clm_string_copy(str);
+  node->str = string_copy(str);
   return node;
 }
 
@@ -62,7 +64,7 @@ ClmExpNode *clm_exp_new_bool(BoolOp operand, ClmExpNode *right,
 ClmExpNode *clm_exp_new_call(char *name, ArrayList *params) {
   ClmExpNode *node = malloc(sizeof(*node));
   node->type = EXP_TYPE_CALL;
-  node->callExp.name = clm_string_copy(name);
+  node->callExp.name = string_copy(name);
   node->callExp.params = params;
   return node;
 }
@@ -71,7 +73,7 @@ ClmExpNode *clm_exp_new_index(const char *id, ClmExpNode *rowIndex,
                               ClmExpNode *colIndex) {
   ClmExpNode *node = malloc(sizeof(*node));
   node->type = EXP_TYPE_INDEX;
-  node->indExp.id = clm_string_copy(id);
+  node->indExp.id = string_copy(id);
   node->indExp.rowIndex = rowIndex;
   node->indExp.colIndex = colIndex;
   return node;
@@ -97,8 +99,8 @@ ClmExpNode *clm_exp_new_empty_mat_dec(int rows, int cols, const char *rowVar,
   node->matDecExp.length = 0;
   node->matDecExp.rows = rows;
   node->matDecExp.cols = cols;
-  node->matDecExp.rowVar = clm_string_copy(rowVar);
-  node->matDecExp.colVar = clm_string_copy(colVar);
+  node->matDecExp.rowVar = string_copy(rowVar);
+  node->matDecExp.colVar = string_copy(colVar);
   return node;
 }
 
@@ -107,12 +109,12 @@ ClmExpNode *clm_exp_new_param(const char *name, ClmType type, int rows,
                               const char *colVar) {
   ClmExpNode *node = malloc(sizeof(*node));
   node->type = EXP_TYPE_PARAM;
-  node->paramExp.name = clm_string_copy(name);
+  node->paramExp.name = string_copy(name);
   node->paramExp.type = type;
   node->paramExp.rows = rows;
   node->paramExp.cols = cols;
-  node->paramExp.rowVar = clm_string_copy(rowVar);
-  node->paramExp.colVar = clm_string_copy(colVar);
+  node->paramExp.rowVar = string_copy(rowVar);
+  node->paramExp.colVar = string_copy(colVar);
   return node;
 }
 

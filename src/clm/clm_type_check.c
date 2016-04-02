@@ -1,13 +1,15 @@
-#include "clm_type_check.h"
-#include "util/array_list.h"
-#include "util/clm_error.h"
-#include "util/clm_expression.h"
-#include "util/clm_scope.h"
-#include "util/clm_statement.h"
-#include "util/clm_symbol.h"
-#include "util/clm_type.h"
-#include "util/clm_type_of.h"
 #include <stdlib.h>
+
+#include "util/array_list.h"
+
+#include "clm_error.h"
+#include "clm_expression.h"
+#include "clm_scope.h"
+#include "clm_statement.h"
+#include "clm_symbol.h"
+#include "clm_type.h"
+#include "clm_type_check.h"
+#include "clm_type_of.h"
 
 // valid arith ops
 // string string         +

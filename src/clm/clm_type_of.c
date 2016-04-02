@@ -1,8 +1,9 @@
-#include "clm_type_of.h"
+#include <stdlib.h>
+
 #include "clm_statement.h"
 #include "clm_symbol.h"
 #include "clm_type.h"
-#include <stdlib.h>
+#include "clm_type_of.h"
 
 ClmType clm_type_of_ind(ClmExpNode *node, ClmScope *scope) {
   ClmSymbol *symbol = clm_scope_find(scope, node->indExp.id);

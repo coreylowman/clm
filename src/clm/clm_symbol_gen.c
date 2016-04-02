@@ -1,9 +1,10 @@
-#include "clm_symbol_gen.h"
-#include "util/clm_error.h"
-#include "util/clm_statement.h"
-#include "util/clm_type.h"
-#include "util/clm_type_of.h"
 #include <stdlib.h>
+
+#include "clm_error.h"
+#include "clm_statement.h"
+#include "clm_symbol_gen.h"
+#include "clm_type.h"
+#include "clm_type_of.h"
 
 static void gen_expnode_symbols(ClmScope *scope, ClmExpNode *node);
 static void gen_statement_symbols(ClmScope *scope, ClmStmtNode *node);
