@@ -28,6 +28,8 @@ static CodeGenData data;
 #define T_EAX "T_EAX"
 #define T_EBX "T_EBX"
 
+#define LABEL_SIZE 32
+
 static void next_label(char *buffer) {
   int id = data.labelID++;
   sprintf(buffer, "label%d", id);
@@ -285,27 +287,49 @@ static void gen_bool(ClmExpNode *node) {
   }
 }
 
+static void gen_unary_minus(ClmExpNode *node) {
+  ClmType type = clm_type_of_exp(node, data.scope);
+  switch (type) {
+  case CLM_TYPE_INT:
+    asm_neg("dword [esp - 8]");
+    break;
+  case CLM_TYPE_FLOAT:
+    // TODO
+    break;
+  case CLM_TYPE_MATRIX: {
+    char cmp_label[LABEL_SIZE], end_label[LABEL_SIZE];
+    next_label(cmp_label);
+    next_label(end_label);
+
+    asm_mov(ECX, "[esp - 8]");
+    asm_imul(ECX, "[esp - 12]");
+    asm_dec(ECX);
+    asm_label(cmp_label);
+    asm_cmp(ECX, "0");
+    asm_jmp_l(end_label);
+    asm_neg("dword [esp + ecx]");
+    asm_dec(ECX);
+    asm_jmp(cmp_label);
+    asm_label(end_label);
+    break;
+  }
+  default:
+    break;
+  }
+}
+
+// stack will look like this
+// node
+// node type
+// <- esp
+// so [esp-4] is the node type
 static void gen_unary(ClmExpNode *node) {
   switch (node->unaryExp.operand) {
   case UNARY_OP_MINUS:
-    // TODO... this is just the matrix case
-    // also need the rest of the negatable objects
-    // TODO foreach element... neg it
-    // cols
-    // rows
-    // type
-    // <- esp
-    // mov ecx, [esp + 8]
-    // mul ecx, [esp + 12] ; now ecx contains rows * cols
-    // dec ecx
-    // cmp_label:
-    // cmp ecx, 0
-    // jl end_label
-    // neg dword [esp + ecx]
-    // jmp cmp_label
-    // end_label:
+    gen_unary_minus(node->unaryExp.node);
     break;
   case UNARY_OP_TRANSPOSE:
+    // TODO
     // https://en.wikipedia.org/wiki/In-place_matrix_transposition
     break;
   case UNARY_OP_NOT:
@@ -360,8 +384,8 @@ static void gen_lhs(ClmExpNode *node) {
     // TODO case where matrix is actually a pointer
     if (node->indExp.rowIndex == NULL && node->indExp.colIndex == NULL) {
       // TODO pop whole matrix off stack
-      char start_label[32];
-      char end_label[32];
+      char start_label[LABEL_SIZE];
+      char end_label[LABEL_SIZE];
       next_label(start_label);
       next_label(end_label);
 
@@ -408,6 +432,57 @@ static void gen_lhs(ClmExpNode *node) {
   }
 }
 
+static void gen_index(ClmExpNode *node) {
+  char index_str[64];
+  ClmSymbol *var = clm_scope_find(data.scope, node->indExp.id);
+  switch (var->type) {
+  case CLM_TYPE_INT:
+    if (var->isParam)
+      sprintf(index_str, "dword [ebp+%d]", var->offset + 4);
+    else
+      sprintf(index_str, "dword [ebp+%d]", var->offset - 4);
+    asm_push(index_str);
+    asm_push_i((int)var->type);
+    break;
+  case CLM_TYPE_FLOAT:
+    // TODO floats
+    break;
+  case CLM_TYPE_MATRIX: {
+    // TODO case where matrix is actually a pointer
+    if (node->indExp.rowIndex == NULL && node->indExp.colIndex == NULL) {
+      // TODO push whole matrix on stack
+    } else if (node->indExp.rowIndex == NULL) {
+      // TODO push a whole row onto the stack
+    } else if (node->indExp.colIndex == NULL) {
+      // TODO push a whole col onto the stack
+    } else {
+      // TODO push one val onto the stack
+      gen_expression(node->indExp.colIndex);
+      gen_expression(node->indExp.rowIndex);
+      pop_int(EAX); // pop row index into eax
+      pop_int(EBX); // pop col index into ebx
+      asm_imul(EAX, EBX);
+      asm_imul(EAX, "4"); // now eax contains row * col * 4
+      // var->offset points at type... 3 elements above is the first item
+      // in the matrix
+      // sprintf(index_str, "dword [ebp+%d+eax]", var->offset + 12);
+      sprintf(index_str, "[ebp+%d]", var->offset + 4);
+      asm_mov(EBX, index_str);
+      // asm_add(EAX, EBX); //eax now contains
+      asm_push("dword [eax]");
+      asm_push_i((int)CLM_TYPE_INT);
+    }
+    break;
+  }
+  case CLM_TYPE_STRING:
+    // uhh
+    break;
+  default:
+    // shouldn't get here...
+    break;
+  }
+}
+
 // stack should look like this:
 // val
 // type
@@ -445,55 +520,7 @@ static void gen_expression(ClmExpNode *node) {
     break;
   }
   case EXP_TYPE_INDEX: {
-    char index_str[64];
-    ClmSymbol *var = clm_scope_find(data.scope, node->indExp.id);
-    switch (var->type) {
-    case CLM_TYPE_INT:
-      if (var->isParam)
-        sprintf(index_str, "dword [ebp+%d]", var->offset + 4);
-      else
-        sprintf(index_str, "dword [ebp+%d]", var->offset - 4);
-      asm_push(index_str);
-      asm_push_i((int)var->type);
-      break;
-    case CLM_TYPE_FLOAT:
-      // TODO floats
-      break;
-    case CLM_TYPE_MATRIX: {
-      // TODO case where matrix is actually a pointer
-      if (node->indExp.rowIndex == NULL && node->indExp.colIndex == NULL) {
-        // TODO push whole matrix on stack
-      } else if (node->indExp.rowIndex == NULL) {
-        // TODO push a whole row onto the stack
-      } else if (node->indExp.colIndex == NULL) {
-        // TODO push a whole col onto the stack
-      } else {
-        // TODO push one val onto the stack
-        gen_expression(node->indExp.colIndex);
-        gen_expression(node->indExp.rowIndex);
-        pop_int(EAX); // pop row index into eax
-        pop_int(EBX); // pop col index into ebx
-        asm_imul(EAX, EBX);
-        asm_imul(EAX, "4"); // now eax contains row * col * 4
-        // var->offset points at type... 3 elements above is the first item
-        // in the matrix
-        // sprintf(index_str, "dword [ebp+%d+eax]", var->offset + 12);
-        sprintf(index_str, "[ebp+%d]", var->offset + 4);
-        asm_mov(EBX, index_str);
-        // asm_add(EAX, EBX); //eax now contains
-        asm_push("dword [eax]");
-        asm_push_i((int)CLM_TYPE_INT);
-      }
-      break;
-    }
-    case CLM_TYPE_STRING:
-      // uhh
-      break;
-    case CLM_TYPE_FUNCTION:
-    case CLM_TYPE_NONE:
-      // shouldn't get here...
-      break;
-    }
+    gen_index(node);
     break;
   }
   case EXP_TYPE_MAT_DEC: {
@@ -535,8 +562,8 @@ static void gen_expression(ClmExpNode *node) {
         sprintf(index_str, "%d", node->matDecExp.cols);
         asm_mov(EBX, index_str);
       }
-      char start_label[32];
-      char end_label[32];
+      char start_label[LABEL_SIZE];
+      char end_label[LABEL_SIZE];
       next_label(start_label);
       next_label(end_label);
 
@@ -667,7 +694,7 @@ static void gen_statement(ClmStmtNode *node) {
     gen_expression(node->conditionStmt.condition);
 
     if (node->conditionStmt.falseBody == NULL) {
-      char end_label[32];
+      char end_label[LABEL_SIZE];
       next_label(end_label);
       ClmScope *trueScope =
           clm_scope_find_child(data.scope, node->conditionStmt.trueBody);
@@ -681,8 +708,8 @@ static void gen_statement(ClmStmtNode *node) {
 
       data.scope = trueScope->parent;
     } else {
-      char end_label[32];
-      char false_label[32];
+      char end_label[LABEL_SIZE];
+      char false_label[LABEL_SIZE];
       next_label(end_label);
       next_label(false_label);
       ClmScope *trueScope =
@@ -707,7 +734,7 @@ static void gen_statement(ClmStmtNode *node) {
   }
   case STMT_TYPE_FUNC_DEC: {
     int i;
-    char func_label[32];
+    char func_label[LABEL_SIZE];
 
     sprintf(func_label, "_%s", node->funcDecStmt.name);
     ClmScope *funcScope = clm_scope_find_child(data.scope, node);
@@ -727,8 +754,8 @@ static void gen_statement(ClmStmtNode *node) {
     // these are all declared below the local variables
     ClmSymbol *sym;
     ClmStmtNode *dec;
-    char start_label[32];
-    char end_label[32];
+    char start_label[LABEL_SIZE];
+    char end_label[LABEL_SIZE];
     char index_str[32];
     for (i = 0; i < funcScope->symbols->length; i++) {
       sym = funcScope->symbols->data[i];
@@ -736,7 +763,6 @@ static void gen_statement(ClmStmtNode *node) {
 
       if (sym->isParam)
         continue;
-      writeLine("; setting type on stack\n");
       // setting the type of the local var
       sprintf(index_str, "dword [ebp+%d]", sym->offset);
       asm_mov_i(index_str, (int)sym->type);
@@ -789,17 +815,18 @@ static void gen_statement(ClmStmtNode *node) {
     break;
   }
   case STMT_TYPE_LOOP: {
-    char start_label[32];
-    char end_label[32];
+    char start_label[LABEL_SIZE];
+    char end_label[LABEL_SIZE];
     next_label(start_label);
     next_label(end_label);
 
     ClmSymbol *var = clm_scope_find(data.scope, node->loopStmt.varId);
     char loop_var[32];
-    sprintf(loop_var, "dword [ebp+%d]", var->offset);
+    sprintf(loop_var, "dword [ebp+%d]", var->offset + (var->isParam ? 4 : -4));
 
-    gen_expression(node->loopStmt.start); // don't need to store this - just
-    // evaluate and put into loop var
+    // don't need to store this - just evaluate and put into loop var
+    gen_expression(node->loopStmt.start);
+
     if (!node->loopStmt.startInclusive) {
       gen_expression(node->loopStmt.delta);
       pop_int(EAX); // eax contains delta

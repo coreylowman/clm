@@ -3,60 +3,59 @@
 #include "array_list.h"
 
 ArrayList *array_list_new(void (*free_element)(void *element)) {
-  ArrayList *array = malloc(sizeof(*array));
-  array->length = 0;
-  array->capacity = 16;
-  array->data = malloc(array->capacity * sizeof(*(array->data)));
+  ArrayList *self = malloc(sizeof(*self));
+  self->length = 0;
+  self->capacity = 16;
+  self->data = malloc(self->capacity * sizeof(*(self->data)));
   int i;
-  for (i = 0; i < array->capacity; i++) {
-    array->data[i] = NULL;
+  for (i = 0; i < self->capacity; i++) {
+    self->data[i] = NULL;
   }
-  array->free_element = free_element;
-  return array;
+  self->free_element = free_element;
+  return self;
 }
 
 void array_list_free(void *data) {
   if (data == NULL)
     return;
 
-  ArrayList *array = (ArrayList *)data;
+  ArrayList *self = (ArrayList *)data;
   int i;
-  for (i = array->length - 1; i >= 0; i--) {
-    array->free_element(array->data[i]);
+  for (i = self->length - 1; i >= 0; i--) {
+    self->free_element(self->data[i]);
   }
-  free(array->data);
-  free(array);
+  free(self->data);
+  free(self);
 }
 
-void array_list_push(ArrayList *array, void *data) {
-  if (array->length == array->capacity) {
-    int i = array->capacity;
-    array->capacity = 2 * array->capacity;
-    array->data =
-        realloc(array->data, array->capacity * sizeof(*(array->data)));
-    for (; i < array->capacity; i++) {
-      array->data[i] = NULL;
+void array_list_push(ArrayList *self, void *data) {
+  if (self->length == self->capacity) {
+    int i = self->capacity;
+    self->capacity = 2 * self->capacity;
+    self->data = realloc(self->data, self->capacity * sizeof(*(self->data)));
+    for (; i < self->capacity; i++) {
+      self->data[i] = NULL;
     }
   }
-  array->data[array->length] = data;
-  array->length += 1;
+  self->data[self->length] = data;
+  self->length += 1;
 }
 
-void array_list_foreach(ArrayList *array, void (*func)(void *data)) {
-  if (array == NULL)
+void array_list_foreach(ArrayList *self, void (*func)(void *data)) {
+  if (self == NULL)
     return;
   int i = 0;
-  for (; i < array->length; i++) {
-    func(array->data[i]);
+  for (; i < self->length; i++) {
+    func(self->data[i]);
   }
 }
 
-void array_list_foreach_2(ArrayList *array, int level,
+void array_list_foreach_2(ArrayList *self, int level,
                           void (*func)(void *data, int l)) {
-  if (array == NULL)
+  if (self == NULL)
     return;
   int i = 0;
-  for (; i < array->length; i++) {
-    func(array->data[i], level);
+  for (; i < self->length; i++) {
+    func(self->data[i], level);
   }
 }

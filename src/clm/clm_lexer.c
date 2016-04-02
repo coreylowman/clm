@@ -234,9 +234,6 @@ static ClmLexerToken *get_token() {
     } else if (tok_str_eq(word, "*")) {
       token->sym = LEX_MULT;
       data.curInd += strlen("*");
-    } else if (tok_str_eq(word, "@")) {
-      token->sym = LEX_AT;
-      data.curInd += strlen("@");
     } else if (tok_str_eq(word, "-")) {
       token->sym = LEX_SUB;
       data.curInd += strlen("-");
@@ -301,14 +298,5 @@ static ClmLexerToken *get_token() {
 }
 
 const char *clm_lexer_sym_to_string(ClmLexerSymbol s) {
-  const char *ClmLexerSymbol_String[] = {
-      "ADD",         "AND",    "ASSIGN", "AT",         "BACKSLASH", "BY",
-      "CALL",        "COLON",  "COMMA",  "DIV",        "DO",        "ELSE",
-      "END",         "EQ",     "FLOAT",  "FLOAT_WORD", "FOR",       "GT",
-      "GTE",         "ID",     "IF",     "INT",        "INT_WORD",  "LBRACK",
-      "LCURL",       "LPAREN", "LT",     "LTE",        "MULT",      "NEQ",
-      "NOT",         "OR",     "PERIOD", "PRINT",      "PRINTL",    "QUESTION",
-      "RBRACK",      "RCURL",  "RETURN", "RPAREN",     "SEMI",      "STRING",
-      "STRING_WORD", "SUB",    "THEN",   "TILDA",      "TO"};
-  return ClmLexerSymbol_String[(int)s];
+  return clmLexerSymbolStrings[(int)s];
 }

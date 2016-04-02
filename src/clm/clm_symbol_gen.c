@@ -134,14 +134,14 @@ static void gen_statement_symbols(ClmScope *scope, ClmStmtNode *node) {
     break;
   }
   case STMT_TYPE_LOOP: {
-    ClmScope *loopScope = clm_scope_new(scope, node);
-    if (!clm_scope_contains(loopScope, node->loopStmt.varId)) {
+    if (!clm_scope_contains(scope, node->loopStmt.varId)) {
       ClmSymbol *symbol =
           clm_symbol_new(node->loopStmt.varId, CLM_TYPE_INT, node);
       symbol->isParam = 0;
-      symbol->offset = clm_scope_next_local_offset(loopScope);
-      clm_scope_push(loopScope, symbol);
+      symbol->offset = clm_scope_next_local_offset(scope);
+      clm_scope_push(scope, symbol);
     }
+    ClmScope *loopScope = clm_scope_new(scope, node);
     gen_expnode_symbols(loopScope, node->loopStmt.start);
     gen_expnode_symbols(loopScope, node->loopStmt.end);
     gen_expnode_symbols(loopScope, node->loopStmt.delta);

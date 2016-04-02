@@ -2,55 +2,38 @@
 #define CLM_LEXER_H_
 
 #include "util/array_list.h"
+#define token_list                                                             \
+  token(ADD, "+") token(AND, "and") token(ASSIGN, "=") token(BACKSLASH, "\\")  \
+      token(BY, "by") token(CALL, "call") token(COLON, ":") token(             \
+          COMMA, ",") token(DIV, "/") token(DO, "do") token(ELSE, "else")      \
+          token(END, "end") token(EQ, "==") token(FLOAT, "float") token(       \
+              FLOAT_WORD, "float_word") token(FOR, "for") token(GT, ">")       \
+              token(GTE, ">=") token(ID, "id") token(IF, "if") token(          \
+                  INT, "int") token(INT_WORD, "int_word") token(LBRACK, "[")   \
+                  token(LCURL, "{") token(LPAREN, "(") token(LT, "<")          \
+                      token(LTE, "<=") token(MULT, "*") token(NEQ, "!=")       \
+                          token(NOT, "not") token(OR, "or") token(PERIOD, ".") \
+                              token(PRINT, "print") token(PRINTL, "printl")    \
+                                  token(RBRACK, "]") token(RCURL, "}") token(  \
+                                      RETURN, "return") token(RPAREN, ")")     \
+                                      token(SEMI, ";") token(STRING, "string") \
+                                          token(STRING_WORD, "string_word")    \
+                                              token(SUB, "-")                  \
+                                                  token(THEN, "then")          \
+                                                      token(TILDA, "~")        \
+                                                          token(TO, "to")
 
 typedef enum ClmLexerSymbol {
-  LEX_ADD,
-  LEX_AND,
-  LEX_ASSIGN,
-  LEX_AT,
-  LEX_BACKSLASH,
-  LEX_BY,
-  LEX_CALL,
-  LEX_COLON,
-  LEX_COMMA,
-  LEX_DIV,
-  LEX_DO,
-  LEX_ELSE,
-  LEX_END,
-  LEX_EQ,
-  LEX_FLOAT,
-  LEX_FLOAT_WORD,
-  LEX_FOR,
-  LEX_GT,
-  LEX_GTE,
-  LEX_ID,
-  LEX_IF,
-  LEX_INT,
-  LEX_INT_WORD,
-  LEX_LBRACK,
-  LEX_LCURL,
-  LEX_LPAREN,
-  LEX_LT,
-  LEX_LTE,
-  LEX_MULT,
-  LEX_NEQ,
-  LEX_NOT,
-  LEX_OR,
-  LEX_PERIOD,
-  LEX_PRINT,
-  LEX_PRINTL,
-  LEX_RBRACK,
-  LEX_RCURL,
-  LEX_RETURN,
-  LEX_RPAREN,
-  LEX_SEMI,
-  LEX_STRING,
-  LEX_STRING_WORD,
-  LEX_SUB,
-  LEX_THEN,
-  LEX_TILDA,
-  LEX_TO
+#define token(tok, str) LEX_##tok,
+  token_list
+#undef token
 } ClmLexerSymbol;
+
+static char *clmLexerSymbolStrings[] = {
+#define token(tok, str) str,
+    token_list
+#undef token
+};
 
 typedef struct ClmLexerToken {
   ClmLexerSymbol sym;
