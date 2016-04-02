@@ -1,9 +1,9 @@
-#include <stdlib.h>
 #include "clm_symbol_gen.h"
 #include "util/clm_error.h"
 #include "util/clm_statement.h"
 #include "util/clm_type.h"
 #include "util/clm_type_of.h"
+#include <stdlib.h>
 
 static void gen_expnode_symbols(ClmScope *scope, ClmExpNode *node);
 static void gen_statement_symbols(ClmScope *scope, ClmStmtNode *node);
@@ -162,15 +162,6 @@ static void gen_statements_symbols(ClmScope *scope, ArrayList *statements) {
   int i;
   for (i = 0; i < statements->length; i++) {
     gen_statement_symbols(scope, statements->data[i]);
-  }
-}
-
-// TODO
-static void gen_symbol_offsets(ClmScope *scope) {
-  int i;
-  for (i = 0; i < scope->symbols->length; i++) {
-    ClmSymbol *sym = scope->symbols->data[i];
-    // sym->offset =
   }
 }
 

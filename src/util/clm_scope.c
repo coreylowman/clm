@@ -1,7 +1,7 @@
-#include <stdio.h>
-#include <stdlib.h>
 #include "clm_scope.h"
 #include "clm_string.h"
+#include <stdio.h>
+#include <stdlib.h>
 
 ClmScope *clm_scope_new(ClmScope *parent, void *startNode) {
   ClmScope *scope = malloc(sizeof(*scope));

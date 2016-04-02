@@ -2,9 +2,9 @@
 #include <windows.h>
 #endif
 
-#include <stdlib.h>
-#include <stdio.h>
 #include "clm_error.h"
+#include <stdio.h>
+#include <stdlib.h>
 
 extern char *file_name;
 extern int CLM_BUILD_TESTS;

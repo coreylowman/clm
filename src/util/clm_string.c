@@ -1,5 +1,5 @@
-#include <string.h>
 #include "clm_string.h"
+#include <string.h>
 
 char *clm_string_copy(const char *string) {
   if (string == NULL)

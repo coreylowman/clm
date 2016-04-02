@@ -1,10 +1,10 @@
-#include <stdlib.h>
-#include <stdio.h>
 #include "tests/clm_test_lexer.h"
-#include "tests/clm_test_utils.h"
 #include "lexer/clm_lexer.h"
-#include "util/clm_string.h"
+#include "tests/clm_test_utils.h"
 #include "util/array_list.h"
+#include "util/clm_string.h"
+#include <stdio.h>
+#include <stdlib.h>
 
 int clm_test_lexer() {
   int result = 1;

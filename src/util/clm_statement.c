@@ -1,7 +1,7 @@
-#include <stdio.h>
-#include <stdlib.h>
 #include "clm_statement.h"
 #include "clm_string.h"
+#include <stdio.h>
+#include <stdlib.h>
 
 ClmStmtNode *clm_stmt_new_assign(ClmExpNode *lhs, ClmExpNode *rhs) {
   ClmStmtNode *node = malloc(sizeof(*node));

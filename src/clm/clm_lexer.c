@@ -1,9 +1,9 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 #include "clm_lexer.h"
 #include "util/clm_error.h"
 #include "util/clm_string.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 typedef struct ClmLexerData {
   const char *programString;

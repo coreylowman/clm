@@ -1,13 +1,13 @@
-#include <stdlib.h>
-#include <stdarg.h>
-#include <stdio.h>
-#include <string.h>
 #include "clm_code_gen.h"
 #include "clm_asm.h"
 #include "util/clm_expression.h"
 #include "util/clm_statement.h"
 #include "util/clm_type.h"
 #include "util/clm_type_of.h"
+#include <stdarg.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 typedef struct {
   char *code;
@@ -56,46 +56,36 @@ static void gen_statement(ClmStmtNode *node);
 static void gen_functions(ArrayList *statements);
 static void gen_statements(ArrayList *statements);
 
+static void pop_int(const char *dest) {
+  // pop type
+  asm_pop(dest);
+
+  // overwrite type with int value
+  asm_pop(dest);
+}
+
 static void gen_arith_int_int(ArithOp op) {
+  pop_int(EAX);
+  pop_int(EBX);
+
   switch (op) {
   case ARITH_OP_ADD:
-    asm_pop(EAX);
-    asm_pop(EAX);
-    asm_pop(EBX);
-    asm_pop(EBX);
     asm_add(EAX, EBX);
-    asm_push(EAX);
-    asm_push_i((int)CLM_TYPE_INT);
+
     break;
   case ARITH_OP_SUB:
-    asm_pop(EAX);
-    asm_pop(EAX);
-    asm_pop(EBX);
-    asm_pop(EBX);
     asm_sub(EAX, EBX);
-    asm_push(EAX);
-    asm_push_i((int)CLM_TYPE_INT);
     break;
   case ARITH_OP_MULT:
-    asm_pop(EAX);
-    asm_pop(EAX);
-    asm_pop(EBX);
-    asm_pop(EBX);
     asm_imul(EAX, EBX);
-    asm_push(EAX);
-    asm_push_i((int)CLM_TYPE_INT);
     break;
   case ARITH_OP_DIV:
     // TODO
-    // asm_pop(EAX);
-    // asm_pop(EAX);
-    // asm_pop(EBX);
-    // asm_pop(EBX);
-    // asm_add(EAX, EBX);
-    // asm_push(EAX);
-    // asm_push_i((int)CLM_TYPE_INT);
     break;
   }
+
+  asm_push(EAX);
+  asm_push_i((int)CLM_TYPE_INT);
 }
 
 // stack will look like this
@@ -121,10 +111,8 @@ static void gen_bool_eq_int_int(int eq) {
   next_label(false_label);
   next_label(end_label);
 
-  asm_pop(EAX);
-  asm_pop(EAX);
-  asm_pop(EBX);
-  asm_pop(EBX);
+  pop_int(EAX);
+  pop_int(EBX);
   asm_cmp(EAX, EBX);
   if (eq) {
     asm_jmp_neq(false_label);
@@ -247,18 +235,14 @@ static void gen_bool_eq(int eq, ClmExpNode *left, ClmExpNode *right) {
 static void gen_bool(ClmExpNode *node) {
   switch (node->boolExp.operand) {
   case BOOL_OP_AND:
-    asm_pop(EAX); // pop type into eax
-    asm_pop(EAX); // ovewrite type with val
-    asm_pop(EBX); // pop type into ebx
-    asm_pop(EBX); // overwrite type iwth val
+    pop_int(EAX);
+    pop_int(EBX);
     asm_and(EAX, EBX);
     asm_push(EAX);
     break;
   case BOOL_OP_OR:
-    asm_pop(EAX);
-    asm_pop(EAX);
-    asm_pop(EBX);
-    asm_pop(EBX);
+    pop_int(EAX);
+    pop_int(EBX);
     asm_or(EAX, EBX);
     asm_push(EAX);
     break;
@@ -268,85 +252,34 @@ static void gen_bool(ClmExpNode *node) {
   case BOOL_OP_NEQ:
     gen_bool_eq(0, node->boolExp.left, node->boolExp.right);
     break;
-  case BOOL_OP_GT: {
-    // TODO collapse all of these comparisons into one block and just assign a
-    // cmp func
-    // based on the case... all of the following cases are exactly the same
-    // except the jmp condition
+  default: {
     char end_label[256];
     char false_label[256];
     next_label(false_label);
     next_label(end_label);
 
-    asm_pop(EAX);
-    asm_pop(EAX);
-    asm_pop(EBX);
-    asm_pop(EBX);
+    pop_int(EAX);
+    pop_int(EBX);
     asm_cmp(EAX, EBX);
-    asm_jmp_le(false_label);
+    switch (node->boolExp.operand) {
+    case BOOL_OP_GT:
+      asm_jmp_le(false_label);
+      break;
+    case BOOL_OP_LT:
+      asm_jmp_ge(false_label);
+      break;
+    case BOOL_OP_GTE:
+      asm_jmp_l(false_label);
+      break;
+    case BOOL_OP_LTE:
+      asm_jmp_g(false_label);
+      break;
+    }
     asm_push_i(1);
     asm_jmp(end_label);
     asm_label(false_label);
     asm_push_i(0);
     asm_label(end_label);
-    break;
-  }
-  case BOOL_OP_LT: {
-    char end_label[256];
-    char false_label[256];
-    next_label(false_label);
-    next_label(end_label);
-
-    asm_pop(EAX);
-    asm_pop(EAX);
-    asm_pop(EBX);
-    asm_pop(EBX);
-    asm_cmp(EAX, EBX);
-    asm_jmp_ge(false_label);
-    asm_push_i(1);
-    asm_jmp(end_label);
-    asm_label(false_label);
-    asm_push_i(0);
-    asm_label(end_label);
-    break;
-  }
-  case BOOL_OP_GTE: {
-    char end_label[256];
-    char false_label[256];
-    next_label(false_label);
-    next_label(end_label);
-
-    asm_pop(EAX);
-    asm_pop(EAX);
-    asm_pop(EBX);
-    asm_pop(EBX);
-    asm_cmp(EAX, EBX);
-    asm_jmp_l(false_label);
-    asm_push_i(1);
-    asm_jmp(end_label);
-    asm_label(false_label);
-    asm_push_i(0);
-    asm_label(end_label);
-    break;
-  }
-  case BOOL_OP_LTE: {
-    char end_label[256];
-    char false_label[256];
-    next_label(false_label);
-    next_label(end_label);
-
-    asm_pop(EAX);
-    asm_pop(EAX);
-    asm_pop(EBX);
-    asm_pop(EBX);
-    asm_cmp(EAX, EBX);
-    asm_jmp_g(false_label);
-    asm_push_i(1);
-    asm_jmp(end_label);
-    asm_label(false_label);
-    asm_push_i(0);
-    asm_label(end_label);
-    break;
   }
   }
 }
@@ -405,16 +338,6 @@ static void gen_matrix_size(ClmExpNode *node) {
   }
 }
 
-// TODO make a function that will pop an int into a dest
-// TODO use this function
-// void pop_int(const char *dest) {
-//     // pop type
-//     asm_pop(dest);
-//     // overwrite type with int value
-//     asm_pop(dest);
-// }
-// TODO make other functions for poping values?
-
 // TODO rename this pop_into_var
 static void gen_lhs(ClmExpNode *node) {
   // it is an index node - otherwise it is a type check fail
@@ -423,17 +346,17 @@ static void gen_lhs(ClmExpNode *node) {
 
   switch (var->type) {
   case CLM_TYPE_INT:
-    asm_pop(EAX); // pop type
     if (var->isParam)
       sprintf(index_str, "dword [ebp+%d]", var->offset + 4);
     else
       sprintf(index_str, "dword [ebp+%d]", var->offset - 4);
-    asm_pop(index_str);
+    pop_int(index_str);
     break;
   case CLM_TYPE_FLOAT:
     // TODO floats
     break;
   case CLM_TYPE_MATRIX: {
+    // TODO case where matrix is actually a pointer
     if (node->indExp.rowIndex == NULL && node->indExp.colIndex == NULL) {
       // TODO pop whole matrix off stack
       char start_label[32];
@@ -463,28 +386,14 @@ static void gen_lhs(ClmExpNode *node) {
       // TODO pop one val off the stack
       gen_expression(node->indExp.colIndex);
       gen_expression(node->indExp.rowIndex);
-      asm_pop(EAX);       // pop type
-      asm_pop(EAX);       // pop rows into eax
-      asm_pop(EBX);       // pop type
-      asm_pop(EBX);       // pop cols into ebx
+      pop_int(EAX);       // pop rows into eax
+      pop_int(EBX);       // pop cols into ebx
       asm_imul(EAX, EBX); // eax = eax * ebx
       asm_imul(EAX, "4"); // now eax contains row * col * 4
       // var->offset points at type... 3 elements above is the first item in
       // the matrix
       sprintf(index_str, "dword [ebp+%d+eax]", var->offset + 12);
       asm_pop(index_str);
-    }
-    break;
-  }
-  case CLM_TYPE_MATRIX_POINTER: {
-    if (node->indExp.rowIndex == NULL && node->indExp.colIndex == NULL) {
-      // TODO push whole matrix on stack
-    } else if (node->indExp.rowIndex == NULL) {
-      // TODO push a whole row onto the stack
-    } else if (node->indExp.colIndex == NULL) {
-      // TODO push a whole col onto the stack
-    } else {
-      // TODO push one val onto the stack
     }
     break;
   }
@@ -550,6 +459,7 @@ static void gen_expression(ClmExpNode *node) {
       // TODO floats
       break;
     case CLM_TYPE_MATRIX: {
+      // TODO case where matrix is actually a pointer
       if (node->indExp.rowIndex == NULL && node->indExp.colIndex == NULL) {
         // TODO push whole matrix on stack
       } else if (node->indExp.rowIndex == NULL) {
@@ -560,10 +470,8 @@ static void gen_expression(ClmExpNode *node) {
         // TODO push one val onto the stack
         gen_expression(node->indExp.colIndex);
         gen_expression(node->indExp.rowIndex);
-        asm_pop(EAX); // pop type
-        asm_pop(EAX); // pop row index into eax
-        asm_pop(EBX); // pop type
-        asm_pop(EBX); // pop col index into ebx
+        pop_int(EAX); // pop row index into eax
+        pop_int(EBX); // pop col index into ebx
         asm_imul(EAX, EBX);
         asm_imul(EAX, "4"); // now eax contains row * col * 4
         // var->offset points at type... 3 elements above is the first item
@@ -574,18 +482,6 @@ static void gen_expression(ClmExpNode *node) {
         // asm_add(EAX, EBX); //eax now contains
         asm_push("dword [eax]");
         asm_push_i((int)CLM_TYPE_INT);
-      }
-      break;
-    }
-    case CLM_TYPE_MATRIX_POINTER: {
-      if (node->indExp.rowIndex == NULL && node->indExp.colIndex == NULL) {
-        // TODO push whole matrix on stack
-      } else if (node->indExp.rowIndex == NULL) {
-        // TODO push a whole row onto the stack
-      } else if (node->indExp.colIndex == NULL) {
-        // TODO push a whole col onto the stack
-      } else {
-        // TODO push one val onto the stack
       }
       break;
     }
@@ -696,8 +592,6 @@ static void gen_print(ClmExpNode *node, int newline) {
       break;
     case CLM_TYPE_MATRIX:
       break;
-    case CLM_TYPE_MATRIX_POINTER:
-      break;
     case CLM_TYPE_STRING:
       break;
     case CLM_TYPE_FLOAT:
@@ -713,8 +607,7 @@ static void gen_print(ClmExpNode *node, int newline) {
     switch (var->type) {
     case CLM_TYPE_INT:
       gen_expression(node);
-      asm_pop(EAX); // pop type
-      asm_pop(EAX); // pop val into eax
+      pop_int(EAX);
       asm_print_int(EAX, newline);
       break;
     case CLM_TYPE_FLOAT:
@@ -723,15 +616,13 @@ static void gen_print(ClmExpNode *node, int newline) {
       asm_pop(EAX); // pop val into eax
       asm_print_float(EAX, newline);
       break;
-    case CLM_TYPE_MATRIX:
-    case CLM_TYPE_MATRIX_POINTER: {
+    case CLM_TYPE_MATRIX: {
       // these two types should be the same...
       // they are generated differently...
       // but gen_expression will push all the vals onto the stack
       gen_expression(node);
       if (node->indExp.rowIndex != NULL && node->indExp.colIndex != NULL) {
-        asm_pop(EAX); // pop type
-        asm_pop(EAX); // pop val
+        pop_int(EAX);
         asm_print_int(EAX, newline);
       } else {
         // for all other cases we wil have to pop the rows and cols
@@ -853,7 +744,7 @@ static void gen_statement(ClmStmtNode *node) {
       sprintf(index_str, "dword [ebp+%d]", sym->offset - 4);
       asm_mov_i(index_str, 0);
 
-      if (clm_type_is_matrix(sym->type)) {
+      if (sym->type == CLM_TYPE_MATRIX) {
         next_label(start_label);
         next_label(end_label);
 
@@ -910,22 +801,20 @@ static void gen_statement(ClmStmtNode *node) {
     // evaluate and put into loop var
     if (!node->loopStmt.startInclusive) {
       gen_expression(node->loopStmt.delta);
-      asm_pop(EAX); // pop type of delta
-      asm_pop(EAX); // pop val of delta
-      asm_pop(EBX); // pop type of start
-      asm_pop(EBX); // pop val of start
+      pop_int(EAX); // eax contains delta
+      pop_int(EBX); // ebx contains start
       asm_add(EBX, EAX);
+
       asm_push(EBX); // push start back on stack
+      asm_push((int)CLM_TYPE_INT);
     }
-    asm_pop(loop_var);
-    // TODO need to pop twice here?
+    pop_int(loop_var);
     asm_label(start_label);
 
     // don't need to store this - just evaulate every loop
     gen_expression(node->loopStmt.end);
 
-    asm_pop(EAX);
-    // TODO need to pop twice here?
+    pop_int(EAX);
 
     asm_cmp(loop_var, EAX);
     if (node->loopStmt.endInclusive)

@@ -1,5 +1,5 @@
-#include <stdlib.h>
 #include "array_list.h"
+#include <stdlib.h>
 
 ArrayList *array_list_new(void (*free_element)(void *element)) {
   ArrayList *array = malloc(sizeof(*array));

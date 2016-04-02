@@ -1,7 +1,7 @@
-#include <stdlib.h>
-#include <stdio.h>
-#include "clm_string.h"
 #include "clm_symbol.h"
+#include "clm_string.h"
+#include <stdio.h>
+#include <stdlib.h>
 
 ClmSymbol *clm_symbol_new(const char *name, ClmType type, void *declaration) {
   ClmSymbol *symbol = malloc(sizeof(*symbol));
@@ -35,10 +35,6 @@ void clm_symbol_print(void *data, int level) {
     break;
   case CLM_TYPE_MATRIX:
     printf("Symbol name : %s, type : matrix, param : %d, offset : %d",
-           symbol->name, symbol->isParam, symbol->offset);
-    break;
-  case CLM_TYPE_MATRIX_POINTER:
-    printf("Symbol name : %s, type : matrix *, param : %d, offset : %d",
            symbol->name, symbol->isParam, symbol->offset);
     break;
   case CLM_TYPE_STRING:

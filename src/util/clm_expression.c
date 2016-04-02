@@ -1,7 +1,7 @@
-#include <stdlib.h>
-#include <stdio.h>
-#include "clm_string.h"
 #include "clm_expression.h"
+#include "clm_string.h"
+#include <stdio.h>
+#include <stdlib.h>
 
 const char *arith_op_to_string(ArithOp op) {
   const char *strings[] = {"ADD", "SUB", "MULT", "DIV"};
@@ -171,7 +171,6 @@ void clm_exp_free(void *data) {
 }
 
 void clm_exp_unbox_right(ClmExpNode *node) {
-  // TODO make sure this works
   switch (node->type) {
   case EXP_TYPE_ARITH: {
     clm_exp_free(node->arithExp.left);
@@ -197,7 +196,6 @@ void clm_exp_unbox_right(ClmExpNode *node) {
 }
 
 void clm_exp_unbox_left(ClmExpNode *node) {
-  // TODO make sure this works
   switch (node->type) {
   case EXP_TYPE_ARITH: {
     clm_exp_free(node->arithExp.right);
@@ -223,7 +221,6 @@ void clm_exp_unbox_left(ClmExpNode *node) {
 }
 
 void clm_exp_unbox_unary(ClmExpNode *node) {
-  // TODO make sure this works
   ClmExpNode *unboxed = node->unaryExp.node;
   *node = *unboxed;
   free(unboxed);

@@ -1,5 +1,5 @@
-#include "clm_lexer.h"
 #include "clm_parser.h"
+#include "clm_lexer.h"
 #include "util/clm_error.h"
 #include "util/clm_expression.h"
 #include "util/clm_statement.h"
@@ -138,7 +138,7 @@ static ClmExpNode *consume_parameter() {
         node->paramExp.colVar = clm_string_copy(data.prevTokenRaw);
       }
       expect(LEX_RCURL);
-      node->paramExp.type = CLM_TYPE_MATRIX_POINTER;
+      node->paramExp.type = CLM_TYPE_MATRIX;
     } else {
       if (accept(LEX_INT_WORD)) {
         node->paramExp.type = CLM_TYPE_INT;

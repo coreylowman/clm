@@ -1,5 +1,5 @@
-#include <stdio.h>
 #include "clm_asm.h"
+#include <stdio.h>
 
 extern void writeLine(const char *line);
 

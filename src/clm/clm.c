@@ -2,25 +2,26 @@
 #define _CRTDBG_MAP_ALLOC // for heap corruption debugging
 #include <crtdbg.h>
 #include <windows.h>
+
 #include <shellapi.h>
 #endif
 
-#include <stdlib.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <time.h>
 
 #include "util/array_list.h"
+#include "util/clm_error.h"
 #include "util/clm_scope.h"
 #include "util/clm_string.h"
-#include "util/clm_error.h"
 
+#include "clm_code_gen.h"
 #include "clm_lexer.h"
+#include "clm_optimizer.h"
 #include "clm_parser.h"
 #include "clm_symbol_gen.h"
 #include "clm_type_check.h"
-#include "clm_optimizer.h"
-#include "clm_code_gen.h"
 
 char *file_name;
 int CLM_BUILD_TESTS = 0;

@@ -1,13 +1,13 @@
-#include <stdlib.h>
 #include "clm_type_check.h"
-#include "util/clm_expression.h"
-#include "util/clm_type_of.h"
-#include "util/clm_scope.h"
-#include "util/clm_type.h"
-#include "util/clm_statement.h"
 #include "util/array_list.h"
-#include "util/clm_symbol.h"
 #include "util/clm_error.h"
+#include "util/clm_expression.h"
+#include "util/clm_scope.h"
+#include "util/clm_statement.h"
+#include "util/clm_symbol.h"
+#include "util/clm_type.h"
+#include "util/clm_type_of.h"
+#include <stdlib.h>
 
 // valid arith ops
 // string string         +
@@ -35,11 +35,11 @@ static int arith_op_is_valid_for(ArithOp op, ClmType left, ClmType right) {
     return 1;
   } else if (clm_type_is_number(left) && clm_type_is_number(right)) {
     return 1;
-  } else if (clm_type_is_number(left) && clm_type_is_matrix(right)) {
+  } else if (clm_type_is_number(left) && right == CLM_TYPE_MATRIX) {
     if (op == ARITH_OP_MULT) {
       return 1;
     }
-  } else if (clm_type_is_matrix(left) && clm_type_is_number(right)) {
+  } else if (left == CLM_TYPE_MATRIX && clm_type_is_number(right)) {
     if (op == ARITH_OP_MULT || op == ARITH_OP_DIV) {
       return 1;
     }
@@ -71,7 +71,7 @@ static int bool_op_is_valid_for(BoolOp op, ClmType left, ClmType right) {
     }
   } else if (clm_type_is_number(left) && clm_type_is_number(right)) {
     return 1;
-  } else if (clm_type_is_matrix(left) && clm_type_is_matrix(left)) {
+  } else if (left == CLM_TYPE_MATRIX && right == CLM_TYPE_MATRIX) {
     return 1;
   }
   return 0;
@@ -158,7 +158,7 @@ static void type_check_expression(ClmExpNode *node, ClmScope *scope) {
     type_check_expression(node->indExp.colIndex, scope);
 
     if (!clm_exp_has_no_inds(node) &&
-        !clm_type_is_matrix(clm_type_of_ind(node, scope))) {
+        clm_type_of_ind(node, scope) != CLM_TYPE_MATRIX) {
       // error... only matrices should be indexed into
       clm_error(node->lineNo, node->colNo,
                 "Unexpected indices... only matrices can be indexed into");
@@ -248,25 +248,25 @@ static void type_check_stmts(ArrayList *statements, ClmScope *scope) {
       type_check_expression(node->loopStmt.end, scope);
       type_check_expression(node->loopStmt.delta, scope);
 
-      if (!clm_type_is_number(clm_type_of_exp(node->loopStmt.start, scope))) {
-        // error.. loop var should be a number
+      if (clm_type_of_exp(node->loopStmt.start, scope) != CLM_TYPE_INT) {
+        // error.. loop var should be an int
         clm_error(
             node->lineNo, node->colNo,
-            "Loop starting expression should be a number, but got type %s",
+            "Loop starting expression should be an int, but got type %s",
             clm_type_to_string(clm_type_of_exp(node->loopStmt.start, scope)));
       }
-      if (!clm_type_is_number(clm_type_of_exp(node->loopStmt.end, scope))) {
+      if (clm_type_of_exp(node->loopStmt.end, scope) != CLM_TYPE_INT) {
         // error.. loop var should be a number
         clm_error(
             node->lineNo, node->colNo,
-            "Loop ending expression should be a number, but got type %s",
+            "Loop ending expression should be an int, but got type %s",
             clm_type_to_string(clm_type_of_exp(node->loopStmt.end, scope)));
       }
-      if (!clm_type_is_number(clm_type_of_exp(node->loopStmt.delta, scope))) {
+      if (clm_type_of_exp(node->loopStmt.delta, scope) != CLM_TYPE_INT) {
         // error.. loop var should be a number
         clm_error(
             node->lineNo, node->colNo,
-            "Loop delta expression should be a number, but got type %s",
+            "Loop delta expression should be an int, but got type %s",
             clm_type_to_string(clm_type_of_exp(node->loopStmt.delta, scope)));
       }
 
