@@ -99,8 +99,9 @@ static const char ASM_HEADER[] =
 static const char ASM_EXIT_PROCESS[] = "invoke ExitProcess, 0\n";
 static const char ASM_START[] = "start:\n";
 static const char ASM_DATA[] = "section '.data' data readable writable\n"
-                               "T_EAX dd 0\n"
-                               "T_EBX dd 0\n";
+                               "__T_EAX__ dd 0\n"
+                               "__T_EBX__ dd 0\n"
+                               "__T_ESP__ dd 0\n";
 
 void asm_comment(const char *line);
 void asm_pop(const char *dest);

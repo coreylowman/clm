@@ -25,8 +25,11 @@ static CodeGenData data;
 #define EDX "edx"
 #define ESP "esp"
 #define EBP "ebp"
-#define T_EAX "T_EAX"
-#define T_EBX "T_EBX"
+
+// compiler only globals to give more temporary
+#define T_EAX "__T_EAX__"
+#define T_EBX "__T_EBX__"
+#define T_ESP "__T_ESP__"
 
 #define LABEL_SIZE 32
 
@@ -59,7 +62,7 @@ static void gen_statement(ClmStmtNode *node);
 static void gen_functions(ArrayList *statements);
 static void gen_statements(ArrayList *statements);
 
-static void pop_int(const char *dest) {
+static void pop_int_into(const char *dest) {
   // pop type
   asm_pop(dest);
 
@@ -67,14 +70,73 @@ static void pop_int(const char *dest) {
   asm_pop(dest);
 }
 
+// size_location is the location of the numbber of elements the matrix has
+// this assumes esp is pointing like so
+//
+// vals
+// ...
+// cols
+// rows
+// type
+// <- esp
+static void pop_matrix_of_size(const char *size_location){
+  asm_mov(EAX, size_location); // eax contains number of elements
+  asm_imul(EAX, "4");
+  asm_add(EAX, "16");
+  asm_sub(ESP, EAX); // esp -= (num elements * 4 + 16)
+}
+
+// stack will look like this
+// right
+// right type
+// left <- edx
+// left type
+// <- esp
+// so [esp-4] is the left type, and [edx-4] is the right type
+/*
+        lrows = [edx + 8]
+        lele = lrows * [edx + 12]
+
+        for(ecx = lele - 1, ecx >= 0, ecx--)
+                ebx = 16 + ecx * 4
+                add [edx + ebx], [esp + ebx]
+
+        pop matrix
+*/
+static void gen_arith_mat_mat_add(){
+  char cmp_label[LABEL_SIZE], end_label[LABEL_SIZE];
+  next_label(cmp_label);
+  next_label(end_label);
+
+  asm_mov(ECX, "[edx + 8]");
+  asm_imul(ECX, "[edx + 12]");
+  asm_mov(EAX, ECX);
+  asm_dec(ECX);
+
+  asm_label(cmp_label);
+  asm_cmp(ECX, "0");
+  asm_jmp_l(end_label);
+
+  asm_mov(EBX, ECX);
+  asm_imul(EBX, "4");
+  asm_add(EBX, "16");
+  asm_add("dword [edx + ebx]", "dword [esp + ebx]");
+
+  asm_dec(ECX);
+  asm_jmp(cmp_label);
+
+  asm_label(end_label);
+
+  pop_matrix_of_size(EAX);
+}
+
 static void gen_arith_int_int(ArithOp op) {
-  pop_int(EAX);
-  pop_int(EBX);
+  pop_int_into(EAX);
+  pop_int_into(EBX);
 
   switch (op) {
   case ARITH_OP_ADD:
     asm_add(EAX, EBX);
-
     break;
   case ARITH_OP_SUB:
     asm_sub(EAX, EBX);
@@ -114,8 +176,8 @@ static void gen_bool_eq_int_int(int eq) {
   next_label(false_label);
   next_label(end_label);
 
-  pop_int(EAX);
-  pop_int(EBX);
+  pop_int_into(EAX);
+  pop_int_into(EBX);
   asm_cmp(EAX, EBX);
   if (eq) {
     asm_jmp_neq(false_label);
@@ -143,7 +205,7 @@ typedef void (*asm_func1)(const char *);
         jneq false_label
 
         for(ecx = lele - 1, ecx >= 0, ecx--)
-                eax = 16 + (ecx - 1) * 4
+                eax = 16 + ecx * 4
                 cmp [esp + eax], [edx + eax]
                 jneq false_label
 
@@ -199,18 +261,12 @@ static void gen_bool_eq_mat_mat(int eq) {
   asm_jmp(cmp_label);
 
   asm_label(true_label);
-  asm_mov(EAX, EBX); // ebx still contains number of elements
-  asm_imul(EAX, "4");
-  asm_add(EAX, "16");
-  asm_sub(ESP, EAX); // esp -= (num elements * 4 + 16)
+  pop_matrix_of_size(EBX); // ebx still contains number of elements
   asm_push_i(1);
   asm_jmp(end_label);
 
   asm_label(false_label);
-  asm_mov(EAX, EBX); // ebx still contains number of elements
-  asm_imul(EAX, "4");
-  asm_add(EAX, "16");
-  asm_sub(ESP, EAX); // esp -= (num elements * 4 + 16)
+  pop_matrix_of_size(EBX); // ebx still contains number of elements
   asm_push_i(0);
 
   asm_label(end_label);
@@ -238,14 +294,14 @@ static void gen_bool_eq(int eq, ClmExpNode *left, ClmExpNode *right) {
 static void gen_bool(ClmExpNode *node) {
   switch (node->boolExp.operand) {
   case BOOL_OP_AND:
-    pop_int(EAX);
-    pop_int(EBX);
+    pop_int_into(EAX);
+    pop_int_into(EBX);
     asm_and(EAX, EBX);
     asm_push(EAX);
     break;
   case BOOL_OP_OR:
-    pop_int(EAX);
-    pop_int(EBX);
+    pop_int_into(EAX);
+    pop_int_into(EBX);
     asm_or(EAX, EBX);
     asm_push(EAX);
     break;
@@ -261,8 +317,8 @@ static void gen_bool(ClmExpNode *node) {
     next_label(false_label);
     next_label(end_label);
 
-    pop_int(EAX);
-    pop_int(EBX);
+    pop_int_into(EAX);
+    pop_int_into(EBX);
     asm_cmp(EAX, EBX);
     switch (node->boolExp.operand) {
     case BOOL_OP_GT:
@@ -363,7 +419,7 @@ static void gen_matrix_size(ClmExpNode *node) {
   }
 }
 
-// TODO rename this pop_into_var
+// TODO rename this pop_int_intoo_var
 static void gen_lhs(ClmExpNode *node) {
   // it is an index node - otherwise it is a type check fail
   char index_str[64];
@@ -375,7 +431,7 @@ static void gen_lhs(ClmExpNode *node) {
       sprintf(index_str, "dword [ebp+%d]", var->offset + 4);
     else
       sprintf(index_str, "dword [ebp+%d]", var->offset - 4);
-    pop_int(index_str);
+    pop_int_into(index_str);
     break;
   case CLM_TYPE_FLOAT:
     // TODO floats
@@ -411,8 +467,8 @@ static void gen_lhs(ClmExpNode *node) {
       // TODO pop one val off the stack
       gen_expression(node->indExp.colIndex);
       gen_expression(node->indExp.rowIndex);
-      pop_int(EAX);       // pop rows into eax
-      pop_int(EBX);       // pop cols into ebx
+      pop_int_into(EAX);       // pop rows into eax
+      pop_int_into(EBX);       // pop cols into ebx
       asm_imul(EAX, EBX); // eax = eax * ebx
       asm_imul(EAX, "4"); // now eax contains row * col * 4
       // var->offset points at type... 3 elements above is the first item in
@@ -459,8 +515,8 @@ static void gen_index(ClmExpNode *node) {
       // TODO push one val onto the stack
       gen_expression(node->indExp.colIndex);
       gen_expression(node->indExp.rowIndex);
-      pop_int(EAX); // pop row index into eax
-      pop_int(EBX); // pop col index into ebx
+      pop_int_into(EAX); // pop row index into eax
+      pop_int_into(EBX); // pop col index into ebx
       asm_imul(EAX, EBX);
       asm_imul(EAX, "4"); // now eax contains row * col * 4
       // var->offset points at type... 3 elements above is the first item
@@ -635,7 +691,7 @@ static void gen_print(ClmExpNode *node, int newline) {
     switch (var->type) {
     case CLM_TYPE_INT:
       gen_expression(node);
-      pop_int(EAX);
+      pop_int_into(EAX);
       asm_print_int(EAX, newline);
       break;
     case CLM_TYPE_FLOAT:
@@ -650,7 +706,7 @@ static void gen_print(ClmExpNode *node, int newline) {
       // but gen_expression will push all the vals onto the stack
       gen_expression(node);
       if (node->indExp.rowIndex != NULL && node->indExp.colIndex != NULL) {
-        pop_int(EAX);
+        pop_int_into(EAX);
         asm_print_int(EAX, newline);
       } else {
         // for all other cases we wil have to pop the rows and cols
@@ -829,20 +885,20 @@ static void gen_statement(ClmStmtNode *node) {
 
     if (!node->loopStmt.startInclusive) {
       gen_expression(node->loopStmt.delta);
-      pop_int(EAX); // eax contains delta
-      pop_int(EBX); // ebx contains start
+      pop_int_into(EAX); // eax contains delta
+      pop_int_into(EBX); // ebx contains start
       asm_add(EBX, EAX);
 
       asm_push(EBX); // push start back on stack
       asm_push((int)CLM_TYPE_INT);
     }
-    pop_int(loop_var);
+    pop_int_into(loop_var);
     asm_label(start_label);
 
     // don't need to store this - just evaulate every loop
     gen_expression(node->loopStmt.end);
 
-    pop_int(EAX);
+    pop_int_into(EAX);
 
     asm_cmp(loop_var, EAX);
     if (node->loopStmt.endInclusive)
