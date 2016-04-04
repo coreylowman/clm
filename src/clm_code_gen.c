@@ -66,6 +66,9 @@ static void gen_arith(ClmExpNode *node) {
   case CLM_TYPE_MATRIX:
     gen_mat_arith(node->arithExp.operand, right_type);
     break;
+  default:
+    // shouldn't get here
+    break;
   }
 }
 
@@ -231,6 +234,9 @@ static void gen_bool(ClmExpNode *node) {
       break;
     case BOOL_OP_LTE:
       asm_jmp_g(false_label);
+      break;
+    default:
+      // shouldn't get here
       break;
     }
     asm_push_i(1);
@@ -789,7 +795,7 @@ static void gen_statement(ClmStmtNode *node) {
       asm_add(EBX, EAX);
 
       asm_push(EBX); // push start back on stack
-      asm_push((int)CLM_TYPE_INT);
+      asm_push_i((int)CLM_TYPE_INT);
     }
     pop_int_into(loop_var);
     asm_label(start_label);

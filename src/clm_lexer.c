@@ -144,6 +144,8 @@ static ClmLexerToken *get_token() {
     token->sym = LEX_STRING;
   } else {
     const char *word = data.programString + start;
+
+    // TODO use token_list?
     if (tok_str_eq(word, "for")) {
       token->sym = LEX_FOR;
       data.curInd += strlen("for");
@@ -286,7 +288,8 @@ static ClmLexerToken *get_token() {
       }
 
       if (!can_be_id) {
-        clm_error(data.lineNo, data.colNo, "unknown symbol %s", token->raw);
+        // TODO print out the right thing?
+        clm_error(data.lineNo, data.colNo, "unknown symbol %s", word);
         return NULL;
       }
 

@@ -2,6 +2,8 @@
 #define CLM_LEXER_H_
 
 #include "array_list.h"
+
+// TODO add commas after each one
 #define token_list                                                             \
   token(ADD, "+") token(AND, "and") token(ASSIGN, "=") token(BACKSLASH, "\\")  \
       token(BY, "by") token(CALL, "call") token(COLON, ":") token(             \
@@ -24,12 +26,14 @@
                                                           token(TO, "to")
 
 typedef enum ClmLexerSymbol {
+// TODO remove comma after this
 #define token(tok, str) LEX_##tok,
   token_list
 #undef token
 } ClmLexerSymbol;
 
 static char *clmLexerSymbolStrings[] = {
+// TODO remove comma after this
 #define token(tok, str) str,
     token_list
 #undef token

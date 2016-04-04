@@ -10,9 +10,32 @@
 
 int clm_test_lexer() {
   int result = 1;
-  result &= clm_test_lexer_ids();
-  result &= clm_test_lexer_numbers();
-  result &= clm_test_lexer_keywords();
+
+  printf("Testing ids... ");
+  if(!clm_test_lexer_ids()){
+    printf(" FAILED.\n");
+    result = 0;
+  }else {
+    printf(" OK.\n");
+  }
+
+  printf("Testing numbers... ");
+  if(!clm_test_lexer_numbers()){
+    printf(" FAILED.\n");
+    result = 0;
+  }else {
+    printf(" OK.\n");
+  }
+
+
+  printf("Testing keywords... ");
+  if(!clm_test_lexer_keywords()){
+    printf(" FAILED.\n");
+    result = 0;
+  } else {
+    printf(" OK.\n");
+  }
+
   return result;
 }
 

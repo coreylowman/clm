@@ -33,6 +33,9 @@ void gen_mat_arith(ArithOp op, ClmType other_type) {
     else if (op == ARITH_OP_SUB)
       gen_mat_sub_mat();
     break;
+  default:
+    // shouldn't get here
+    break;
   }
 }
 
@@ -161,6 +164,9 @@ void gen_int_arith(ArithOp op, ClmType other_type) {
     if (op == ARITH_OP_MULT)
       gen_int_mul_mat();
     break;
+  default:
+    // shouldn't get here
+    break;
   }
 }
 
@@ -238,6 +244,9 @@ void gen_float_arith(ArithOp op, ClmType other_type) {
   case CLM_TYPE_MATRIX:
     if (op == ARITH_OP_MULT)
       gen_float_mul_mat();
+    break;
+  default:
+    // shouldn't get here
     break;
   }
 }
