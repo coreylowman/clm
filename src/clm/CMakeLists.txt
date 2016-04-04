@@ -28,6 +28,8 @@ list(APPEND CLM_SOURCES
     clm_type_check.h
     clm_type_of.c
     clm_type_of.h
+    clm_type_gen.h
+    clm_type_gen.c
 
     $<TARGET_OBJECTS:clmUtil>
 )

@@ -103,6 +103,23 @@ static const char ASM_DATA[] = "section '.data' data readable writable\n"
                                "__T_EBX__ dd 0\n"
                                "__T_ESP__ dd 0\n";
 
+#define EAX "eax"
+#define EBX "ebx"
+#define ECX "ecx"
+#define EDX "edx"
+#define ESP "esp"
+#define EBP "ebp"
+
+// compiler only globals to give more temporary
+#define T_EAX "__T_EAX__"
+#define T_EBX "__T_EBX__"
+#define T_ESP "__T_ESP__"
+
+#define LABEL_SIZE 32
+
+void pop_int_into(const char *dest);
+void pop_matrix_of_size(const char *size_location);
+
 void asm_comment(const char *line);
 void asm_pop(const char *dest);
 void asm_push(const char *src);

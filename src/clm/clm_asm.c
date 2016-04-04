@@ -4,6 +4,30 @@
 
 extern void writeLine(const char *line);
 
+void pop_int_into(const char *dest) {
+  // pop type
+  asm_pop(dest);
+
+  // overwrite type with int value
+  asm_pop(dest);
+}
+
+// size_location is the location of the numbber of elements the matrix has
+// this assumes esp is pointing like so
+//
+// vals
+// ...
+// cols
+// rows
+// type
+// <- esp
+void pop_matrix_of_size(const char *size_location) {
+  asm_mov(EAX, size_location); // eax contains number of elements
+  asm_imul(EAX, "4");
+  asm_add(EAX, "16");
+  asm_sub(ESP, EAX); // esp -= (num elements * 4 + 16)
+}
+
 void asm_comment(const char *line) {
   char buffer[128];
   sprintf(buffer, "; %s\n", line);

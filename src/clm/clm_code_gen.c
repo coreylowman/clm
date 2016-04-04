@@ -8,6 +8,7 @@
 #include "clm_expression.h"
 #include "clm_statement.h"
 #include "clm_type.h"
+#include "clm_type_gen.h"
 #include "clm_type_of.h"
 
 typedef struct {
@@ -19,21 +20,7 @@ typedef struct {
 
 static CodeGenData data;
 
-#define EAX "eax"
-#define EBX "ebx"
-#define ECX "ecx"
-#define EDX "edx"
-#define ESP "esp"
-#define EBP "ebp"
-
-// compiler only globals to give more temporary
-#define T_EAX "__T_EAX__"
-#define T_EBX "__T_EBX__"
-#define T_ESP "__T_ESP__"
-
-#define LABEL_SIZE 32
-
-static void next_label(char *buffer) {
+void next_label(char *buffer) {
   int id = data.labelID++;
   sprintf(buffer, "label%d", id);
 }
@@ -62,111 +49,23 @@ static void gen_statement(ClmStmtNode *node);
 static void gen_functions(ArrayList *statements);
 static void gen_statements(ArrayList *statements);
 
-static void pop_int_into(const char *dest) {
-  // pop type
-  asm_pop(dest);
-
-  // overwrite type with int value
-  asm_pop(dest);
-}
-
-// size_location is the location of the numbber of elements the matrix has
-// this assumes esp is pointing like so
-//
-// vals
-// ...
-// cols
-// rows
-// type
-// <- esp
-static void pop_matrix_of_size(const char *size_location){
-  asm_mov(EAX, size_location); // eax contains number of elements
-  asm_imul(EAX, "4");
-  asm_add(EAX, "16");
-  asm_sub(ESP, EAX); // esp -= (num elements * 4 + 16)
-}
-
-// stack will look like this
-// right
-// right type
-// left <- edx
-// left type
-// <- esp
-// so [esp-4] is the left type, and [edx-4] is the right type
-/*
-        lrows = [edx + 8]
-        lele = lrows * [edx + 12]
-
-        for(ecx = lele - 1, ecx >= 0, ecx--)
-                ebx = 16 + ecx * 4
-                add [edx + ebx], [esp + ebx]
-
-        pop matrix
-*/
-static void gen_arith_mat_mat_add(){
-  char cmp_label[LABEL_SIZE], end_label[LABEL_SIZE];
-  next_label(cmp_label);
-  next_label(end_label);
-
-  asm_mov(ECX, "[edx + 8]");
-  asm_imul(ECX, "[edx + 12]");
-  asm_mov(EAX, ECX);
-  asm_dec(ECX);
-
-  asm_label(cmp_label);
-  asm_cmp(ECX, "0");
-  asm_jmp_l(end_label);
-
-  asm_mov(EBX, ECX);
-  asm_imul(EBX, "4");
-  asm_add(EBX, "16");
-  asm_add("dword [edx + ebx]", "dword [esp + ebx]");
-
-  asm_dec(ECX);
-  asm_jmp(cmp_label);
-
-  asm_label(end_label);
-
-  pop_matrix_of_size(EAX);
-}
-
-static void gen_arith_int_int(ArithOp op) {
-  pop_int_into(EAX);
-  pop_int_into(EBX);
-
-  switch (op) {
-  case ARITH_OP_ADD:
-    asm_add(EAX, EBX);
-    break;
-  case ARITH_OP_SUB:
-    asm_sub(EAX, EBX);
-    break;
-  case ARITH_OP_MULT:
-    asm_imul(EAX, EBX);
-    break;
-  case ARITH_OP_DIV:
-    // TODO
-    break;
-  }
-
-  asm_push(EAX);
-  asm_push_i((int)CLM_TYPE_INT);
-}
-
-// stack will look like this
-// right
-// right type
-// left <- edx
-// left type
-// <- esp
-// so [esp-4] is the left type, and [edx-4] is the right type
 static void gen_arith(ClmExpNode *node) {
-  // TODO all of these
   ClmType left_type = clm_type_of_exp(node->arithExp.left, data.scope);
   ClmType right_type = clm_type_of_exp(node->arithExp.right, data.scope);
 
-  if (left_type == CLM_TYPE_INT && right_type == CLM_TYPE_INT) {
-    gen_arith_int_int(node->arithExp.operand);
+  switch (left_type) {
+  case CLM_TYPE_INT:
+    gen_int_arith(node->arithExp.operand, right_type);
+    break;
+  case CLM_TYPE_FLOAT:
+    gen_float_arith(node->arithExp.operand, right_type);
+    break;
+  case CLM_TYPE_STRING:
+    gen_string_arith(node->arithExp.operand, right_type);
+    break;
+  case CLM_TYPE_MATRIX:
+    gen_mat_arith(node->arithExp.operand, right_type);
+    break;
   }
 }
 
@@ -467,8 +366,8 @@ static void gen_lhs(ClmExpNode *node) {
       // TODO pop one val off the stack
       gen_expression(node->indExp.colIndex);
       gen_expression(node->indExp.rowIndex);
-      pop_int_into(EAX);       // pop rows into eax
-      pop_int_into(EBX);       // pop cols into ebx
+      pop_int_into(EAX);  // pop rows into eax
+      pop_int_into(EBX);  // pop cols into ebx
       asm_imul(EAX, EBX); // eax = eax * ebx
       asm_imul(EAX, "4"); // now eax contains row * col * 4
       // var->offset points at type... 3 elements above is the first item in
