@@ -1,7 +1,7 @@
 #ifndef CLM_OPTIMIZER_
 #define CLM_OPTIMIZER_
 
-#include "util/array_list.h"
+#include "array_list.h"
 
 #include "clm_scope.h"
 

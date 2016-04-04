@@ -1,5 +1,6 @@
 list(APPEND CLM_SOURCES
-    clm.c
+    array_list.c
+    array_list.h
     clm_asm.c
     clm_asm.h
     clm_code_gen.c
@@ -26,16 +27,14 @@ list(APPEND CLM_SOURCES
     clm_type.h
     clm_type_check.c
     clm_type_check.h
+    clm_type_gen.c
+    clm_type_gen.h
     clm_type_of.c
     clm_type_of.h
-    clm_type_gen.h
-    clm_type_gen.c
-
-    $<TARGET_OBJECTS:clmUtil>
+    string_util.c
+    string_util.h
 )
 
-add_executable(clm ${CLM_SOURCES})
-target_include_directories(clm
-    PUBLIC ${CLM_SOURCE_DIR}/src/clm
-    PUBLIC ${CLM_SOURCE_DIR}/src #util files
-)
+add_library(clmObjectLibrary OBJECT ${CLM_SOURCES})
+
+add_executable(clm clm.c ${CLM_SOURCES})

@@ -1,6 +1,6 @@
 #include <stdlib.h>
 
-#include "util/array_list.h"
+#include "array_list.h"
 
 #include "clm_error.h"
 #include "clm_expression.h"

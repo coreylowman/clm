@@ -12,8 +12,8 @@
 #include <string.h>
 #include <time.h>
 
-#include "util/array_list.h"
-#include "util/string_util.h"
+#include "array_list.h"
+#include "string_util.h"
 
 #include "clm_code_gen.h"
 #include "clm_error.h"

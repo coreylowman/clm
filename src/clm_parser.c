@@ -1,4 +1,4 @@
-#include "util/string_util.h"
+#include "string_util.h"
 
 #include "clm_error.h"
 #include "clm_expression.h"

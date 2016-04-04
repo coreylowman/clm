@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "util/string_util.h"
+#include "string_util.h"
 
 #include "clm_error.h"
 #include "clm_lexer.h"

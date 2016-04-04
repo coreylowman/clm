@@ -3,7 +3,7 @@
 
 #include "clm_type.h"
 
-#include "util/array_list.h"
+#include "array_list.h"
 
 typedef enum ArithOp {
   ARITH_OP_ADD,

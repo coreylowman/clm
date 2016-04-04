@@ -1,9 +1,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "lexer/clm_lexer.h"
-#include "util/array_list.h"
-#include "util/string.h"
+#include "clm_lexer.h"
+#include "array_list.h"
+#include "string_util.h"
 
 #include "clm_test_lexer.h"
 #include "clm_test_utils.h"

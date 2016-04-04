@@ -1,7 +1,7 @@
 #ifndef CLM_LEXER_H_
 #define CLM_LEXER_H_
 
-#include "util/array_list.h"
+#include "array_list.h"
 #define token_list                                                             \
   token(ADD, "+") token(AND, "and") token(ASSIGN, "=") token(BACKSLASH, "\\")  \
       token(BY, "by") token(CALL, "call") token(COLON, ":") token(             \

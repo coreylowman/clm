@@ -1,6 +1,8 @@
+#include <stdio.h>
+
 #include "clm_test_lexer.h"
 
-char *fileName;
+char *file_name;
 int CLM_BUILD_TESTS = 1;
 
 int main(int argc, char *argv[]) {

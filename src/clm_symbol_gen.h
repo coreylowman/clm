@@ -1,7 +1,7 @@
 #ifndef CLM_SYMBOL_GEN_H_
 #define CLM_SYMBOL_GEN_H_
 
-#include "util/array_list.h"
+#include "array_list.h"
 
 #include "clm_scope.h"
 

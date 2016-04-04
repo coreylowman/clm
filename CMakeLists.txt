@@ -13,7 +13,5 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}/bin)
 
 set(CLM_LIB_DIR ${CMAKE_CURRENT_LIST_DIR}/lib/Debug)
 
-option(CLM_BUILD_TESTS "builds the test executable" OFF)
-
-add_subdirectory(src/util)
-add_subdirectory(src/clm)
+add_subdirectory(src)
+add_subdirectory(tests)
