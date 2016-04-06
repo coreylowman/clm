@@ -41,13 +41,18 @@ static int is_id_char(char c) { return is_letter(c) || is_dig(c) || c == '_'; }
 
 static char consume() { return data.programString[data.curInd++]; }
 
+static char next() { return data.programString[data.curInd + 1]; }
+
 static char curr() { return data.programString[data.curInd]; }
 
 static char prev() { return data.programString[data.curInd - 1]; }
 
-static void clm_rewind() { data.curInd--; }
+static void reverse() {
+  if (data.curInd > 0)
+    data.curInd--;
+}
 
-static int valid() { return data.curInd <= data.programLength; }
+static int valid() { return data.curInd < data.programLength; }
 
 static void lexer_token_free(void *data) {
   if (data == NULL)
@@ -83,7 +88,7 @@ ArrayList *clm_lexer_main(const char *file_contents) {
   }
 
   ClmLexerToken *end = malloc(sizeof(*end));
-  end->sym = LEX_END;
+  end->sym = KEYWORD_END;
   end->raw = string_copy("end");
   end->lineNo = 0;
   end->colNo = 0;
@@ -92,211 +97,251 @@ ArrayList *clm_lexer_main(const char *file_contents) {
   return data.tokens;
 }
 
-static ClmLexerToken *get_token() {
+// all numbers will start with a digit, and may optionally contain a period
+static ClmLexerToken *read_number() {
   char c;
+  int num_pds = 0;
+  int start = data.curInd;
+
+  c = curr();
+
+  if (!is_dig(c)) {
+    return NULL;
+  }
+
+  while (valid() && (is_dig(c = curr()) || is_pd(c))) {
+    num_pds += is_pd(c);
+    consume();
+  }
+
+  if (num_pds > 1) {
+    clm_error(data.lineNo, data.colNo,
+              "found multiple '.' in number declaration");
+    return NULL;
+  }
+
   ClmLexerToken *token = malloc(sizeof(*token));
   token->lineNo = data.lineNo;
   token->colNo = data.colNo;
+  token->raw = string_copy_n(data.programString + start, data.curInd - start);
 
-  while (is_whitespace(consume()) && valid()) {
-    c = prev();
+  if (num_pds > 0)
+    token->sym = LITERAL_FLOAT;
+  else
+    token->sym = LITERAL_INT;
+
+  return token;
+}
+
+// all words must start with [a-zA-Z]
+// a word can either be a keyword or an identifier
+static ClmLexerToken *read_word() {
+  char c;
+  int num_id_chars = 0;
+  int start = data.curInd;
+
+  c = curr();
+
+  if (!is_letter(c)) {
+    return NULL;
+  }
+
+  while (valid() && is_id_char(c = curr())) {
+    num_id_chars += (c == '_' || is_dig(c));
+    consume();
+  }
+
+  if (num_id_chars > 0) {
+    ClmLexerToken *token = malloc(sizeof(*token));
+    token->lineNo = data.lineNo;
+    token->colNo = data.colNo;
+    token->raw = string_copy_n(data.programString + start, data.curInd - start);
+    token->sym = LITERAL_ID;
+    return token;
+  }
+
+  ClmLexerSymbol sym;
+  char word_buffer[32];
+  strncpy(word_buffer, data.programString + start, data.curInd - start);
+  word_buffer[data.curInd - start] = '\0';
+
+  if (0) {
+    // include if branch just for parsing correctly
+    // all the keywords will map to else ifs
+  }
+#define literal(tok, str)
+#define token(tok, str)
+#define keyword(tok, str)                                                      \
+  else if (strcmp(word_buffer, str) == 0) {                                    \
+    sym = tok;                                                                 \
+  }
+#include "keywords.inc"
+#undef literal
+#undef token
+#undef keyword
+  else {
+    // the word in word_buffer didn't match any keywords... its an id
+    sym = LITERAL_ID;
+  }
+
+  ClmLexerToken *token = malloc(sizeof(*token));
+  token->lineNo = data.lineNo;
+  token->colNo = data.colNo;
+  token->raw = string_copy_n(data.programString + start, data.curInd - start);
+  token->sym = sym;
+  return token;
+}
+
+static ClmLexerToken *read_string_literal() {
+  char c;
+  int start = data.curInd;
+
+  c = curr();
+
+  if (c != '"') {
+    return NULL;
+  }
+
+  while (valid() && (c = curr()) != '"') {
+    // TODO allow strings inside of strings? using \" ?
+    if (c == '\n' || c == '\r') {
+      data.lineNo++;
+      data.colNo = 0;
+    }
+    consume();
+  }
+
+  // eat the last quote
+  consume();
+
+  ClmLexerToken *token = malloc(sizeof(*token));
+  token->lineNo = data.lineNo;
+  token->colNo = data.colNo;
+  token->raw = string_copy_n(data.programString + start, data.curInd - start);
+  token->sym = LITERAL_STRING;
+  return token;
+}
+
+static ClmLexerToken *get_token() {
+  char c;
+  ClmLexerSymbol sym;
+
+  while (valid() && is_whitespace(c = curr())) {
     if (c == '\n' || c == '\r') {
       data.lineNo++;
       data.colNo = 0;
     }
     data.colNo++;
+    consume();
   }
 
-  clm_rewind();
+  // capture white space at end of file
+  if (!valid()) {
+    return NULL;
+  }
 
   int start = data.curInd;
-
   c = curr();
 
-  if (is_dig(c) || is_pd(c)) {
-    int is_float = 0;
-
-    while ((is_dig(consume()) || is_pd(prev())) && valid()) {
-      if (is_float && is_pd(prev())) {
-        clm_error(data.lineNo, data.colNo,
-                  "found multiple '.' in number declaration");
-        return NULL;
-      }
-      is_float |= is_pd(prev());
-    }
-    clm_rewind();
-
-    if (is_pd(prev()) && data.curInd == start + 1) {
-      clm_error(data.lineNo, data.colNo,
-                "expected '.' to be used in number declaration");
-      return NULL;
-    }
-
-    if (is_float)
-      token->sym = LEX_FLOAT;
-    else
-      token->sym = LEX_INT;
-  } else if (is_quote(c)) {
-    consume(); // eat the first quote
-    while (!is_quote(consume()) && valid())
-      ; // eat everything thats not a quote & the last quote
-
-    token->sym = LEX_STRING;
+  if (is_dig(c)) {
+    return read_number();
+  } else if (is_letter(c)) {
+    return read_word();
+  } else if (c == '"') {
+    return read_string_literal();
   } else {
-    const char *word = data.programString + start;
-
-    // TODO use token_list?
-    if (tok_str_eq(word, "for")) {
-      token->sym = LEX_FOR;
-      data.curInd += strlen("for");
-    } else if (tok_str_eq(word, "by")) {
-      token->sym = LEX_BY;
-      data.curInd += strlen("by");
-    } else if (tok_str_eq(word, "do")) {
-      token->sym = LEX_DO;
-      data.curInd += strlen("do");
-    } else if (tok_str_eq(word, "printl")) {
-      token->sym = LEX_PRINTL;
-      data.curInd += strlen("printl");
-    } else if (tok_str_eq(word, "print")) {
-      token->sym = LEX_PRINT;
-      data.curInd += strlen("print");
-    } else if (tok_str_eq(word, "if")) {
-      token->sym = LEX_IF;
-      data.curInd += strlen("if");
-    } else if (tok_str_eq(word, "end")) {
-      token->sym = LEX_END;
-      data.curInd += strlen("end");
-    } else if (tok_str_eq(word, "then")) {
-      token->sym = LEX_THEN;
-      data.curInd += strlen("then");
-    } else if (tok_str_eq(word, "else")) {
-      token->sym = LEX_ELSE;
-      data.curInd += strlen("else");
-    } else if (tok_str_eq(word, "int")) {
-      token->sym = LEX_INT_WORD;
-      data.curInd += strlen("int");
-    } else if (tok_str_eq(word, "float")) {
-      token->sym = LEX_FLOAT_WORD;
-      data.curInd += strlen("float");
-    } else if (tok_str_eq(word, "string")) {
-      token->sym = LEX_STRING_WORD;
-      data.curInd += strlen("string");
-    } else if (tok_str_eq(word, "and")) {
-      token->sym = LEX_AND;
-      data.curInd += strlen("and");
-    } else if (tok_str_eq(word, "or")) {
-      token->sym = LEX_OR;
-      data.curInd += strlen("or");
-    } else if (tok_str_eq(word, "return")) {
-      token->sym = LEX_RETURN;
-      data.curInd += strlen("return");
-    } else if (tok_str_eq(word, "call")) {
-      token->sym = LEX_CALL;
-      data.curInd += strlen("call");
-    } else if (tok_str_eq(word, "to")) {
-      token->sym = LEX_TO;
-      data.curInd += strlen("to");
-    } else if (tok_str_eq(word, "~")) {
-      token->sym = LEX_TILDA;
-      data.curInd += strlen("~");
-    } else if (tok_str_eq(word, ".")) {
-      token->sym = LEX_PERIOD;
-      data.curInd += strlen(".");
-    } else if (tok_str_eq(word, "\\")) {
-      token->sym = LEX_BACKSLASH;
-      data.curInd += strlen("\\");
-    } else if (tok_str_eq(word, "[")) {
-      token->sym = LEX_LBRACK;
-      data.curInd += strlen("[");
-    } else if (tok_str_eq(word, "]")) {
-      token->sym = LEX_RBRACK;
-      data.curInd += strlen("]");
-    } else if (tok_str_eq(word, "{")) {
-      token->sym = LEX_LCURL;
-      data.curInd += strlen("{");
-    } else if (tok_str_eq(word, "}")) {
-      token->sym = LEX_RCURL;
-      data.curInd += strlen(")");
-    } else if (tok_str_eq(word, "(")) {
-      token->sym = LEX_LPAREN;
-      data.curInd += strlen("(");
-    } else if (tok_str_eq(word, ")")) {
-      token->sym = LEX_RPAREN;
-      data.curInd += strlen(")");
-    } else if (tok_str_eq(word, ",")) {
-      token->sym = LEX_COMMA;
-      data.curInd += strlen(",");
-    } else if (tok_str_eq(word, ":")) {
-      token->sym = LEX_COLON;
-      data.curInd += strlen(":");
-    } else if (tok_str_eq(word, ";")) {
-      token->sym = LEX_SEMI;
-      data.curInd += strlen(";");
-    } else if (tok_str_eq(word, "*")) {
-      token->sym = LEX_MULT;
-      data.curInd += strlen("*");
-    } else if (tok_str_eq(word, "-")) {
-      token->sym = LEX_SUB;
-      data.curInd += strlen("-");
-    } else if (tok_str_eq(word, "+")) {
-      token->sym = LEX_ADD;
-      data.curInd += strlen("+");
-    } else if (tok_str_eq(word, ">=")) {
-      token->sym = LEX_GTE;
-      data.curInd += strlen(">=");
-    } else if (tok_str_eq(word, ">")) {
-      token->sym = LEX_GT;
-      data.curInd += strlen(">");
-    } else if (tok_str_eq(word, "<=")) {
-      token->sym = LEX_LTE;
-      data.curInd += strlen("<=");
-    } else if (tok_str_eq(word, "<")) {
-      token->sym = LEX_LT;
-      data.curInd += strlen("<");
-    } else if (tok_str_eq(word, "==")) {
-      token->sym = LEX_EQ;
-      data.curInd += strlen("==");
-    } else if (tok_str_eq(word, "=")) {
-      token->sym = LEX_ASSIGN;
-      data.curInd += strlen("=");
-    } else if (tok_str_eq(word, "!=")) {
-      token->sym = LEX_NEQ;
-      data.curInd += strlen("!=");
-    } else if (tok_str_eq(word, "!")) {
-      token->sym = LEX_NOT;
-      data.curInd += strlen("!");
-    } else if (tok_str_eq(word, "//")) {
-      while (consume() != '\n' && prev() != '\r')
-        ;
+    // read operator
+    switch (c) {
+    case '\\':
+      sym = TOKEN_BSLASH;
+      break;
+    case ':':
+      sym = TOKEN_COLON;
+      break;
+    case ',':
+      sym = TOKEN_COMMA;
+      break;
+    case '=':
+      if (next() == '=') {
+        sym = TOKEN_EQEQ;
+        consume();
+      } else
+        sym = TOKEN_EQ;
+      break;
+    case '/':
+      sym = TOKEN_FSLASH;
+      break;
+    case '>':
+      if (next() == '=') {
+        sym = TOKEN_GTE;
+        consume();
+      } else
+        sym = TOKEN_GT;
+      break;
+    case '[':
+      sym = TOKEN_LBRACK;
+      break;
+    case '{':
+      sym = TOKEN_LCURL;
+      break;
+    case '(':
+      sym = TOKEN_LPAREN;
+      break;
+    case '<':
+      if (next() == '=') {
+        sym = TOKEN_LTE;
+        consume();
+      } else
+        sym = TOKEN_LT;
+      break;
+    case '-':
+      sym = TOKEN_MINUS;
+      break;
+    case '!':
+      if (next() == '=') {
+        sym = TOKEN_BANGEQ;
+        consume();
+      } else
+        sym = TOKEN_BANG;
+      break;
+    case '.':
+      sym = TOKEN_PERIOD;
+      break;
+    case '+':
+      sym = TOKEN_PLUS;
+      break;
+    case ']':
+      sym = TOKEN_RBRACK;
+      break;
+    case '}':
+      sym = TOKEN_RCURL;
+      break;
+    case ')':
+      sym = TOKEN_RPAREN;
+      break;
+    case ';':
+      sym = TOKEN_SEMI;
+      break;
+    case '*':
+      sym = TOKEN_STAR;
+      break;
+    case '~':
+      sym = TOKEN_TILDA;
+      break;
+    default:
+      clm_error(data.lineNo, data.colNo, "unknown symbol '%c'", c);
       return NULL;
-    } else if (tok_str_eq(word, "/")) {
-      token->sym = LEX_DIV;
-      data.curInd += strlen("/");
-    } else if (curr() == '\0') {
-      data.curInd += 1;
-      return NULL;
-    } else {
-      int can_be_id = 1;
-      // id must start with underscore or letter
-      if (!(curr() == '_' || is_letter(curr())))
-        can_be_id = 0;
-      else {
-        while (is_id_char(consume()) && valid())
-          ;
-        clm_rewind();
-      }
-
-      if (!can_be_id) {
-        // TODO print out the right thing?
-        clm_error(data.lineNo, data.colNo, "unknown symbol %s", word);
-        return NULL;
-      }
-
-      token->sym = LEX_ID;
     }
+
+    consume();
   }
+
+  ClmLexerToken *token = malloc(sizeof(*token));
+  token->lineNo = data.lineNo;
+  token->colNo = data.colNo;
+  token->sym = sym;
   token->raw = string_copy_n(data.programString + start, data.curInd - start);
+
   return token;
 }
 

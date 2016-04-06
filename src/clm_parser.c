@@ -74,7 +74,7 @@ static ArrayList *consume_statements(int ifElse) {
   // if we are parsing an if else and an else is next, we don't want to handle
   // that here... it is parsed in the consume_statement function
   // when we parse the actual if else
-  while (!accept(LEX_END) && !(ifElse && curr()->sym == LEX_ELSE)) {
+  while (!accept(KEYWORD_END) && !(ifElse && curr()->sym == KEYWORD_ELSE)) {
     array_list_push(statements, consume_statement());
   }
 
@@ -84,9 +84,9 @@ static ArrayList *consume_statements(int ifElse) {
 static int consume_int() {
   int val = 0;
   int neg = 0;
-  if (accept(LEX_SUB))
+  if (accept(TOKEN_MINUS))
     neg = 1;
-  expect(LEX_INT);
+  expect(LITERAL_INT);
 
   val = atoi(data.prevTokenRaw);
   return neg ? -val : val;
@@ -95,27 +95,27 @@ static int consume_int() {
 static float consume_float() {
   float val = 0;
   int neg = 0;
-  if (accept(LEX_SUB)) {
+  if (accept(TOKEN_MINUS)) {
     neg = 1;
   }
-  expect(LEX_FLOAT);
+  expect(LITERAL_FLOAT);
   val = atof(data.prevTokenRaw);
   return neg ? -val : val;
 }
 
 static int consume_param_size() {
-  if (accept(LEX_INT)) {
+  if (accept(LITERAL_INT)) {
     return atoi(data.prevTokenRaw);
   }
-  expect(LEX_ID);
+  expect(LITERAL_ID);
   return 0;
 }
 
 static int consume_return_size() {
-  if (accept(LEX_INT)) {
+  if (accept(LITERAL_INT)) {
     return atoi(data.prevTokenRaw);
   }
-  expect(LEX_ID);
+  expect(LITERAL_ID);
   return 0;
 }
 
@@ -123,29 +123,29 @@ static int consume_return_size() {
 // id:type
 static ClmExpNode *consume_parameter() {
   ClmExpNode *node = NULL;
-  if (accept(LEX_ID)) {
+  if (accept(LITERAL_ID)) {
     node = clm_exp_new_param(data.prevTokenRaw, CLM_TYPE_INT, 1, 1, NULL, NULL);
     node->lineNo = prev()->lineNo;
     node->colNo = prev()->colNo;
-    expect(LEX_COLON);
-    if (accept(LEX_LCURL)) {
+    expect(TOKEN_COLON);
+    if (accept(TOKEN_LCURL)) {
       node->paramExp.rows = consume_param_size();
       if (!node->paramExp.rows) {
         node->paramExp.rowVar = string_copy(data.prevTokenRaw);
       }
-      expect(LEX_COLON);
+      expect(TOKEN_COLON);
       node->paramExp.cols = consume_param_size();
       if (!node->paramExp.cols) {
         node->paramExp.colVar = string_copy(data.prevTokenRaw);
       }
-      expect(LEX_RCURL);
+      expect(TOKEN_RCURL);
       node->paramExp.type = CLM_TYPE_MATRIX;
     } else {
-      if (accept(LEX_INT_WORD)) {
+      if (accept(KEYWORD_INT)) {
         node->paramExp.type = CLM_TYPE_INT;
-      } else if (accept(LEX_FLOAT_WORD)) {
+      } else if (accept(KEYWORD_FLOAT)) {
         node->paramExp.type = CLM_TYPE_FLOAT;
-      } else if (accept(LEX_STRING_WORD)) {
+      } else if (accept(KEYWORD_STRING)) {
         node->paramExp.type = CLM_TYPE_STRING;
       }
     }
@@ -157,18 +157,18 @@ static ClmExpNode *consume_lhs() {
   int lineNo = curr()->lineNo, colNo = curr()->colNo;
 
   ClmExpNode *node = NULL;
-  expect(LEX_ID);
+  expect(LITERAL_ID);
   char *name = data.prevTokenRaw;
 
   ClmExpNode *rowIndex = NULL, *colIndex = NULL;
-  if (accept(LEX_LBRACK)) {
+  if (accept(TOKEN_LBRACK)) {
     // accepts A[x,y] A[,y] A[x,] A[,]
-    if (next()->sym != LEX_COMMA)
+    if (next()->sym != TOKEN_COMMA)
       rowIndex = consume_expression();
-    expect(LEX_COMMA);
-    if (next()->sym != LEX_RBRACK)
+    expect(TOKEN_COMMA);
+    if (next()->sym != TOKEN_RBRACK)
       colIndex = consume_expression();
-    expect(LEX_RBRACK);
+    expect(TOKEN_RBRACK);
   }
 
   node = clm_exp_new_index(name, rowIndex, colIndex);
@@ -181,57 +181,57 @@ static ClmExpNode *consume_lhs() {
 static ClmStmtNode *consume_statement() {
   int lineNo = curr()->lineNo, colNo = curr()->colNo;
 
-  if (curr()->sym == LEX_ID) {
+  if (curr()->sym == LITERAL_ID) {
     ClmExpNode *lhs = consume_lhs();
-    expect(LEX_ASSIGN);
+    expect(TOKEN_EQ);
     ClmExpNode *rhs = consume_expression();
 
     ClmStmtNode *stmt = clm_stmt_new_assign(lhs, rhs);
     stmt->lineNo = lineNo;
     stmt->colNo = colNo;
     return stmt;
-  } else if (accept(LEX_CALL)) {
+  } else if (accept(KEYWORD_CALL)) {
     ClmStmtNode *stmt = clm_stmt_new_call(consume_expression());
     stmt->lineNo = lineNo;
     stmt->colNo = colNo;
     return stmt;
-  } else if (accept(LEX_PRINT)) {
+  } else if (accept(KEYWORD_PRINT)) {
     ClmStmtNode *stmt = clm_stmt_new_print(consume_expression(), 0);
     stmt->lineNo = lineNo;
     stmt->colNo = colNo;
     return stmt;
-  } else if (accept(LEX_PRINTL)) {
+  } else if (accept(KEYWORD_PRINTL)) {
     ClmStmtNode *stmt = clm_stmt_new_print(consume_expression(), 1);
     stmt->lineNo = lineNo;
     stmt->colNo = colNo;
     return stmt;
-  } else if (accept(LEX_FOR)) {
-    expect(LEX_ID);
+  } else if (accept(KEYWORD_FOR)) {
+    expect(LITERAL_ID);
     char *name = data.prevTokenRaw;
-    expect(LEX_ASSIGN);
+    expect(TOKEN_EQ);
     int startInclusive = 0;
-    if (accept(LEX_LBRACK))
+    if (accept(TOKEN_LBRACK))
       startInclusive = 1;
     else
-      expect(LEX_LPAREN);
+      expect(TOKEN_LPAREN);
 
     ClmExpNode *start = consume_expression();
-    expect(LEX_COMMA);
+    expect(TOKEN_COMMA);
     ClmExpNode *end = consume_expression();
     int endInclusive = 0;
-    if (accept(LEX_RBRACK))
+    if (accept(TOKEN_RBRACK))
       endInclusive = 1;
     else
-      expect(LEX_RPAREN);
+      expect(TOKEN_RPAREN);
 
     ClmExpNode *delta;
-    if (accept(LEX_BY)) {
+    if (accept(KEYWORD_BY)) {
       delta = consume_expression();
     } else {
       delta = clm_exp_new_int(1);
     }
 
-    expect(LEX_DO);
+    expect(KEYWORD_DO);
     ArrayList *body = consume_statements(0);
 
     ClmStmtNode *stmt = clm_stmt_new_loop(name, start, end, delta, body,
@@ -240,13 +240,13 @@ static ClmStmtNode *consume_statement() {
     stmt->colNo = colNo;
 
     return stmt;
-  } else if (accept(LEX_IF)) {
+  } else if (accept(KEYWORD_IF)) {
     ClmExpNode *condition = consume_expression();
-    expect(LEX_THEN);
+    expect(KEYWORD_THEN);
     ArrayList *trueBody = consume_statements(1);
 
     ArrayList *falseBody = NULL;
-    if (accept(LEX_ELSE)) {
+    if (accept(KEYWORD_ELSE)) {
       falseBody = consume_statements(0);
     }
 
@@ -254,13 +254,13 @@ static ClmStmtNode *consume_statement() {
     stmt->lineNo = lineNo;
     stmt->colNo = colNo;
     return stmt;
-  } else if (accept(LEX_RETURN)) {
+  } else if (accept(KEYWORD_RETURN)) {
     ClmStmtNode *stmt = clm_stmt_new_return(consume_expression());
     stmt->lineNo = lineNo;
     stmt->colNo = colNo;
     return stmt;
-  } else if (accept(LEX_BACKSLASH)) {
-    expect(LEX_ID);
+  } else if (accept(TOKEN_BSLASH)) {
+    expect(LITERAL_ID);
     char *name = data.prevTokenRaw;
 
     ArrayList *params = array_list_new(clm_exp_free);
@@ -268,10 +268,10 @@ static ClmStmtNode *consume_statement() {
     while (param) {
       array_list_push(params, param);
 
-      if (curr()->sym == LEX_SUB || curr()->sym == LEX_ASSIGN)
+      if (curr()->sym == TOKEN_MINUS || curr()->sym == TOKEN_EQ)
         break;
       else
-        expect(LEX_COMMA);
+        expect(TOKEN_COMMA);
 
       param = consume_parameter();
     }
@@ -279,30 +279,30 @@ static ClmStmtNode *consume_statement() {
     int r = -2, c = -2;
     char *rv = NULL, *cv = NULL;
     ClmType returnType = CLM_TYPE_NONE;
-    if (accept(LEX_SUB)) {
-      expect(LEX_GT);
-      if (accept(LEX_INT_WORD)) { //\x ... -> int
+    if (accept(TOKEN_MINUS)) {
+      expect(TOKEN_GT);
+      if (accept(KEYWORD_INT)) { //\x ... -> int
         returnType = CLM_TYPE_INT;
-      } else if (accept(LEX_FLOAT_WORD)) { //\x ... -> float
+      } else if (accept(KEYWORD_FLOAT)) { //\x ... -> float
         returnType = CLM_TYPE_FLOAT;
-      } else if (accept(LEX_STRING_WORD)) { //\x ... -> string
+      } else if (accept(KEYWORD_STRING)) { //\x ... -> string
         returnType = CLM_TYPE_STRING;
       } else { //\x ... -> [m:n]
-        expect(LEX_LBRACK);
+        expect(TOKEN_LBRACK);
         r = consume_return_size();
         if (!r)
           rv = data.prevTokenRaw;
-        expect(LEX_COLON);
+        expect(TOKEN_COLON);
         c = consume_return_size();
         if (!c)
           cv = data.prevTokenRaw;
-        expect(LEX_RBRACK);
+        expect(TOKEN_RBRACK);
 
         returnType = CLM_TYPE_MATRIX;
       }
     }
 
-    expect(LEX_ASSIGN);
+    expect(TOKEN_EQ);
     ArrayList *body = consume_statements(0);
 
     ClmStmtNode *stmt =
@@ -322,8 +322,8 @@ static ClmExpNode *consume_expression() {
   ClmExpNode *node1, *node2;
   BoolOp op;
   node1 = consume_expression_2();
-  while (curr()->sym == LEX_AND || curr()->sym == LEX_OR) {
-    op = accept(LEX_AND) ? BOOL_OP_AND : BOOL_OP_OR, accept(LEX_OR);
+  while (curr()->sym == KEYWORD_AND || curr()->sym == KEYWORD_OR) {
+    op = accept(KEYWORD_AND) ? BOOL_OP_AND : BOOL_OP_OR, accept(KEYWORD_OR);
     node2 = consume_expression_2();
     node1 = clm_exp_new_bool(op, node1, node2);
   }
@@ -335,8 +335,8 @@ static ClmExpNode *consume_expression_2() {
   ClmExpNode *node1, *node2;
   BoolOp op;
   node1 = consume_expression_3();
-  while (curr()->sym == LEX_EQ || curr()->sym == LEX_NEQ) {
-    op = accept(LEX_EQ) ? BOOL_OP_EQ : BOOL_OP_NEQ, accept(LEX_NEQ);
+  while (curr()->sym == TOKEN_EQ || curr()->sym == TOKEN_BANGEQ) {
+    op = accept(TOKEN_EQ) ? BOOL_OP_EQ : BOOL_OP_NEQ, accept(TOKEN_BANGEQ);
     node2 = consume_expression_2();
     node1 = clm_exp_new_bool(op, node1, node2);
   }
@@ -349,13 +349,13 @@ static ClmExpNode *consume_expression_3() {
   ClmExpNode *node2;
   BoolOp op;
   node1 = consume_expression_4();
-  while (curr()->sym == LEX_GT || curr()->sym == LEX_LT ||
-         curr()->sym == LEX_GTE || curr()->sym == LEX_LTE) {
-    op = accept(LEX_GT) ? BOOL_OP_GT : accept(LEX_LT)
-                                           ? BOOL_OP_LT
-                                           : accept(LEX_GTE) ? BOOL_OP_GTE
-                                                             : BOOL_OP_LTE,
-    accept(LEX_LTE);
+  while (curr()->sym == TOKEN_GT || curr()->sym == TOKEN_LT ||
+         curr()->sym == TOKEN_GTE || curr()->sym == TOKEN_LTE) {
+    op = accept(TOKEN_GT) ? BOOL_OP_GT : accept(TOKEN_LT)
+                                             ? BOOL_OP_LT
+                                             : accept(TOKEN_GTE) ? BOOL_OP_GTE
+                                                                 : BOOL_OP_LTE,
+    accept(TOKEN_LTE);
     node2 = consume_expression_4();
     node1 = clm_exp_new_bool(op, node1, node2);
   }
@@ -368,8 +368,8 @@ static ClmExpNode *consume_expression_4() {
   ClmExpNode *node2;
   ArithOp op;
   node1 = consume_expression_5();
-  while (curr()->sym == LEX_ADD || curr()->sym == LEX_SUB) {
-    op = accept(LEX_ADD) ? ARITH_OP_ADD : ARITH_OP_SUB, accept(LEX_SUB);
+  while (curr()->sym == TOKEN_PLUS || curr()->sym == TOKEN_MINUS) {
+    op = accept(TOKEN_PLUS) ? ARITH_OP_ADD : ARITH_OP_SUB, accept(TOKEN_MINUS);
     node2 = consume_expression_5();
     node1 = clm_exp_new_arith(op, node1, node2);
   }
@@ -382,8 +382,9 @@ static ClmExpNode *consume_expression_5() {
   ClmExpNode *node2;
   ArithOp op;
   node1 = consume_expression_6();
-  while (curr()->sym == LEX_MULT || curr()->sym == LEX_DIV) {
-    op = accept(LEX_MULT) ? ARITH_OP_MULT : ARITH_OP_DIV, accept(LEX_DIV);
+  while (curr()->sym == TOKEN_STAR || curr()->sym == TOKEN_FSLASH) {
+    op = accept(TOKEN_STAR) ? ARITH_OP_MULT : ARITH_OP_DIV,
+    accept(TOKEN_FSLASH);
     node2 = consume_expression_6();
     node1 = clm_exp_new_arith(op, node1, node2);
   }
@@ -392,57 +393,57 @@ static ClmExpNode *consume_expression_5() {
 
 static ClmExpNode *consume_expression_6() {
   int lineNo = curr()->lineNo, colNo = curr()->colNo;
-  if (accept(LEX_LPAREN)) {
+  if (accept(TOKEN_LPAREN)) {
     ClmExpNode *exp = consume_expression();
-    expect(LEX_RPAREN);
+    expect(TOKEN_RPAREN);
 
     exp->lineNo = lineNo;
     exp->colNo = colNo;
     return exp;
-  } else if (accept(LEX_INT)) {
+  } else if (accept(LITERAL_INT)) {
     ClmExpNode *exp = clm_exp_new_int(atoi(data.prevTokenRaw));
     exp->lineNo = lineNo;
     exp->colNo = colNo;
     return exp;
-  } else if (accept(LEX_FLOAT)) {
+  } else if (accept(LITERAL_FLOAT)) {
     ClmExpNode *exp = clm_exp_new_float(atof(data.prevTokenRaw));
     exp->lineNo = lineNo;
     exp->colNo = colNo;
     return exp;
-  } else if (accept(LEX_STRING)) {
+  } else if (accept(LITERAL_STRING)) {
     ClmExpNode *exp = clm_exp_new_string(data.prevTokenRaw);
     exp->lineNo = lineNo;
     exp->colNo = colNo;
     return exp;
-  } else if (accept(LEX_SUB)) {
+  } else if (accept(TOKEN_MINUS)) {
     ClmExpNode *exp = clm_exp_new_unary(UNARY_OP_MINUS, consume_expression_6());
     return exp;
-  } else if (accept(LEX_NOT)) {
+  } else if (accept(TOKEN_BANG)) {
     ClmExpNode *exp = clm_exp_new_unary(UNARY_OP_NOT, consume_expression_6());
     exp->lineNo = lineNo;
     exp->colNo = colNo;
     return exp;
-  } else if (accept(LEX_TILDA)) {
+  } else if (accept(TOKEN_TILDA)) {
     ClmExpNode *exp =
         clm_exp_new_unary(UNARY_OP_TRANSPOSE, consume_expression_6());
     exp->lineNo = lineNo;
     exp->colNo = colNo;
     return exp;
-  } else if (curr()->sym == LEX_ID) {
-    if (next()->sym == LEX_LPAREN) {
-      expect(LEX_ID);
+  } else if (curr()->sym == LITERAL_ID) {
+    if (next()->sym == TOKEN_LPAREN) {
+      expect(LITERAL_ID);
       char *name = data.prevTokenRaw;
-      expect(LEX_LPAREN);
+      expect(TOKEN_LPAREN);
 
       ArrayList *params = array_list_new(clm_exp_free);
-      while (curr()->sym != LEX_RPAREN) {
+      while (curr()->sym != TOKEN_RPAREN) {
         array_list_push(params, consume_expression());
-        if (accept(LEX_COMMA))
+        if (accept(TOKEN_COMMA))
           continue;
         else
           break;
       }
-      expect(LEX_RPAREN);
+      expect(TOKEN_RPAREN);
 
       ClmExpNode *exp = clm_exp_new_call(name, params);
       exp->lineNo = lineNo;
@@ -454,36 +455,36 @@ static ClmExpNode *consume_expression_6() {
       exp->colNo = colNo;
       return exp;
     }
-  } else if (accept(LEX_LBRACK)) {
+  } else if (accept(TOKEN_LBRACK)) {
     int rows = 0, cols = 0;
     char *rowVar = NULL, *colVar = NULL;
-    if (accept(LEX_ID)) {
+    if (accept(LITERAL_ID)) {
       rowVar = data.prevTokenRaw;
     } else {
-      expect(LEX_INT);
+      expect(LITERAL_INT);
       rows = atoi(data.prevTokenRaw);
     }
-    expect(LEX_COLON);
-    if (accept(LEX_ID)) {
+    expect(TOKEN_COLON);
+    if (accept(LITERAL_ID)) {
       colVar = data.prevTokenRaw;
     } else {
-      expect(LEX_INT);
+      expect(LITERAL_INT);
       cols = atoi(data.prevTokenRaw);
     }
-    expect(LEX_RBRACK);
+    expect(TOKEN_RBRACK);
 
     ClmExpNode *exp = clm_exp_new_empty_mat_dec(rows, cols, rowVar, colVar);
     exp->lineNo = lineNo;
     exp->colNo = colNo;
     return exp;
-  } else if (accept(LEX_RCURL)) {
+  } else if (accept(TOKEN_RCURL)) {
     int cols, num = 0;
     float *list;
     int start = prev()->lineNo;
 
     list = malloc(sizeof(*list));
-    if (curr()->sym == LEX_INT ||
-        (curr()->sym == LEX_SUB && next()->sym == LEX_INT))
+    if (curr()->sym == LITERAL_INT ||
+        (curr()->sym == TOKEN_MINUS && next()->sym == LITERAL_INT))
       list[num++] = consume_int();
     else {
       list[num++] = consume_float();
@@ -491,11 +492,11 @@ static ClmExpNode *consume_expression_6() {
 
     // curr is int or float
     // or curr is negative and next is int or float
-    while (curr()->sym == LEX_INT || curr()->sym == LEX_FLOAT ||
-           (curr()->sym == LEX_SUB &&
-            (next()->sym == LEX_INT || next()->sym == LEX_FLOAT))) {
+    while (curr()->sym == LITERAL_INT || curr()->sym == LITERAL_FLOAT ||
+           (curr()->sym == TOKEN_MINUS &&
+            (next()->sym == LITERAL_INT || next()->sym == LITERAL_FLOAT))) {
       list = realloc(list, (num + 1) * sizeof(*list));
-      if (curr()->sym == LEX_INT)
+      if (curr()->sym == LITERAL_INT)
         list[num++] = consume_int();
       else {
         list[num++] = consume_float();
@@ -503,19 +504,19 @@ static ClmExpNode *consume_expression_6() {
     }
 
     cols = num;
-    while (accept(LEX_COMMA)) {
-      while (curr()->sym == LEX_INT || curr()->sym == LEX_FLOAT ||
-             (curr()->sym == LEX_SUB &&
-              (next()->sym == LEX_INT || next()->sym == LEX_FLOAT))) {
+    while (accept(TOKEN_COMMA)) {
+      while (curr()->sym == LITERAL_INT || curr()->sym == LITERAL_FLOAT ||
+             (curr()->sym == TOKEN_MINUS &&
+              (next()->sym == LITERAL_INT || next()->sym == LITERAL_FLOAT))) {
         list = realloc(list, (num + 1) * sizeof(*list));
-        if (curr()->sym == LEX_INT)
+        if (curr()->sym == LITERAL_INT)
           list[num++] = consume_int();
         else {
           list[num++] = consume_float();
         }
       }
     }
-    expect(LEX_RCURL);
+    expect(TOKEN_RCURL);
 
     ClmExpNode *exp = clm_exp_new_mat_dec(list, num, cols);
     exp->lineNo = lineNo;

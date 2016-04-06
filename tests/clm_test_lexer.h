@@ -5,5 +5,6 @@ int clm_test_lexer();
 int clm_test_lexer_ids();
 int clm_test_lexer_numbers();
 int clm_test_lexer_keywords();
+// TODO test string literals
 
 #endif
