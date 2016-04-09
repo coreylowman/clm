@@ -65,7 +65,7 @@ static int arith_op_is_valid_for(ArithOp op, ClmType left, ClmType right) {
 // matrix string
 // matrix int
 // matrix float
-// matrix matrix         == != > >= < <= && ||
+// matrix matrix         == != && ||
 static int bool_op_is_valid_for(BoolOp op, ClmType left, ClmType right) {
   if (left == CLM_TYPE_STRING && right == CLM_TYPE_STRING) {
     if (op == BOOL_OP_EQ || op == BOOL_OP_NEQ) {
@@ -77,6 +77,24 @@ static int bool_op_is_valid_for(BoolOp op, ClmType left, ClmType right) {
     return 1;
   }
   return 0;
+}
+
+// valid unary ops
+// string
+// int            ! -
+// float          -
+// mat            ~ -
+static int unary_op_is_valid_for(UnaryOp op, ClmType type) {
+  switch (type) {
+  case CLM_TYPE_INT:
+    return op == UNARY_OP_MINUS || op == UNARY_OP_NOT;
+  case CLM_TYPE_FLOAT:
+    return op == UNARY_OP_MINUS;
+  case CLM_TYPE_MATRIX:
+    return op == UNARY_OP_TRANSPOSE || op == UNARY_OP_MINUS;
+  default:
+    return 0;
+  }
 }
 
 static void type_check_expression(ClmExpNode *node, ClmScope *scope) {
@@ -192,13 +210,12 @@ static void type_check_expression(ClmExpNode *node, ClmScope *scope) {
     break;
   case EXP_TYPE_UNARY:
     type_check_expression(node->unaryExp.node, scope);
-    if (node->unaryExp.operand == UNARY_OP_NOT &&
-        clm_type_of_exp(node->unaryExp.node, scope) != CLM_TYPE_INT) {
-      // error... boolean should be an int
+    ClmType type = clm_type_of_exp(node->unaryExp.node, scope);
+    if (!unary_op_is_valid_for(node->unaryExp.operand, type)) {
+      // error... unary operand not valid for type
       clm_error(
-          node->lineNo, node->colNo,
-          "Unary expression NOT expected an BOOL but got type %s",
-          clm_type_to_string(clm_type_of_exp(node->unaryExp.node, scope)));
+          node->lineNo, node->colNo, "Unary operand %s not valid for type %s",
+          unary_op_to_string(node->unaryExp.operand), clm_type_to_string(type));
     }
     break;
   }

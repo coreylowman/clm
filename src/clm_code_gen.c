@@ -72,229 +72,47 @@ static void gen_arith(ClmExpNode *node) {
   }
 }
 
-static void gen_bool_eq_int_int(int eq) {
-  char end_label[256];
-  char false_label[256];
-  next_label(false_label);
-  next_label(end_label);
-
-  pop_int_into(EAX);
-  pop_int_into(EBX);
-  asm_cmp(EAX, EBX);
-  if (eq) {
-    asm_jmp_neq(false_label);
-  } else {
-    asm_jmp_eq(false_label);
-  }
-  asm_push_i(1);
-  asm_jmp(end_label);
-  asm_label(false_label);
-  asm_push_i(0);
-  asm_label(end_label);
-}
-
-typedef void (*asm_func1)(const char *);
-
-/*
-        lrows = [esp + 8]
-        rrows = [edx + 8]
-        cmp lrows, rrows
-        jneq false_label
-
-        lele = lrows * [esp + 12]
-        rele = rrows * [edx + 12]
-        cmp lele, rele
-        jneq false_label
-
-        for(ecx = lele - 1, ecx >= 0, ecx--)
-                eax = 16 + ecx * 4
-                cmp [esp + eax], [edx + eax]
-                jneq false_label
-
-        pop matrices
-        push 1
-        jmp end_label
-false_label
-        pop matrices
-        push 0
-end_label
-*/
-static void gen_bool_eq_mat_mat(int eq) {
-  asm_func1 jmp_func;
-  if (eq) {
-    jmp_func = asm_jmp_neq;
-  } else {
-    jmp_func = asm_jmp_eq;
-  }
-  char cmp_label[256], true_label[256], false_label[256], end_label[256];
-  next_label(cmp_label);
-  next_label(true_label);
-  next_label(false_label);
-  next_label(end_label);
-
-  // compare rows
-  asm_mov(EAX, "[esp + 8]");
-  asm_mov(EBX, "[edx + 8]");
-  asm_cmp(EAX, EBX);
-  jmp_func(false_label);
-
-  // compare num elements
-  asm_imul(EAX, "[esp + 12]");
-  asm_imul(EBX, "[edx + 12]");
-  asm_cmp(EAX, EBX);
-  jmp_func(false_label);
-
-  // ecx = num elements - 1
-  asm_mov(ECX, EAX);
-  asm_dec(ECX);
-
-  asm_label(cmp_label);
-  asm_cmp(ECX, "0");
-  asm_jmp_l(true_label);
-
-  // eax = 16 + 4 * ecx
-  asm_mov(EAX, ECX);
-  asm_imul(EAX, "4");
-  asm_add(EAX, "16");
-  asm_cmp("[esp + eax]", "[edx + eax]");
-  jmp_func(false_label);
-
-  asm_dec(EAX);
-  asm_jmp(cmp_label);
-
-  asm_label(true_label);
-  pop_matrix_of_size(EBX); // ebx still contains number of elements
-  asm_push_i(1);
-  asm_jmp(end_label);
-
-  asm_label(false_label);
-  pop_matrix_of_size(EBX); // ebx still contains number of elements
-  asm_push_i(0);
-
-  asm_label(end_label);
-}
-
-// stack will look like this
-// right
-// right type
-// left <- edx
-// left type
-// <- esp
-// so [esp-4] is the left type, and [edx-4] is the right type
-static void gen_bool_eq(int eq, ClmExpNode *left, ClmExpNode *right) {
-  // TODO all of these
-  ClmType left_type = clm_type_of_exp(left, data.scope);
-  ClmType right_type = clm_type_of_exp(right, data.scope);
-
-  if (left_type == CLM_TYPE_INT && right_type == CLM_TYPE_INT) {
-    gen_bool_eq_int_int(eq);
-  } else if (left_type == CLM_TYPE_MATRIX && right_type == CLM_TYPE_MATRIX) {
-    gen_bool_eq_mat_mat(eq);
-  }
-}
-
 static void gen_bool(ClmExpNode *node) {
-  switch (node->boolExp.operand) {
-  case BOOL_OP_AND:
-    pop_int_into(EAX);
-    pop_int_into(EBX);
-    asm_and(EAX, EBX);
-    asm_push(EAX);
-    break;
-  case BOOL_OP_OR:
-    pop_int_into(EAX);
-    pop_int_into(EBX);
-    asm_or(EAX, EBX);
-    asm_push(EAX);
-    break;
-  case BOOL_OP_EQ:
-    gen_bool_eq(1, node->boolExp.left, node->boolExp.right);
-    break;
-  case BOOL_OP_NEQ:
-    gen_bool_eq(0, node->boolExp.left, node->boolExp.right);
-    break;
-  default: {
-    char end_label[256];
-    char false_label[256];
-    next_label(false_label);
-    next_label(end_label);
+  ClmType left_type = clm_type_of_exp(node->arithExp.left, data.scope);
+  ClmType right_type = clm_type_of_exp(node->arithExp.right, data.scope);
 
-    pop_int_into(EAX);
-    pop_int_into(EBX);
-    asm_cmp(EAX, EBX);
-    switch (node->boolExp.operand) {
-    case BOOL_OP_GT:
-      asm_jmp_le(false_label);
-      break;
-    case BOOL_OP_LT:
-      asm_jmp_ge(false_label);
-      break;
-    case BOOL_OP_GTE:
-      asm_jmp_l(false_label);
-      break;
-    case BOOL_OP_LTE:
-      asm_jmp_g(false_label);
-      break;
-    default:
-      // shouldn't get here
-      break;
-    }
-    asm_push_i(1);
-    asm_jmp(end_label);
-    asm_label(false_label);
-    asm_push_i(0);
-    asm_label(end_label);
-  }
-  }
-}
-
-static void gen_unary_minus(ClmExpNode *node) {
-  ClmType type = clm_type_of_exp(node, data.scope);
-  switch (type) {
+  switch (left_type) {
   case CLM_TYPE_INT:
-    asm_neg("dword [esp - 8]");
+    gen_int_bool(node->boolExp.operand, right_type);
     break;
   case CLM_TYPE_FLOAT:
-    // TODO
+    gen_float_bool(node->boolExp.operand, right_type);
     break;
-  case CLM_TYPE_MATRIX: {
-    char cmp_label[LABEL_SIZE], end_label[LABEL_SIZE];
-    next_label(cmp_label);
-    next_label(end_label);
-
-    asm_mov(ECX, "[esp - 8]");
-    asm_imul(ECX, "[esp - 12]");
-    asm_dec(ECX);
-    asm_label(cmp_label);
-    asm_cmp(ECX, "0");
-    asm_jmp_l(end_label);
-    asm_neg("dword [esp + ecx]");
-    asm_dec(ECX);
-    asm_jmp(cmp_label);
-    asm_label(end_label);
+  case CLM_TYPE_STRING:
+    gen_string_bool(node->boolExp.operand, right_type);
     break;
-  }
+  case CLM_TYPE_MATRIX:
+    gen_mat_bool(node->boolExp.operand, right_type);
+    break;
   default:
+    // shouldn't get here
     break;
   }
 }
 
-// stack will look like this
-// node
-// node type
-// <- esp
-// so [esp-4] is the node type
 static void gen_unary(ClmExpNode *node) {
-  switch (node->unaryExp.operand) {
-  case UNARY_OP_MINUS:
-    gen_unary_minus(node->unaryExp.node);
+  ClmType type = clm_type_of_exp(node->unaryExp.node, data.scope);
+
+  switch (type) {
+  case CLM_TYPE_INT:
+    gen_int_unary(node->unaryExp.operand);
     break;
-  case UNARY_OP_TRANSPOSE:
-    // TODO
-    // https://en.wikipedia.org/wiki/In-place_matrix_transposition
+  case CLM_TYPE_FLOAT:
+    gen_float_unary(node->unaryExp.operand);
     break;
-  case UNARY_OP_NOT:
-    asm_xor("dword [" ESP "]", "1");
+  case CLM_TYPE_STRING:
+    gen_string_unary(node->unaryExp.operand);
+    break;
+  case CLM_TYPE_MATRIX:
+    gen_mat_unary(node->unaryExp.operand);
+    break;
+  default:
+    // shouldn't get here
     break;
   }
 }
@@ -353,15 +171,17 @@ static void gen_lhs(ClmExpNode *node) {
       asm_pop(EAX);       // pop type
       asm_pop(ECX);       // pop rows
       asm_pop(EBX);       // pop cols;
-      asm_imul(ECX, EBX); // eax now contains rows * cols
-      asm_label(start_label);
+      asm_imul(ECX, EBX); // ecx now contains rows * cols
       asm_dec(ECX);
+
+      asm_label(start_label);
       asm_cmp(ECX, "0");
-      asm_jmp_eq(end_label);
+      asm_jmp_l(end_label);
 
       sprintf(index_str, "dword [ebp+%d+ecx]", var->offset);
       asm_pop(index_str);
 
+      asm_dec(ECX);
       asm_jmp(start_label);
       asm_label(end_label);
     } else if (node->indExp.rowIndex == NULL) {
@@ -460,12 +280,36 @@ static void gen_expression(ClmExpNode *node) {
     break;
   case EXP_TYPE_STRING:
     break;
-  case EXP_TYPE_ARITH:
-    gen_expression(node->arithExp.right);
-    asm_mov(EDX, ESP);
-    gen_expression(node->arithExp.left);
-    gen_arith(node);
+  case EXP_TYPE_ARITH: {
+    ClmType right_type = clm_type_of_exp(node->arithExp.right, data.scope);
+    ClmType left_type = clm_type_of_exp(node->arithExp.left, data.scope);
+    if (left_type == CLM_TYPE_MATRIX && clm_type_is_number(right_type)) {
+      // here the only ops are mul & div... we are scaling matrix
+      // gen left and then right here... if we don't then we have
+      // int val
+      // int type
+      // matrix
+      // cols
+      // rows
+      // matrix type
+      // and we have to pop the int after we generate the value... which is hard
+      // and since we are multiplying the matrix in place, it would be easiest
+      // to
+      // gen the matrix first and then the int, so we just have to pop two
+      // values
+      // in total
+      gen_expression(node->arithExp.left);
+      asm_mov(EDX, ESP);
+      gen_expression(node->arithExp.right);
+      gen_arith(node);
+    } else {
+      gen_expression(node->arithExp.right);
+      asm_mov(EDX, ESP);
+      gen_expression(node->arithExp.left);
+      gen_arith(node);
+    }
     break;
+  }
   case EXP_TYPE_BOOL:
     gen_expression(node->boolExp.right);
     asm_mov(EDX, ESP);

@@ -1,8 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "clm_lexer.h"
 #include "array_list.h"
+#include "clm_lexer.h"
 #include "string_util.h"
 
 #include "clm_test_lexer.h"
