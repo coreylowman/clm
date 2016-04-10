@@ -25,82 +25,15 @@ static const char ASM_HEADER[] =
     "        import kernel32, ExitProcess, 'ExitProcess'\n"
     "        import msvcrt, printf, 'printf'\n"
     "\n"
-    "section '.code' code executable\n"
-    "; m1 and m2 are addresses to the matrix\n"
-    "; cols <- m1 + 8\n"
-    "; rows <- m1 + 4\n"
-    "; type <- m1\n"
-    "macro add_mat m1, m2 {\n"
-    "    local loop1, loop2\n"
-    "    mov eax, [m1 + 4]\n"
-    "    imul eax, [m1 + 8] \n"
-    "    dec eax \n"
-    "    imul eax, 4 ;eax = 4*(rows * cols - 1)\n"
-    "loop1:\n"
-    "    cmp eax, -4\n"
-    "    je loop2\n"
-    "\n"
-    "    mov ebx, [m1 + eax + 12]\n"
-    "    add ebx, [m2 + eax + 12]\n"
-    "    push ebx\n"
-    "\n"
-    "    sub eax, 4\n"
-    "    jmp loop1\n"
-    "loop2:\n"
-    "    push [m1+8] ;push cols\n"
-    "    push [m1+4] ;push rows\n"
-    "    push [m1] ;push type\n"
-    "}\n"
-    "\n"
-    "macro print_mat m1 {\n"
-    "    local loop1, loop2, loop3\n"
-    "    mov ecx, [m1+4]\n"
-    "    imul ecx,4 ;ecx to keep track of when to print newline... this is "
-    "rows * 4\n"
-    "    mov ebx, [m1+4]\n"
-    "    imul ebx, [m1+8] ;ebx to keep track of how many more elements to "
-    "print...\n"
-    "    imul ebx, 4 ; ebx is 4 * rows * cols\n"
-    "    mov eax, -4 ; eax is current index\n"
-    "loop1:\n"
-    "    add eax,4\n"
-    "    cmp eax, ebx\n"
-    "    je loop2\n"
-    "    \n"
-    "    push eax ;save eax and ecx on stack\n"
-    "    push ecx\n"
-    "\n"
-    "    mov edx,0 ;if eax % rows*4 == 0 print new line\n"
-    "    div ecx\n"
-    "    cmp edx,0\n"
-    "    jne loop3\n"
-    "    cmp eax,0\n"
-    "    je loop3\n"
-    "    cinvoke printf,print_char,'' ;eax and ecx invalidated here\n"
-    "\n"
-    "loop3:\n"
-    "    pop ecx ;restore eax and ecx\n"
-    "    pop eax\n"
-    "\n"
-    "    push eax ;savee eax and ecx on stack\n"
-    "    push ecx\n"
-    "\n"
-    "    cinvoke printf,print_int,[m1 + eax + 12] ;eax and ecx invalidated "
-    "here\n"
-    "    \n"
-    "    pop ecx ;restore eax and ecx\n"
-    "    pop eax\n"
-    "\n"
-    "    jmp loop1\n"
-    "loop2:\n"
-    "    cinvoke printf,print_char,''\n"
-    "}\n";
+    "section '.code' code executable\n";
 
 static const char ASM_EXIT_PROCESS[] = "invoke ExitProcess, 0\n";
 static const char ASM_START[] = "start:\n";
 static const char ASM_DATA[] = "section '.data' data readable writable\n"
                                "__T_EAX__ dd 0\n"
                                "__T_EBX__ dd 0\n"
+                               "__T_END__ dd 0\n"
+                               "__T_ROW_END__ dd 0\n"
                                "__T_ESP__ dd 0\n";
 
 #define EAX "eax"
@@ -113,6 +46,8 @@ static const char ASM_DATA[] = "section '.data' data readable writable\n"
 // compiler only globals to give more temporary
 #define T_EAX "__T_EAX__"
 #define T_EBX "__T_EBX__"
+#define T_END "__T_END__"
+#define T_ROW_END "__T_ROW_END__"
 #define T_ESP "__T_ESP__"
 
 #define LABEL_SIZE 32
@@ -130,6 +65,7 @@ void asm_add(const char *dest, const char *other);
 void asm_add_i(const char *dest, int i);
 void asm_sub(const char *dest, const char *other);
 void asm_imul(const char *dest, const char *other);
+void asm_div(const char *denom);
 void asm_fadd(const char *dest, const char *other);
 void asm_fsub(const char *dest, const char *other);
 void asm_fmul(const char *dest, const char *other);
@@ -154,13 +90,11 @@ void asm_jmp_neq(const char *label);
 void asm_label(const char *name);
 void asm_call(const char *name);
 void asm_ret();
-void asm_print_mat(const char *src, int nl);
-void asm_print_const_mat(float *arr, int num_elements, int nl);
-void asm_print_float(const char *src, int nl);
-void asm_print_const_float(float f, int nl);
-void asm_print_int(const char *src, int nl);
-void asm_print_const_int(int i, int nl);
-void asm_print_char(const char *src, int nl);
-void asm_print_const_char(char c, int nl);
+// TODO improve this interface
+void asm_print_float(const char *src, int spc, int nl);
+void asm_print_int(const char *src, int spc, int nl);
+void asm_print_char(const char *src, int spc, int nl);
+void asm_push_regs();
+void asm_pop_regs();
 
 #endif

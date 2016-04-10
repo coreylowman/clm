@@ -141,6 +141,8 @@ static void gen_statement_symbols(ClmScope *scope, ClmStmtNode *node) {
       symbol->offset = clm_scope_next_local_offset(scope);
       clm_scope_push(scope, symbol);
     }
+    // TODO should this create a new scope? - need to allocate local variable
+    // space for these vars
     ClmScope *loopScope = clm_scope_new(scope, node);
     gen_expnode_symbols(loopScope, node->loopStmt.start);
     gen_expnode_symbols(loopScope, node->loopStmt.end);

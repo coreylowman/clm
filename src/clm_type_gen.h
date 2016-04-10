@@ -30,4 +30,13 @@ void gen_int_unary(UnaryOp op);
 void gen_float_unary(UnaryOp op);
 void gen_string_unary(UnaryOp op);
 
+//
+// printing
+//
+void gen_print_type(ClmType type, int nl);
+void gen_print_mat(int nl);
+void gen_print_int(int nl);
+void gen_print_float(int nl);
+void gen_print_string(int nl);
+
 #endif

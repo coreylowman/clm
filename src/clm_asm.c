@@ -53,9 +53,7 @@ void asm_push_i(int val) {
 }
 
 void asm_push_f(float val) {
-  char buffer[32];
-  sprintf(buffer, "push %f\n", val);
-  writeLine(buffer);
+  // TODO
 }
 
 void asm_push_c(char val) {
@@ -88,11 +86,23 @@ void asm_imul(const char *dest, const char *other) {
   writeLine(buffer);
 }
 
-void asm_fadd(const char *dest, const char *other) {}
+void asm_div(const char *denom) {
+  char buffer[32];
+  sprintf(buffer, "div %s\n", denom);
+  writeLine(buffer);
+}
 
-void asm_fsub(const char *dest, const char *other) {}
+void asm_fadd(const char *dest, const char *other) {
+  // TODO
+}
 
-void asm_fmul(const char *dest, const char *other) {}
+void asm_fsub(const char *dest, const char *other) {
+  // TODO
+}
+
+void asm_fmul(const char *dest, const char *other) {
+  // TODO
+}
 
 void asm_inc(const char *arg) {
   char buffer[32];
@@ -130,13 +140,21 @@ void asm_lea(const char *dest, const char *src) {
   writeLine(buffer);
 }
 
-void asm_xchg(const char *arg1, const char *arg2) {}
+void asm_xchg(const char *arg1, const char *arg2) {
+  // TODO
+}
 
-void asm_and(const char *arg1, const char *arg2) {}
+void asm_and(const char *arg1, const char *arg2) {
+  // TODO
+}
 
-void asm_or(const char *arg1, const char *arg2) {}
+void asm_or(const char *arg1, const char *arg2) {
+  // TODO
+}
 
-void asm_xor(const char *arg1, const char *arg2) {}
+void asm_xor(const char *arg1, const char *arg2) {
+  // TODO
+}
 
 void asm_cmp(const char *arg1, const char *arg2) {
   char buffer[32];
@@ -198,45 +216,53 @@ void asm_call(const char *name) {
   writeLine(buffer);
 }
 
-void asm_ret() {
-  char buffer[32];
-  sprintf(buffer, "ret\n");
-  writeLine(buffer);
-}
+void asm_ret() { writeLine("ret\n"); }
 
-void asm_print_mat(const char *src, int nl) {}
+void asm_print_float(const char *src, int spc, int nl) {
+  asm_push_regs();
 
-void asm_print_const_mat(float *arr, int num_elements, int nl) {}
-
-void asm_print_float(const char *src, int nl) {
   char buffer[64];
   if (nl)
     sprintf(buffer, "cinvoke printf, print_float_nl, %s\n", src);
+  else if (spc)
+    sprintf(buffer, "cinvoke printf, print_float_spc, %s\n", src);
   else
     sprintf(buffer, "cinvoke printf, print_float, %s\n", src);
   writeLine(buffer);
+
+  asm_pop_regs();
 }
 
-void asm_print_const_float(float f, int nl) {}
+void asm_print_int(const char *src, int spc, int nl) {
+  asm_push_regs();
 
-void asm_print_int(const char *src, int nl) {
   char buffer[64];
   if (nl)
     sprintf(buffer, "cinvoke printf, print_int_nl, %s\n", src);
+  else if (spc)
+    sprintf(buffer, "cinvoke printf, print_int_spc, %s\n", src);
   else
     sprintf(buffer, "cinvoke printf, print_int, %s\n", src);
   writeLine(buffer);
+
+  asm_pop_regs();
 }
 
-void asm_print_const_int(int i, int nl) {}
+void asm_print_char(const char *src, int spc, int nl) {
+  asm_push_regs();
 
-void asm_print_char(const char *src, int nl) {
   char buffer[64];
   if (nl)
     sprintf(buffer, "cinvoke printf, print_char_nl, %s\n", src);
+  else if (spc)
+    sprintf(buffer, "cinvoke printf, print_char_spc, %s\n", src);
   else
     sprintf(buffer, "cinvoke printf, print_char, %s\n", src);
   writeLine(buffer);
+
+  asm_pop_regs();
 }
 
-void asm_print_const_char(char c, int nl) {}
+void asm_push_regs() { writeLine("pushad\n"); }
+
+void asm_pop_regs() { writeLine("popad\n"); }

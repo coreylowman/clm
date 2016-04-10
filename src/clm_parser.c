@@ -51,9 +51,10 @@ static int expect(ClmLexerSymbol symbol) {
   if (accept(symbol)) {
     return 1;
   }
-  clm_error(
-      curr()->lineNo, curr()->colNo, "Expected token %s, but found token %s",
-      clm_lexer_sym_to_string(symbol), clm_lexer_sym_to_string(curr()->sym));
+  clm_error(curr()->lineNo, curr()->colNo,
+            "Expected token '%s', but found token '%s'",
+            clm_lexer_sym_to_string(symbol),
+            clm_lexer_sym_to_string(curr()->sym));
   return 0;
 }
 
@@ -477,7 +478,7 @@ static ClmExpNode *consume_expression_6() {
     exp->lineNo = lineNo;
     exp->colNo = colNo;
     return exp;
-  } else if (accept(TOKEN_RCURL)) {
+  } else if (accept(TOKEN_LCURL)) {
     int cols, num = 0;
     float *list;
     int start = prev()->lineNo;

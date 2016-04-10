@@ -58,6 +58,7 @@ int clm_scope_contains(ClmScope *scope, const char *name) {
       return 1;
     }
   }
+
   return clm_scope_contains(scope->parent, name);
 }
 

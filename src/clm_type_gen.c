@@ -64,12 +64,12 @@ static void gen_int_not();
 static void gen_float_minus();
 
 // stack will look like this
-// where left will always be the matrix
 // right
-// right type
-// left <- edx
-// left type
-// <- esp
+// right type <- edx
+// left
+// left type <- esp
+// stack grows down
+// so esp + 4 is previous element
 
 extern void next_label(char *buffer);
 
@@ -102,12 +102,12 @@ void gen_mat_arith(ArithOp op, ClmType other_type) {
 }
 
 /*
-        lrows = [edx - 8]
-        lele = lrows * [edx - 12]
+        lrows = [edx + 4]
+        lele = lrows * [edx + 8]
 
         for(ecx = lele - 1, ecx >= 0, ecx--)
-                ebx = 16 + ecx * 4
-                add [esp - ebx], [edx - ebx]
+                ebx = 12 + ecx * 4
+                add [esp + ebx], [edx + ebx]
 
         pop matrix
 */
@@ -116,8 +116,8 @@ static void gen_mat_add_mat() {
   next_label(cmp_label);
   next_label(end_label);
 
-  asm_mov(ECX, "[edx - 8]");
-  asm_imul(ECX, "[edx - 12]");
+  asm_mov(ECX, "[edx + 4]");
+  asm_imul(ECX, "[edx + 8]");
   asm_mov(EAX, ECX);
   asm_dec(ECX);
 
@@ -127,8 +127,8 @@ static void gen_mat_add_mat() {
 
   asm_mov(EBX, ECX);
   asm_imul(EBX, "4");
-  asm_add(EBX, "16");
-  asm_add("dword [esp - ebx]", "dword [edx - ebx]");
+  asm_add(EBX, "12");
+  asm_add("dword [esp + ebx]", "dword [edx + ebx]");
 
   asm_dec(ECX);
   asm_jmp(cmp_label);
@@ -139,12 +139,12 @@ static void gen_mat_add_mat() {
 }
 
 /*
-        lrows = [edx - 8]
-        lele = lrows * [edx - 12]
+        lrows = [edx + 4]
+        lele = lrows * [edx + 8]
 
         for(ecx = lele - 1, ecx >= 0, ecx--)
-                ebx = 16 + ecx * 4
-                sub [esp - ebx], [edx - ebx]
+                ebx = 12 + ecx * 4
+                add [esp + ebx], [edx + ebx]
 
         pop matrix
 */
@@ -153,8 +153,8 @@ static void gen_mat_sub_mat() {
   next_label(cmp_label);
   next_label(end_label);
 
-  asm_mov(ECX, "[edx - 8]");
-  asm_imul(ECX, "[edx - 12]");
+  asm_mov(ECX, "[edx + 4]");
+  asm_imul(ECX, "[edx + 8]");
   asm_mov(EAX, ECX);
   asm_dec(ECX);
 
@@ -164,8 +164,8 @@ static void gen_mat_sub_mat() {
 
   asm_mov(EBX, ECX);
   asm_imul(EBX, "4");
-  asm_add(EBX, "16");
-  asm_sub("dword [esp - ebx]", "dword [edx - ebx]");
+  asm_add(EBX, "12");
+  asm_sub("dword [esp + ebx]", "dword [edx + ebx]");
 
   asm_dec(ECX);
   asm_jmp(cmp_label);
@@ -187,10 +187,9 @@ static void gen_mat_div_mat() {
         matrix
         cols
         rows
-        matrix type
-        int val <-edx
-        int type
-        <- esp
+        matrix type <- edx
+        int val
+        int type <-esp
 */
 static void gen_mat_mul_int() {
   // note this funcs is genned differently... see code_gen gen_arith comment
@@ -290,25 +289,25 @@ static void gen_int_div_float() {
 }
 
 /*
-        lrows = [edx - 8]
-        lele = lrows * [edx - 12]
-        eax = [esp - 4]
+        lrows = [edx + 4]
+        lele = lrows * [edx + 8]
+        eax = [esp + 4]
         for(ecx = lele - 1, ecx >= 0, ecx--)
-                ebx = 16 + ecx * 4
-                imul [edx - ebx], eax
+                ebx = 12 + ecx * 4
+                imul [edx + ebx], eax
 
-        pop matrix
+        pop int
 */
 static void gen_int_mul_mat() {
   char cmp_label[LABEL_SIZE], end_label[LABEL_SIZE];
   next_label(cmp_label);
   next_label(end_label);
 
-  asm_mov(ECX, "[edx - 8]");
-  asm_imul(ECX, "[edx - 12]");
+  asm_mov(ECX, "[edx + 4]");
+  asm_imul(ECX, "[edx + 8]");
   asm_dec(ECX);
 
-  asm_mov(EAX, "[esp - 8]");
+  asm_mov(EAX, "[esp + 4]");
 
   asm_label(cmp_label);
   asm_cmp(ECX, "0");
@@ -316,17 +315,15 @@ static void gen_int_mul_mat() {
 
   asm_mov(EBX, ECX);
   asm_imul(EBX, "4");
-  asm_add(EBX, "16");
-  asm_imul("dword [edx - ebx]", "eax");
+  asm_add(EBX, "12");
+  asm_imul("dword [edx + ebx]", "eax");
 
   asm_dec(ECX);
   asm_jmp(cmp_label);
 
   asm_label(end_label);
 
-  asm_mov(ECX, "[edx - 8]");
-  asm_imul(ECX, "[edx - 12]");
-  pop_matrix_of_size(ECX);
+  pop_int_into(EAX);
 }
 
 // float arith
@@ -433,19 +430,19 @@ static void gen_mat_or_mat() {
 
 typedef void (*asm_func1)(const char *);
 /*
-        lrows = [esp - 8]
-        rrows = [edx - 8]
+        lrows = [esp + 4]
+        rrows = [edx + 4]
         cmp lrows, rrows
         jneq false_label
 
-        lele = lrows * [esp - 12]
-        rele = rrows * [edx - 12]
+        lele = lrows * [esp + 8]
+        rele = rrows * [edx + 8]
         cmp lele, rele
         jneq false_label
 
         for(ecx = lele - 1, ecx >= 0, ecx--)
-                eax = 16 + ecx * 4
-                cmp [esp - eax], [edx - eax]
+                eax = 12 + ecx * 4
+                cmp dword [esp + eax], dword [edx + eax]
                 cmp_func false_label
 
         pop matrices
@@ -488,14 +485,14 @@ static void gen_mat_cmp_mat(BoolOp op) {
   next_label(end_label);
 
   // compare rows
-  asm_mov(EAX, "[esp - 8]");
-  asm_mov(EBX, "[edx - 8]");
+  asm_mov(EAX, "[esp + 4]");
+  asm_mov(EBX, "[edx + 4]");
   asm_cmp(EAX, EBX);
   asm_jmp_neq(false_label);
 
   // compare num elements
-  asm_imul(EAX, "[esp - 12]");
-  asm_imul(EBX, "[edx - 12]");
+  asm_imul(EAX, "[esp + 8]");
+  asm_imul(EBX, "[edx + 8]");
   asm_cmp(EAX, EBX);
   asm_jmp_neq(false_label);
 
@@ -507,11 +504,11 @@ static void gen_mat_cmp_mat(BoolOp op) {
   asm_cmp(ECX, "0");
   asm_jmp_l(true_label);
 
-  // eax = 16 + 4 * ecx
+  // eax = 12 + 4 * ecx
   asm_mov(EAX, ECX);
   asm_imul(EAX, "4");
-  asm_add(EAX, "16");
-  asm_cmp("[esp - eax]", "[edx - eax]");
+  asm_add(EAX, "12");
+  asm_cmp("dword [esp + eax]", "dword [edx + eax]");
   jmp_func(false_label);
 
   asm_dec(EAX);
@@ -710,15 +707,23 @@ static void gen_mat_minus() {
   next_label(cmp_label);
   next_label(end_label);
 
-  asm_mov(ECX, "[esp - 8]");
-  asm_imul(ECX, "[esp - 12]");
+  asm_mov(ECX, "[esp + 8]");
+  asm_imul(ECX, "[esp + 12]");
   asm_dec(ECX);
+
   asm_label(cmp_label);
+
   asm_cmp(ECX, "0");
   asm_jmp_l(end_label);
-  asm_neg("dword [esp - ecx]");
+
+  asm_mov(EBX, ECX);
+  asm_imul(EBX, "4");
+  asm_add(EBX, "12");
+  asm_neg("dword [esp + ebx]");
+
   asm_dec(ECX);
   asm_jmp(cmp_label);
+
   asm_label(end_label);
 }
 
@@ -738,9 +743,9 @@ void gen_int_unary(UnaryOp op) {
   }
 }
 
-static void gen_int_minus() { asm_neg("dword [esp - 8]"); }
+static void gen_int_minus() { asm_neg("dword [esp + 4]"); }
 
-static void gen_int_not() { asm_xor("dword [esp - 8]", "1"); }
+static void gen_int_not() { asm_xor("dword [esp + 4]", "1"); }
 
 void gen_float_unary(UnaryOp op) {
   // only op can be minus
@@ -753,4 +758,81 @@ static void gen_float_minus() {
 
 void gen_string_unary(UnaryOp op) {
   // shouldn't get called
+}
+
+void gen_print_type(ClmType type, int nl) {
+  switch (type) {
+  case CLM_TYPE_INT:
+    gen_print_int(nl);
+    break;
+  case CLM_TYPE_FLOAT:
+    gen_print_float(nl);
+    break;
+  case CLM_TYPE_MATRIX:
+    gen_print_mat(nl);
+    break;
+  case CLM_TYPE_STRING:
+    gen_print_string(nl);
+    break;
+  }
+}
+
+/*
+        pop
+        lrows = pop
+        lcols = pop
+        lele = lrows * lcols
+
+        for(ecx = lele, ecx != 0, ecx--)
+                eax = pop
+                print_int(eax, ecx % lcols == 0)
+*/
+void gen_print_mat(int nl) {
+  char cmp_label[LABEL_SIZE], end_label[LABEL_SIZE], nl_label[LABEL_SIZE];
+  next_label(cmp_label);
+  next_label(end_label);
+  next_label(nl_label);
+
+  asm_pop(ECX); // pop type
+  asm_pop(ECX); // pop rows
+  asm_pop(EBX); // pop cols
+  asm_imul(ECX, EBX);
+  asm_mov("[" T_ROW_END "]", EBX); // TODO does T_ROW_END need to be [T_ROW_END]
+
+  asm_label(cmp_label);
+  asm_cmp(ECX, "0");
+  asm_jmp_eq(end_label);
+
+  asm_mov(EDX, "0");
+  asm_mov(EAX, ECX);
+  asm_div("[" T_ROW_END "]");
+  asm_cmp(EDX, "0");
+  asm_jmp_neq(nl_label);
+
+  asm_print_char("''", 0, 1);
+
+  asm_label(nl_label);
+
+  asm_pop(EAX);
+  asm_print_int(EAX, 1, 0);
+
+  asm_dec(ECX);
+  asm_jmp(cmp_label);
+
+  asm_label(end_label);
+
+  asm_print_char("''", 0, 1);
+}
+
+void gen_print_int(int nl) {
+  pop_int_into(EAX);
+  asm_print_int(EAX, 0, nl);
+}
+
+void gen_print_float(int nl) {
+  // TODO
+}
+
+void gen_print_string(int nl) {
+  // TODO
 }

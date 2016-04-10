@@ -397,93 +397,190 @@ static void gen_expression(ClmExpNode *node) {
   }
 }
 
-static void gen_print(ClmExpNode *node, int newline) {
-  switch (node->type) {
-  case EXP_TYPE_INT:
-    asm_print_const_int(node->ival, newline);
-    break;
-  case EXP_TYPE_FLOAT:
-    asm_print_const_float(node->fval, newline);
-    break;
-  case EXP_TYPE_STRING:
-    // TODO print string
-    break;
-  case EXP_TYPE_ARITH:
-    gen_expression(node);
-    // TODO print result
-    break;
-  case EXP_TYPE_BOOL:
-    gen_expression(node);
-    // TODO print result
-    break;
-  case EXP_TYPE_CALL:
-    gen_expression(node);
-    // TODO print result
-    ClmSymbol *function = clm_scope_find(data.scope, node->callExp.name);
-    switch (function->type) {
-    case CLM_TYPE_INT:
-      break;
-    case CLM_TYPE_MATRIX:
-      break;
-    case CLM_TYPE_STRING:
-      break;
-    case CLM_TYPE_FLOAT:
-      break;
-    default:
-      // shouldn't get here
-      break;
-    }
-    break;
-  case EXP_TYPE_INDEX: {
-    char index_str[32];
-    ClmSymbol *var = clm_scope_find(data.scope, node->indExp.id);
-    switch (var->type) {
-    case CLM_TYPE_INT:
-      gen_expression(node);
-      pop_int_into(EAX);
-      asm_print_int(EAX, newline);
-      break;
-    case CLM_TYPE_FLOAT:
-      gen_expression(node);
-      asm_pop(EAX); // pop type
-      asm_pop(EAX); // pop val into eax
-      asm_print_float(EAX, newline);
-      break;
-    case CLM_TYPE_MATRIX: {
-      // these two types should be the same...
-      // they are generated differently...
-      // but gen_expression will push all the vals onto the stack
-      gen_expression(node);
-      if (node->indExp.rowIndex != NULL && node->indExp.colIndex != NULL) {
-        pop_int_into(EAX);
-        asm_print_int(EAX, newline);
-      } else {
-        // for all other cases we wil have to pop the rows and cols
-        // off the stack
-        // TODO print matrix
-      }
-      break;
-    }
-    case CLM_TYPE_STRING:
-      // this will be similar to printing a matrix, but will always be
-      // one dimensional, so will just pop off length and then do a for
-      // loop to print each char
-      // TODO print string
-      break;
-    case CLM_TYPE_FUNCTION:
-    case CLM_TYPE_NONE:
-      // can't print these :)
-      break;
-    }
-    break;
+static void gen_conditional(ClmStmtNode *node) {
+  gen_expression(node->conditionStmt.condition);
+
+  if (node->conditionStmt.falseBody == NULL) {
+    char end_label[LABEL_SIZE];
+    next_label(end_label);
+
+    ClmScope *trueScope =
+        clm_scope_find_child(data.scope, node->conditionStmt.trueBody);
+
+    asm_pop(EAX);
+    asm_cmp(EAX, "1");
+    asm_jmp_neq(end_label);
+    data.scope = trueScope;
+    gen_statements(node->conditionStmt.trueBody);
+    asm_label(end_label);
+
+    data.scope = trueScope->parent;
+  } else {
+    char end_label[LABEL_SIZE];
+    char false_label[LABEL_SIZE];
+    next_label(end_label);
+    next_label(false_label);
+
+    ClmScope *trueScope =
+        clm_scope_find_child(data.scope, node->conditionStmt.trueBody);
+    ClmScope *falseScope =
+        clm_scope_find_child(data.scope, node->conditionStmt.falseBody);
+
+    asm_pop(EAX);
+    asm_cmp(EAX, "1");
+    asm_jmp_neq(false_label);
+    data.scope = trueScope;
+    gen_statements(node->conditionStmt.trueBody);
+    asm_jmp(end_label);
+    asm_label(false_label);
+    data.scope = falseScope;
+    gen_statements(node->conditionStmt.falseBody);
+    asm_label(end_label);
+
+    data.scope = falseScope->parent;
   }
-  case EXP_TYPE_MAT_DEC:
-    break;
-  case EXP_TYPE_PARAM:
-    break;
-  case EXP_TYPE_UNARY:
-    break;
+}
+
+static void gen_func_dec(ClmStmtNode *node) {
+  int i;
+  char func_label[LABEL_SIZE];
+
+  sprintf(func_label, "_%s", node->funcDecStmt.name);
+  ClmScope *funcScope = clm_scope_find_child(data.scope, node);
+
+  asm_label(func_label);
+  asm_push(EBP);
+  asm_mov(EBP, ESP);
+
+  int local_var_size = 2 * 4 * (funcScope->symbols->length -
+                                node->funcDecStmt.parameters->length);
+  char local_var_size_str[32];
+  sprintf(local_var_size_str, "%d", local_var_size);
+  asm_sub(ESP, local_var_size_str);
+
+  // each local var has 2 slots on the stack, their type and the value
+  // for matrices, the value is a pointer to the location on the stack
+  // these are all declared below the local variables
+  ClmSymbol *sym;
+  ClmStmtNode *dec;
+  char start_label[LABEL_SIZE];
+  char end_label[LABEL_SIZE];
+  char index_str[32];
+  for (i = 0; i < funcScope->symbols->length; i++) {
+    sym = funcScope->symbols->data[i];
+    dec = sym->declaration;
+
+    if (sym->isParam)
+      continue;
+    // setting the type of the local var
+    sprintf(index_str, "dword [ebp+%d]", sym->offset);
+    asm_mov_i(index_str, (int)sym->type);
+
+    // setting the value of the local var
+    sprintf(index_str, "dword [ebp+%d]", sym->offset - 4);
+    asm_mov_i(index_str, 0);
+
+    if (sym->type == CLM_TYPE_MATRIX) {
+      // TODO what does this do? does it work?
+      next_label(start_label);
+      next_label(end_label);
+
+      gen_matrix_size(dec->assignStmt.rhs);
+      asm_pop(EAX); // eax contains num of rows
+      asm_pop(EBX); // ebx contains num of cols
+      asm_mov(ECX, EAX);
+      asm_imul(ECX, EBX);
+      asm_label(start_label);
+      asm_dec(ECX);
+      asm_cmp(ECX, "0");
+      asm_jmp_eq(end_label);
+      asm_push_i(0);
+      asm_jmp(start_label);
+      asm_label(end_label);
+      asm_push(EBX); // cols
+
+      // setting the pointer to point at the rows
+      // note: push changes the value at esp and THEN
+      // decrements it
+      sprintf(index_str, "dword [ebp+%d]", sym->offset - 4);
+      asm_mov(index_str, ESP);
+
+      asm_push(EAX); // rows
+    }
   }
+  // TODO figure out strings though!
+
+  data.inFunction = 1;
+  data.scope = funcScope;
+  gen_statements(node->funcDecStmt.body);
+  data.scope = funcScope->parent;
+  data.inFunction = 0;
+
+  if (node->funcDecStmt.returnRows == -2) {
+    // no return value!
+    asm_mov(ESP, EBP);
+    asm_pop(EBP);
+  }
+  asm_ret();
+}
+
+static void gen_loop(ClmStmtNode *node) {
+  char start_label[LABEL_SIZE];
+  char end_label[LABEL_SIZE];
+  next_label(start_label);
+  next_label(end_label);
+
+  ClmSymbol *var = clm_scope_find(data.scope, node->loopStmt.varId);
+  char loop_var[32];
+  sprintf(loop_var, "dword [ebp+%d]", var->offset + (var->isParam ? 4 : -4));
+
+  // don't need to store this - just evaluate and put into loop var
+  gen_expression(node->loopStmt.start);
+
+  if (!node->loopStmt.startInclusive) {
+    gen_expression(node->loopStmt.delta);
+    pop_int_into(EAX); // eax contains delta
+    pop_int_into(EBX); // ebx contains start
+    asm_add(EBX, EAX);
+
+    asm_push(EBX); // push start back on stack
+    asm_push_i((int)CLM_TYPE_INT);
+  }
+  pop_int_into(loop_var);
+  asm_label(start_label);
+
+  // don't need to store this - just evaulate every loop
+  gen_expression(node->loopStmt.end);
+
+  pop_int_into(EAX);
+
+  asm_cmp(loop_var, EAX);
+  if (node->loopStmt.endInclusive)
+    asm_jmp_g(end_label);
+  else
+    asm_jmp_ge(end_label);
+
+  ClmScope *loopScope = clm_scope_find_child(data.scope, node);
+  data.scope = loopScope;
+  gen_statements(node->loopStmt.body);
+  data.scope = loopScope->parent;
+
+  if (node->loopStmt.delta->type == EXP_TYPE_INT &&
+      node->loopStmt.delta->ival == 1) {
+    asm_inc(loop_var);
+  } else if (node->loopStmt.delta->type == EXP_TYPE_INT &&
+             node->loopStmt.delta->ival == -1) {
+    asm_dec(loop_var);
+  } else if (node->loopStmt.delta->type == EXP_TYPE_INT) {
+    asm_add_i(loop_var, node->loopStmt.delta->ival);
+  } else {
+    gen_expression(node->loopStmt.delta);
+    asm_pop(EAX);
+    asm_add(loop_var, EAX);
+  }
+
+  asm_jmp(start_label);
+  asm_label(end_label);
 }
 
 static void gen_statement(ClmStmtNode *node) {
@@ -495,191 +592,19 @@ static void gen_statement(ClmStmtNode *node) {
   case STMT_TYPE_CALL:
     gen_expression(node->callExpr);
     break;
-  case STMT_TYPE_CONDITIONAL: {
-    gen_expression(node->conditionStmt.condition);
-
-    if (node->conditionStmt.falseBody == NULL) {
-      char end_label[LABEL_SIZE];
-      next_label(end_label);
-      ClmScope *trueScope =
-          clm_scope_find_child(data.scope, node->conditionStmt.trueBody);
-
-      asm_pop(EAX);
-      asm_cmp(EAX, "1");
-      asm_jmp_neq(end_label);
-      data.scope = trueScope;
-      gen_statements(node->conditionStmt.trueBody);
-      asm_label(end_label);
-
-      data.scope = trueScope->parent;
-    } else {
-      char end_label[LABEL_SIZE];
-      char false_label[LABEL_SIZE];
-      next_label(end_label);
-      next_label(false_label);
-      ClmScope *trueScope =
-          clm_scope_find_child(data.scope, node->conditionStmt.trueBody);
-      ClmScope *falseScope =
-          clm_scope_find_child(data.scope, node->conditionStmt.falseBody);
-
-      asm_pop(EAX);
-      asm_cmp(EAX, "1");
-      asm_jmp_neq(false_label);
-      data.scope = trueScope;
-      gen_statements(node->conditionStmt.trueBody);
-      asm_jmp(end_label);
-      asm_label(false_label);
-      data.scope = falseScope;
-      gen_statements(node->conditionStmt.falseBody);
-      asm_label(end_label);
-
-      data.scope = falseScope->parent;
-    }
+  case STMT_TYPE_CONDITIONAL:
+    gen_conditional(node);
     break;
-  }
-  case STMT_TYPE_FUNC_DEC: {
-    int i;
-    char func_label[LABEL_SIZE];
-
-    sprintf(func_label, "_%s", node->funcDecStmt.name);
-    ClmScope *funcScope = clm_scope_find_child(data.scope, node);
-
-    asm_label(func_label);
-    asm_push(EBP);
-    asm_mov(EBP, ESP);
-
-    int local_var_size = 2 * 4 * (funcScope->symbols->length -
-                                  node->funcDecStmt.parameters->length);
-    char local_var_size_str[32];
-    sprintf(local_var_size_str, "%d", local_var_size);
-    asm_sub(ESP, local_var_size_str);
-
-    // each local var has 2 slots on the stack, their type and the value
-    // for matrices, the value is a pointer to the location on the stack
-    // these are all declared below the local variables
-    ClmSymbol *sym;
-    ClmStmtNode *dec;
-    char start_label[LABEL_SIZE];
-    char end_label[LABEL_SIZE];
-    char index_str[32];
-    for (i = 0; i < funcScope->symbols->length; i++) {
-      sym = funcScope->symbols->data[i];
-      dec = sym->declaration;
-
-      if (sym->isParam)
-        continue;
-      // setting the type of the local var
-      sprintf(index_str, "dword [ebp+%d]", sym->offset);
-      asm_mov_i(index_str, (int)sym->type);
-
-      // setting the value of the local var
-      sprintf(index_str, "dword [ebp+%d]", sym->offset - 4);
-      asm_mov_i(index_str, 0);
-
-      if (sym->type == CLM_TYPE_MATRIX) {
-        next_label(start_label);
-        next_label(end_label);
-
-        gen_matrix_size(dec->assignStmt.rhs);
-        asm_pop(EAX); // eax contains num of rows
-        asm_pop(EBX); // ebx contains num of cols
-        asm_mov(ECX, EAX);
-        asm_imul(ECX, EBX);
-        asm_label(start_label);
-        asm_dec(ECX);
-        asm_cmp(ECX, "0");
-        asm_jmp_eq(end_label);
-        asm_push_i(0);
-        asm_jmp(start_label);
-        asm_label(end_label);
-        asm_push(EBX); // cols
-
-        // setting the pointer to point at the rows
-        // note: push changes the value at esp and THEN
-        // decrements it
-        sprintf(index_str, "dword [ebp+%d]", sym->offset - 4);
-        asm_mov(index_str, ESP);
-
-        asm_push(EAX); // rows
-      }
-    }
-    // TODO figure out strings though!
-
-    data.inFunction = 1;
-    data.scope = funcScope;
-    gen_statements(node->funcDecStmt.body);
-    data.scope = funcScope->parent;
-    data.inFunction = 0;
-
-    if (node->funcDecStmt.returnRows == -2) {
-      // no return value!
-      asm_mov(ESP, EBP);
-      asm_pop(EBP);
-    }
-    asm_ret();
+  case STMT_TYPE_FUNC_DEC:
+    gen_func_dec(node);
     break;
-  }
-  case STMT_TYPE_LOOP: {
-    char start_label[LABEL_SIZE];
-    char end_label[LABEL_SIZE];
-    next_label(start_label);
-    next_label(end_label);
-
-    ClmSymbol *var = clm_scope_find(data.scope, node->loopStmt.varId);
-    char loop_var[32];
-    sprintf(loop_var, "dword [ebp+%d]", var->offset + (var->isParam ? 4 : -4));
-
-    // don't need to store this - just evaluate and put into loop var
-    gen_expression(node->loopStmt.start);
-
-    if (!node->loopStmt.startInclusive) {
-      gen_expression(node->loopStmt.delta);
-      pop_int_into(EAX); // eax contains delta
-      pop_int_into(EBX); // ebx contains start
-      asm_add(EBX, EAX);
-
-      asm_push(EBX); // push start back on stack
-      asm_push_i((int)CLM_TYPE_INT);
-    }
-    pop_int_into(loop_var);
-    asm_label(start_label);
-
-    // don't need to store this - just evaulate every loop
-    gen_expression(node->loopStmt.end);
-
-    pop_int_into(EAX);
-
-    asm_cmp(loop_var, EAX);
-    if (node->loopStmt.endInclusive)
-      asm_jmp_g(end_label);
-    else
-      asm_jmp_ge(end_label);
-
-    ClmScope *loopScope = clm_scope_find_child(data.scope, node);
-    data.scope = loopScope;
-    gen_statements(node->loopStmt.body);
-    data.scope = loopScope->parent;
-
-    if (node->loopStmt.delta->type == EXP_TYPE_INT &&
-        node->loopStmt.delta->ival == 1) {
-      asm_inc(loop_var);
-    } else if (node->loopStmt.delta->type == EXP_TYPE_INT &&
-               node->loopStmt.delta->ival == -1) {
-      asm_dec(loop_var);
-    } else if (node->loopStmt.delta->type == EXP_TYPE_INT) {
-      asm_add_i(loop_var, node->loopStmt.delta->ival);
-    } else {
-      gen_expression(node->loopStmt.delta);
-      asm_pop(EAX);
-      asm_add(loop_var, EAX);
-    }
-
-    asm_jmp(start_label);
-    asm_label(end_label);
+  case STMT_TYPE_LOOP:
+    gen_loop(node);
     break;
-  }
   case STMT_TYPE_PRINT:
-    gen_print(node->printStmt.expression, node->printStmt.appendNewline);
+    gen_expression(node->printStmt.expression);
+    gen_print_type(clm_type_of_exp(node->printStmt.expression, data.scope),
+                   node->printStmt.appendNewline);
     break;
   case STMT_TYPE_RET:
     // reset the stack pointer,
@@ -741,6 +666,7 @@ const char *clm_code_gen_main(ArrayList *statements, ClmScope *globalScope) {
   writeLine(ASM_START);
   gen_statements(statements);
   writeLine(ASM_EXIT_PROCESS);
+  writeLine(ASM_DATA);
 
   return data.code;
 }
