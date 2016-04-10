@@ -41,7 +41,7 @@ static void gen_arith(ClmExpNode *node);
 static void gen_bool(ClmExpNode *node);
 static void gen_unary(ClmExpNode *node);
 
-static void gen_lhs(ClmExpNode *node);
+static void pop_into_lhs(ClmExpNode *node);
 static void gen_matrix_size(ClmExpNode *node);
 static void gen_expression(ClmExpNode *node);
 static void gen_statement(ClmStmtNode *node);
@@ -143,7 +143,7 @@ static void gen_matrix_size(ClmExpNode *node) {
 }
 
 // TODO rename this pop_int_intoo_var
-static void gen_lhs(ClmExpNode *node) {
+static void pop_into_lhs(ClmExpNode *node) {
   // it is an index node - otherwise it is a type check fail
   char index_str[64];
   ClmSymbol *var = clm_scope_find(data.scope, node->indExp.id);
@@ -162,7 +162,6 @@ static void gen_lhs(ClmExpNode *node) {
   case CLM_TYPE_MATRIX: {
     // TODO case where matrix is actually a pointer
     if (node->indExp.rowIndex == NULL && node->indExp.colIndex == NULL) {
-      // TODO pop whole matrix off stack
       char start_label[LABEL_SIZE];
       char end_label[LABEL_SIZE];
       next_label(start_label);
@@ -178,7 +177,10 @@ static void gen_lhs(ClmExpNode *node) {
       asm_cmp(ECX, "0");
       asm_jmp_l(end_label);
 
-      sprintf(index_str, "dword [ebp+%d+ecx]", var->offset);
+      asm_mov(EAX, ECX);
+      asm_imul(EAX, "4");
+      asm_add(EAX, "12");
+      sprintf(index_str, "dword [ebp+%d+eax]", var->offset);
       asm_pop(index_str);
 
       asm_dec(ECX);
@@ -189,17 +191,16 @@ static void gen_lhs(ClmExpNode *node) {
     } else if (node->indExp.colIndex == NULL) {
       // TODO pop a whole col off the stack
     } else {
-      // TODO pop one val off the stack
       gen_expression(node->indExp.colIndex);
       gen_expression(node->indExp.rowIndex);
       pop_int_into(EAX);  // pop rows into eax
       pop_int_into(EBX);  // pop cols into ebx
-      asm_imul(EAX, EBX); // eax = eax * ebx
-      asm_imul(EAX, "4"); // now eax contains row * col * 4
+      asm_imul(EAX, EBX); // eax = row * col
+      asm_imul(EAX, "4"); // eax = 4 * row * col
       // var->offset points at type... 3 elements above is the first item in
       // the matrix
       sprintf(index_str, "dword [ebp+%d+eax]", var->offset + 12);
-      asm_pop(index_str);
+      pop_int_into(index_str);
     }
     break;
   }
@@ -279,6 +280,7 @@ static void gen_expression(ClmExpNode *node) {
     asm_push_i((int)expression_type);
     break;
   case EXP_TYPE_STRING:
+    // TODO
     break;
   case EXP_TYPE_ARITH: {
     ClmType right_type = clm_type_of_exp(node->arithExp.right, data.scope);
@@ -319,15 +321,15 @@ static void gen_expression(ClmExpNode *node) {
   case EXP_TYPE_CALL: {
     int i;
     for (i = node->callExp.params->length - 1; i >= 0; i--) {
+      // TODO make sure matrices are pushed correctly
       gen_expression(node->callExp.params->data[i]);
     }
     asm_call(node->callExp.name);
     break;
   }
-  case EXP_TYPE_INDEX: {
+  case EXP_TYPE_INDEX:
     gen_index(node);
     break;
-  }
   case EXP_TYPE_MAT_DEC: {
     int i;
     if (node->matDecExp.arr != NULL) {
@@ -339,47 +341,26 @@ static void gen_expression(ClmExpNode *node) {
       asm_push_i(node->matDecExp.rows);
       asm_push_i((int)expression_type);
     } else {
-      // TODO figure out where to allocate this??
-      // WAIT! we don't need to allocate???
-      // just have a for loop that pushes 0 onto the stack
-      // d'oh
-      // this is already handled by local var allocation in
-      // function dec
-      char index_str[32];
-      if (node->matDecExp.rowVar != NULL) {
-        // mov eax,[ebp+offset]
-        ClmSymbol *sym = clm_scope_find(data.scope, node->matDecExp.rowVar);
-        sprintf(index_str, "[ebp+%d]", sym->offset);
-        asm_mov(EAX, index_str);
-      } else {
-        // mov eax,$rowInd
-        sprintf(index_str, "%d", node->matDecExp.rows);
-        asm_mov(EAX, index_str);
-      }
+      // push a matrix onto the stack with all 0s
 
-      if (node->matDecExp.colVar != NULL) {
-        // mul ebx,[ebp+offset]
-        ClmSymbol *sym = clm_scope_find(data.scope, node->matDecExp.colVar);
-        sprintf(index_str, "[ebp+%d]", sym->offset);
-        asm_mov(EBX, index_str);
-      } else {
-        // mul ebx,$colInd
-        sprintf(index_str, "%d", node->matDecExp.cols);
-        asm_mov(EBX, index_str);
-      }
-      char start_label[LABEL_SIZE];
+      char cmp_label[LABEL_SIZE];
       char end_label[LABEL_SIZE];
-      next_label(start_label);
+      next_label(cmp_label);
       next_label(end_label);
 
-      asm_mov(ECX, EBX);
+      gen_matrix_size(node);
+      asm_pop(EAX); // # rows
+      asm_pop(EBX); // # cols
+
+      asm_mov(ECX, EAX);
       asm_imul(ECX, EBX);
-      asm_label(start_label);
       asm_dec(ECX);
+      asm_label(cmp_label);
       asm_cmp(ECX, "0");
-      asm_jmp_eq(end_label);
+      asm_jmp_l(end_label);
       asm_push_i(0);
-      asm_jmp(start_label);
+      asm_dec(ECX);
+      asm_jmp(cmp_label);
       asm_label(end_label);
       asm_push(EBX);
       asm_push(EAX);
@@ -587,7 +568,7 @@ static void gen_statement(ClmStmtNode *node) {
   switch (node->type) {
   case STMT_TYPE_ASSIGN:
     gen_expression(node->assignStmt.rhs);
-    gen_lhs(node->assignStmt.lhs);
+    pop_into_lhs(node->assignStmt.lhs);
     break;
   case STMT_TYPE_CALL:
     gen_expression(node->callExpr);
@@ -616,17 +597,46 @@ static void gen_statement(ClmStmtNode *node) {
     // return type
     // <- esp
 
-    // note: T_EAX and T_EBX are globals defined in clm_asm_headers.h
-    asm_mov(ESP, EBP); // reset stack pointer to above the function
-    asm_pop(T_EBX);    // pop the old frame pointer into t_ebx
-    asm_pop(T_EAX);    // pop the stack address of the next instruction to
+    // note: T_EAX and T_EBX are globals defined in clm_asm.h
+    asm_mov(ESP, EBP);      // reset stack pointer to above the function
+    asm_pop("[" T_EBX "]"); // pop the old frame pointer into t_ebx
+    asm_pop("[" T_EAX "]"); // pop the stack address of the next instruction to
     // execute after call finishes
     gen_expression(node->returnExpr);
-    asm_mov(EBP, T_EBX); // move the old frame pointer into ebp
-    asm_push(T_EAX);     // push the stack address of the next instruction to
+    asm_mov(EBP, "[" T_EBX "]"); // move the old frame pointer into ebp
+    asm_push("[" T_EAX
+             "]"); // push the stack address of the next instruction to
     // execute after call finishes
     asm_ret(); // return
     break;
+  }
+}
+
+static void gen_globals(ClmScope *globalScope) {
+  int i;
+  ClmSymbol *symbol;
+  char buffer[128];
+  for (i = 0; i < globalScope->symbols->length; i++) {
+    symbol = globalScope->symbols->data[i];
+    switch (symbol->type) {
+    case CLM_TYPE_INT:
+      sprintf(buffer, "%s dd 0", symbol->name);
+      writeLine(buffer) : break;
+    case CLM_TYPE_FLOAT:
+      // TODO
+      break;
+    case CLM_TYPE_STRING:
+      // TODO
+      break;
+    case CLM_TYPE_MATRIX: {
+      ClmStmtNode *node = symbol->declaration;
+      ClmExpNode *val = node->assignStmt.right;
+      // TODO
+      break;
+    }
+    default:
+      break;
+    }
   }
 }
 
@@ -665,8 +675,11 @@ const char *clm_code_gen_main(ArrayList *statements, ClmScope *globalScope) {
 
   writeLine(ASM_START);
   gen_statements(statements);
+
   writeLine(ASM_EXIT_PROCESS);
   writeLine(ASM_DATA);
+
+  gen_globals(globalScope);
 
   return data.code;
 }
