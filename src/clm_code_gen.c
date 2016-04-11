@@ -238,7 +238,6 @@ static void gen_index(ClmExpNode *node) {
     } else if (node->indExp.colIndex == NULL) {
       // TODO push a whole col onto the stack
     } else {
-      // TODO push one val onto the stack
       gen_expression(node->indExp.colIndex);
       gen_expression(node->indExp.rowIndex);
       pop_int_into(EAX); // pop row index into eax
@@ -247,11 +246,8 @@ static void gen_index(ClmExpNode *node) {
       asm_imul(EAX, "4"); // now eax contains row * col * 4
       // var->offset points at type... 3 elements above is the first item
       // in the matrix
-      // sprintf(index_str, "dword [ebp+%d+eax]", var->offset + 12);
-      sprintf(index_str, "[ebp+%d]", var->offset + 4);
-      asm_mov(EBX, index_str);
-      // asm_add(EAX, EBX); //eax now contains
-      asm_push("dword [eax]");
+      sprintf(index_str, "dword [ebp+%d+eax]", var->offset + 12);
+      asm_push(index_str);
       asm_push_i((int)CLM_TYPE_INT);
     }
     break;

@@ -797,7 +797,7 @@ void gen_print_mat(int nl) {
   asm_pop(ECX); // pop rows
   asm_pop(EBX); // pop cols
   asm_imul(ECX, EBX);
-  asm_mov("[" T_ROW_END "]", EBX); // TODO does T_ROW_END need to be [T_ROW_END]
+  asm_mov("[" T_ROW_END "]", EBX);
 
   asm_label(cmp_label);
   asm_cmp(ECX, "0");
