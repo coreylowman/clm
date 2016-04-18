@@ -5,8 +5,7 @@
 
 #include "clm.h"
 #include "clm_asm.h"
-#include "clm_expression.h"
-#include "clm_statement.h"
+#include "clm_ast.h"
 #include "clm_type.h"
 #include "clm_type_gen.h"
 #include "clm_type_of.h"

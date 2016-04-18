@@ -1,5 +1,5 @@
 #include "clm.h"
-#include "clm_expression.h"
+#include "clm_ast.h"
 
 // TODO
 static void foldConstants(ClmExpNode *node, int *changed);

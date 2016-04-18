@@ -1,7 +1,7 @@
 #ifndef CLM_TYPE_OF_H_
 #define CLM_TYPE_OF_H_
 
-#include "clm_expression.h"
+#include "clm_ast.h"
 #include "clm_scope.h"
 #include "clm_type.h"
 

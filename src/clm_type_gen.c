@@ -683,7 +683,7 @@ void gen_string_bool(BoolOp op, ClmType other_type) {
     gen_string_cmp_string(op);
     break;
   default:
-    //shouldn't get here
+    // shouldn't get here
     break;
   }
 }

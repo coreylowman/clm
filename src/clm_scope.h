@@ -16,7 +16,6 @@ void clm_symbol_free(void *data);
 
 void clm_symbol_print(void *data, int level);
 
-
 typedef struct ClmScope {
   ArrayList *symbols; // ArrayList of ClmSymbol
   struct ClmScope *parent;

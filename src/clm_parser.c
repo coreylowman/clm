@@ -1,6 +1,5 @@
 #include "clm.h"
-#include "clm_expression.h"
-#include "clm_statement.h"
+#include "clm_ast.h"
 
 typedef struct ClmParserData {
   ArrayList *parseTree; // ArrayList of ClmStmtNode
@@ -49,8 +48,7 @@ static int expect(ClmLexerSymbol symbol) {
   }
   clm_error(curr()->lineNo, curr()->colNo,
             "Expected token '%s', but found token '%s'",
-            clmLexerSymbolStrings[symbol],
-            clmLexerSymbolStrings[curr()->sym]);
+            clmLexerSymbolStrings[symbol], clmLexerSymbolStrings[curr()->sym]);
   return 0;
 }
 

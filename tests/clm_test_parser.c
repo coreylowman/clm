@@ -13,6 +13,4 @@ static int clm_test_parser_float();
 static int clm_test_parser_int();
 static int clm_test_parser_statement();
 
-int clm_test_parser(){
-    return 1;
-}
+int clm_test_parser() { return 1; }

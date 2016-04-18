@@ -4,15 +4,13 @@ list(APPEND CLM_OBJECT_LIBRARY_SOURCES
     clm_asm.c
     clm_asm.h
     clm_code_gen.c
-    clm_expression.c
-    clm_expression.h
+    clm_ast.c
+    clm_ast.h
     clm_lexer.c
     clm_optimizer.c
     clm_parser.c
     clm_scope.c
     clm_scope.h
-    clm_statement.c
-    clm_statement.h
     clm_symbol_gen.c
     clm_type.c
     clm_type.h

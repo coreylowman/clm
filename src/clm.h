@@ -10,7 +10,8 @@
 typedef struct ClmScope ClmScope;
 
 //
-// Errors (note: not implemented in clm.c - implemented in the corresponding main.c)
+// Errors (note: not implemented in clm.c - implemented in the corresponding
+// main.c)
 //
 void clm_error(int line, int col, const char *fmt, ...);
 

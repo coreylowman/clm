@@ -40,7 +40,7 @@ void clm_error(int line, int col, const char *fmt, ...) {
   vprintf(fmt, ap);
   printf("\n");
   va_end(ap);
-  
+
   exit(1);
 }
 

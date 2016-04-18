@@ -1,7 +1,7 @@
 #include <stdlib.h>
 
 #include "clm.h"
-#include "clm_statement.h"
+#include "clm_ast.h"
 #include "clm_type.h"
 #include "clm_type_of.h"
 
