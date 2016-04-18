@@ -1,8 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "string_util.h"
-
+#include "clm.h"
 #include "clm_statement.h"
 
 ClmStmtNode *clm_stmt_new_assign(ClmExpNode *lhs, ClmExpNode *rhs) {

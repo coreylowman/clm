@@ -1,9 +1,21 @@
 #ifndef CLM_SCOPE_H_
 #define CLM_SCOPE_H_
 
-#include "array_list.h"
+#include "clm_type.h"
 
-#include "clm_symbol.h"
+typedef struct ClmSymbol {
+  char *name;
+  ClmType type;
+  void *declaration;
+  int offset;
+  int isParam;
+} ClmSymbol;
+
+ClmSymbol *clm_symbol_new(const char *name, ClmType type, void *declaration);
+void clm_symbol_free(void *data);
+
+void clm_symbol_print(void *data, int level);
+
 
 typedef struct ClmScope {
   ArrayList *symbols; // ArrayList of ClmSymbol

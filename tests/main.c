@@ -1,14 +1,8 @@
-#ifdef _WIN32
-#include <windows.h>
-#endif
-
 #include <stdio.h>
-#include <stdlib.h>
 
-#include "clm_error.h"
+#include "clm_tests.h"
 
-extern char *file_name;
-extern int CLM_BUILD_TESTS;
+char *file_name;
 
 void clm_error(int line, int col, const char *fmt, ...) {
   va_list ap;
@@ -33,7 +27,12 @@ void clm_error(int line, int col, const char *fmt, ...) {
   vprintf(fmt, ap);
   printf("\n");
   va_end(ap);
+}
 
-  if (!CLM_BUILD_TESTS)
-    exit(1);
+int main(int argc, char *argv[]) {
+  int res;
+  res = clm_test_lexer();
+  printf("LEXER : %s\n", res ? "PASSED" : "FAILED");
+
+  return 0;
 }

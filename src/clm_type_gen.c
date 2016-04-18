@@ -683,7 +683,8 @@ void gen_string_bool(BoolOp op, ClmType other_type) {
     gen_string_cmp_string(op);
     break;
   default:
-    return;
+    //shouldn't get here
+    break;
   }
 }
 
@@ -698,6 +699,9 @@ void gen_mat_unary(UnaryOp op) {
     break;
   case UNARY_OP_MINUS:
     gen_mat_minus();
+    break;
+  default:
+    // shouldn't get here
     break;
   }
 }
@@ -740,6 +744,9 @@ void gen_int_unary(UnaryOp op) {
   case UNARY_OP_NOT:
     gen_int_not();
     break;
+  default:
+    // shouldn't get here
+    break;
   }
 }
 
@@ -773,6 +780,9 @@ void gen_print_type(ClmType type, int nl) {
     break;
   case CLM_TYPE_STRING:
     gen_print_string(nl);
+    break;
+  default:
+    // shouldn't get here
     break;
   }
 }

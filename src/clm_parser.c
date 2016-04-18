@@ -1,9 +1,5 @@
-#include "string_util.h"
-
-#include "clm_error.h"
+#include "clm.h"
 #include "clm_expression.h"
-#include "clm_lexer.h"
-#include "clm_parser.h"
 #include "clm_statement.h"
 
 typedef struct ClmParserData {
@@ -53,8 +49,8 @@ static int expect(ClmLexerSymbol symbol) {
   }
   clm_error(curr()->lineNo, curr()->colNo,
             "Expected token '%s', but found token '%s'",
-            clm_lexer_sym_to_string(symbol),
-            clm_lexer_sym_to_string(curr()->sym));
+            clmLexerSymbolStrings[symbol],
+            clmLexerSymbolStrings[curr()->sym]);
   return 0;
 }
 
@@ -65,7 +61,7 @@ ArrayList *clm_parser_main(ArrayList *tokens) {
   return consume_statements(0);
 }
 
-void clm_parser_print(ArrayList *parseTree) {
+void clm_print_statements(ArrayList *parseTree) {
   array_list_foreach_2(parseTree, 0, clm_stmt_print);
 }
 
@@ -313,7 +309,7 @@ static ClmStmtNode *consume_statement() {
     return stmt;
   } else {
     clm_error(curr()->lineNo, curr()->colNo, "Unexpected symbol %s",
-              clm_lexer_sym_to_string(curr()->sym));
+              clmLexerSymbolStrings[curr()->sym]);
   }
   return NULL;
 }
@@ -525,7 +521,7 @@ static ClmExpNode *consume_expression_6() {
     return exp;
   } else {
     clm_error(curr()->lineNo, curr()->colNo, "Unexpected symbol %s",
-              clm_lexer_sym_to_string(curr()->sym));
+              clmLexerSymbolStrings[curr()->sym]);
   }
 
   // should never return from here... as it will error and exit

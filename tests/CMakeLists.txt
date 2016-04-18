@@ -1,8 +1,12 @@
 list(APPEND CLM_TESTS_SOURCES
+    clm_test_code_gen.c
     clm_test_lexer.c
-    clm_test_lexer.h
-    clm_test_main.c
-    clm_test_main.h
+    clm_test_optimizer.c
+    clm_test_parser.c
+    clm_test_symbol_gen.c
+    clm_test_type_check.c
+    clm_tests.h
+    main.c
 
     $<TARGET_OBJECTS:clmObjectLibrary>
 )

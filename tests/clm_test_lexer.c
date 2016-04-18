@@ -1,12 +1,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "array_list.h"
-#include "clm_lexer.h"
-#include "string_util.h"
+#include "clm.h"
+#include "clm_tests.h"
 
-#include "clm_test_lexer.h"
-#include "clm_test_utils.h"
+static int clm_test_lexer_ids();
+static int clm_test_lexer_numbers();
+static int clm_test_lexer_keywords();
 
 int clm_test_lexer() {
   int result = 1;
@@ -41,7 +41,7 @@ int clm_test_lexer_ids() {
                         "and_2this_1\n";
 
   ArrayList *tokens_list = clm_lexer_main(program);
-  ClmLexerToken **tokens = tokens_list->data;
+  ClmLexerToken **tokens = (ClmLexerToken **)tokens_list->data;
 
   int i = 0;
   CLM_ASSERT(tokens[i]->sym == LITERAL_ID &&
@@ -63,7 +63,7 @@ int clm_test_lexer_numbers() {
                         "2345.0012\n";
 
   ArrayList *tokens_list = clm_lexer_main(program);
-  ClmLexerToken **tokens = tokens_list->data;
+  ClmLexerToken **tokens = (ClmLexerToken **)tokens_list->data;
 
   int i = 0;
   CLM_ASSERT(tokens[i]->sym == LITERAL_INT &&
@@ -126,7 +126,7 @@ int clm_test_lexer_keywords() {
                         "~\n";
 
   ArrayList *tokens_list = clm_lexer_main(program);
-  ClmLexerToken **tokens = tokens_list->data;
+  ClmLexerToken **tokens = (ClmLexerToken **)tokens_list->data;
 
   int i = 0;
   CLM_ASSERT(tokens[i++]->sym == KEYWORD_AND);

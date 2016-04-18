@@ -1,8 +1,6 @@
 #ifndef CLM_STATEMENT_H_
 #define CLM_STATEMENT_H_
 
-#include "array_list.h"
-
 #include "clm_expression.h"
 #include "clm_type.h"
 

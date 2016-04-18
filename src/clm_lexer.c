@@ -2,10 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "string_util.h"
-
-#include "clm_error.h"
-#include "clm_lexer.h"
+#include "clm.h"
 
 typedef struct ClmLexerData {
   const char *programString;
@@ -64,10 +61,10 @@ static void lexer_token_free(void *data) {
 
 static void lexer_token_print(void *data) {
   ClmLexerToken *token = (ClmLexerToken *)data;
-  printf("%s : { %s }\n", clm_lexer_sym_to_string(token->sym), token->raw);
+  printf("%s : { %s }\n", clmLexerSymbolStrings[token->sym], token->raw);
 }
 
-void clm_lexer_print(ArrayList *tokens) {
+void clm_print_tokens(ArrayList *tokens) {
   array_list_foreach(tokens, lexer_token_print);
 }
 

@@ -1,9 +1,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "string_util.h"
-
+#include "clm.h"
 #include "clm_expression.h"
+#include "clm_type.h"
 
 const char *arith_op_to_string(ArithOp op) {
   const char *strings[] = {"ADD", "SUB", "MULT", "DIV"};

@@ -3,7 +3,10 @@
 
 #include "clm_type.h"
 
-#include "array_list.h"
+//
+// Forward Declarations
+//
+typedef struct ArrayList ArrayList;
 
 typedef enum ArithOp {
   ARITH_OP_ADD,

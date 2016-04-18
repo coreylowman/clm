@@ -1,7 +1,6 @@
 #include <stdlib.h>
 
 #include "clm_statement.h"
-#include "clm_symbol.h"
 #include "clm_type.h"
 #include "clm_type_of.h"
 

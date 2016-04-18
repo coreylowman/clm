@@ -1,102 +1,102 @@
-#ifdef _WIN32
-#define _CRTDBG_MAP_ALLOC // for heap corruption debugging
-#include <crtdbg.h>
-#include <windows.h>
-
-#include <shellapi.h>
-#endif
-
-#include <errno.h>
-#include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
-#include <time.h>
 
-#include "array_list.h"
-#include "string_util.h"
+#include "clm.h"
 
-#include "clm_code_gen.h"
-#include "clm_error.h"
-#include "clm_lexer.h"
-#include "clm_optimizer.h"
-#include "clm_parser.h"
-#include "clm_scope.h"
-#include "clm_symbol_gen.h"
-#include "clm_type_check.h"
-
-char *file_name;
-int CLM_BUILD_TESTS = 0;
-
-static char *file_contents(char *file_name) {
-  FILE *file = fopen(file_name, "rb");
-  if (!file)
+char *string_copy(const char *string) {
+  if (string == NULL)
     return NULL;
-
-  char *buffer;
-  long length;
-
-  int success = fseek(file, 0L, SEEK_END);
-  if (success < 0) {
-    strerror(errno);
-    printf("error: couldn't read to end of file");
-    exit(1);
-  }
-  length = ftell(file);
-  rewind(file);
-
-  buffer = malloc((length + 1) * sizeof(char));
-
-  if (!buffer) {
-    printf("unable to allocate memory");
-    exit(1);
-  }
-
-  int num_read = fread(buffer, sizeof(char), length, file);
-  if (num_read != length) {
-    printf("read too many");
-    exit(1);
-  }
-  buffer[length] = '\0';
-
-  fclose(file);
-
-  return buffer;
+  char *newString = NULL;
+  newString = malloc(strlen(string) + 1);
+  strcpy(newString, string);
+  return newString;
 }
 
-static void write_to_file(const char *name, const char *contents) {
-  FILE *file = fopen(name, "w+");
-
-  fprintf(file, contents);
-
-  fclose(file);
+char *string_copy_n(const char *string, size_t n) {
+  if (string == NULL)
+    return NULL;
+  char *newString = NULL;
+  newString = malloc(sizeof(char) * (n + 1));
+  strncpy(newString, string, n);
+  newString[n] = '\0';
+  return newString;
 }
 
-int main(int argc, char *argv[]) {
-  file_name = "test_indexing.clm";
+int string_equals(const char *string1, const char *string2) {
+  if (string1 == NULL && string2 == NULL)
+    return 1;
+  else if (string1 == NULL)
+    return 0;
+  else if (string2 == NULL)
+    return 0;
+  else
+    return !strcmp(string1, string2);
+}
 
-  char *contents = file_contents(file_name);
-  if (contents == NULL)
-    clm_error(0, 0, "No file with name %s", file_name);
+int string_equals_n(const char *string1, const char *string2, size_t n) {
+  if (string1 == NULL && string2 == NULL)
+    return 1;
+  else if (string1 == NULL)
+    return 0;
+  else if (string2 == NULL)
+    return 0;
+  else
+    return !strncmp(string1, string2, n);
+}
 
-  ArrayList *tokens = clm_lexer_main(contents);
-  // clm_lexer_print(tokens);
+ArrayList *array_list_new(void (*free_element)(void *element)) {
+  ArrayList *self = malloc(sizeof(*self));
+  self->length = 0;
+  self->capacity = 16;
+  self->data = malloc(self->capacity * sizeof(*(self->data)));
+  int i;
+  for (i = 0; i < self->capacity; i++) {
+    self->data[i] = NULL;
+  }
+  self->free_element = free_element;
+  return self;
+}
 
-  ArrayList *parseTree = clm_parser_main(tokens);
-  // clm_parser_print(parseTree);
+void array_list_free(void *data) {
+  if (data == NULL)
+    return;
 
-  ClmScope *globalScope = clm_symbol_gen_main(parseTree);
-  // clm_scope_print(globalScope, 0);
+  ArrayList *self = (ArrayList *)data;
+  int i;
+  for (i = self->length - 1; i >= 0; i--) {
+    self->free_element(self->data[i]);
+  }
+  free(self->data);
+  free(self);
+}
 
-  clm_type_check_main(parseTree, globalScope);
+void array_list_push(ArrayList *self, void *data) {
+  if (self->length == self->capacity) {
+    int i = self->capacity;
+    self->capacity = 2 * self->capacity;
+    self->data = realloc(self->data, self->capacity * sizeof(*(self->data)));
+    for (; i < self->capacity; i++) {
+      self->data[i] = NULL;
+    }
+  }
+  self->data[self->length] = data;
+  self->length += 1;
+}
 
-  const char *asm_source = clm_code_gen_main(parseTree, globalScope);
+void array_list_foreach(ArrayList *self, void (*func)(void *data)) {
+  if (self == NULL)
+    return;
+  int i = 0;
+  for (; i < self->length; i++) {
+    func(self->data[i]);
+  }
+}
 
-  write_to_file("output.asm", asm_source);
-
-  free(contents);
-  array_list_free(tokens);
-  array_list_free(parseTree);
-  clm_scope_free(globalScope);
-
-  return 0;
+void array_list_foreach_2(ArrayList *self, int level,
+                          void (*func)(void *data, int l)) {
+  if (self == NULL)
+    return;
+  int i = 0;
+  for (; i < self->length; i++) {
+    func(self->data[i], level);
+  }
 }

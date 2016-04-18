@@ -1,8 +1,7 @@
 #include <stdlib.h>
 
-#include "clm_error.h"
+#include "clm.h"
 #include "clm_statement.h"
-#include "clm_symbol_gen.h"
 #include "clm_type.h"
 #include "clm_type_of.h"
 
