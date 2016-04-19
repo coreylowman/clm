@@ -6,10 +6,10 @@
 #include "clm_asm.h"
 #include "clm_code_gen.h"
 #include "clm_expression.h"
+#include "clm_scope.h"
 #include "clm_statement.h"
 #include "clm_type.h"
 #include "clm_type_gen.h"
-#include "clm_type_of.h"
 
 typedef struct {
   char *code;
@@ -142,7 +142,6 @@ static void gen_matrix_size(ClmExpNode *node) {
   }
 }
 
-// TODO rename this pop_int_intoo_var
 static void pop_into_lhs(ClmExpNode *node) {
   // it is an index node - otherwise it is a type check fail
   char index_str[64];
@@ -617,7 +616,8 @@ static void gen_globals(ClmScope *globalScope) {
     switch (symbol->type) {
     case CLM_TYPE_INT:
       sprintf(buffer, "%s dd 0", symbol->name);
-      writeLine(buffer) : break;
+      writeLine(buffer);
+      break;
     case CLM_TYPE_FLOAT:
       // TODO
       break;
@@ -626,7 +626,7 @@ static void gen_globals(ClmScope *globalScope) {
       break;
     case CLM_TYPE_MATRIX: {
       ClmStmtNode *node = symbol->declaration;
-      ClmExpNode *val = node->assignStmt.right;
+      ClmExpNode *val = node->assignStmt.rhs;
       // TODO
       break;
     }

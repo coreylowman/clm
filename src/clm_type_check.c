@@ -9,7 +9,6 @@
 #include "clm_symbol.h"
 #include "clm_type.h"
 #include "clm_type_check.h"
-#include "clm_type_of.h"
 
 // valid arith ops
 // string string         +
