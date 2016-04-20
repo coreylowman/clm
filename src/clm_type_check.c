@@ -206,7 +206,8 @@ static void type_check_expression(ClmExpNode *node, ClmScope *scope) {
   }
   case EXP_TYPE_MAT_DEC:
     if (node->matDecExp.arr != NULL &&
-        node->matDecExp.size.rows * node->matDecExp.size.cols != node->matDecExp.length) {
+        node->matDecExp.size.rows * node->matDecExp.size.cols !=
+            node->matDecExp.length) {
       // error... mat dec rows or cols have in specific number of items
       clm_error(node->lineNo, node->colNo, "Invalid matrix declaration");
     }

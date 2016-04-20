@@ -121,9 +121,9 @@ static void gen_matrix_size(ClmExpNode *node) {
   char index_str[32];
 
   MatrixSize size;
-  if(node->type == EXP_TYPE_MAT_DEC){
+  if (node->type == EXP_TYPE_MAT_DEC) {
     size = node->matDecExp.size;
-  }else if(node->type == EXP_TYPE_PARAM) {
+  } else if (node->type == EXP_TYPE_PARAM) {
     size = node->paramExp.size;
   }
 
@@ -633,11 +633,12 @@ static void gen_globals(ClmScope *globalScope) {
     case CLM_TYPE_MATRIX: {
       ClmStmtNode *node = symbol->declaration;
       ClmExpNode *val = node->assignStmt.rhs;
-      if(clm_exp_has_size(val, globalScope)){
+      if (clm_exp_has_size(val, globalScope)) {
         int i, rows, cols;
         clm_size_of_exp(val, globalScope, &rows, &cols);
-        sprintf(buffer, "%s dd %d, %d, %d", symbol->name, (int) CLM_TYPE_MATRIX, rows, cols);
-        for(i = 0;i < rows * cols;i++){
+        sprintf(buffer, "%s dd %d, %d, %d", symbol->name, (int)CLM_TYPE_MATRIX,
+                rows, cols);
+        for (i = 0; i < rows * cols; i++) {
           strcat(buffer, ", 0");
         }
         writeLine(buffer);

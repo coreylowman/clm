@@ -165,13 +165,14 @@ int clm_type_is_number(ClmType type) {
   return type == CLM_TYPE_INT || type == CLM_TYPE_FLOAT;
 }
 
-int clm_exp_has_size(ClmExpNode *node, ClmScope *scope) { 
+int clm_exp_has_size(ClmExpNode *node, ClmScope *scope) {
   int rows, cols;
   clm_size_of_exp(node, scope, &rows, &cols);
   return rows > 0 && cols > 0;
 }
 
-void size_of_arith_string_any(ArithOp op, ClmType right_type, int length, int rlength, int *out_length){
+void size_of_arith_string_any(ArithOp op, ClmType right_type, int length,
+                              int rlength, int *out_length) {
   *out_length = 0;
   switch (right_type) {
   case CLM_TYPE_STRING:
@@ -184,7 +185,8 @@ void size_of_arith_string_any(ArithOp op, ClmType right_type, int length, int rl
   }
 }
 
-void size_of_arith_int_any(ArithOp op, ClmType right_type, int rrows, int rcols, int *out_rows, int *out_cols){
+void size_of_arith_int_any(ArithOp op, ClmType right_type, int rrows, int rcols,
+                           int *out_rows, int *out_cols) {
   *out_rows = 0;
   *out_cols = 0;
   switch (right_type) {
@@ -204,7 +206,8 @@ void size_of_arith_int_any(ArithOp op, ClmType right_type, int rrows, int rcols,
   }
 }
 
-void size_of_arith_float_any(ArithOp op, ClmType right_type, int rrows, int rcols, int *out_rows, int *out_cols){
+void size_of_arith_float_any(ArithOp op, ClmType right_type, int rrows,
+                             int rcols, int *out_rows, int *out_cols) {
   *out_rows = 0;
   *out_cols = 0;
   switch (right_type) {
@@ -224,7 +227,9 @@ void size_of_arith_float_any(ArithOp op, ClmType right_type, int rrows, int rcol
   }
 }
 
-void size_of_arith_matrix_any(ArithOp op, ClmType right_type, int rows, int cols, int rrows, int rcols, int *out_rows, int *out_cols){
+void size_of_arith_matrix_any(ArithOp op, ClmType right_type, int rows,
+                              int cols, int rrows, int rcols, int *out_rows,
+                              int *out_cols) {
   *out_rows = 0;
   *out_cols = 0;
   switch (right_type) {
@@ -250,17 +255,17 @@ void size_of_arith_matrix_any(ArithOp op, ClmType right_type, int rows, int cols
     }
   case CLM_TYPE_MATRIX:
     switch (op) {
-      case ARITH_OP_MULT:
-        *out_rows = rows;
-        *out_cols = rcols;
-        return;
-      case ARITH_OP_DIV:
-        return;
-      case ARITH_OP_ADD:
-      case ARITH_OP_SUB:
-        *out_rows = rows;
-        *out_cols = cols;
-        return;
+    case ARITH_OP_MULT:
+      *out_rows = rows;
+      *out_cols = rcols;
+      return;
+    case ARITH_OP_DIV:
+      return;
+    case ARITH_OP_ADD:
+    case ARITH_OP_SUB:
+      *out_rows = rows;
+      *out_cols = cols;
+      return;
     }
     return;
   default:
@@ -268,8 +273,8 @@ void size_of_arith_matrix_any(ArithOp op, ClmType right_type, int rows, int cols
   }
 }
 
-
-static void decompose_matrix_size(MatrixSize size, int *out_rows, int *out_cols){
+static void decompose_matrix_size(MatrixSize size, int *out_rows,
+                                  int *out_cols) {
   *out_rows = size.rows;
   *out_cols = size.cols;
 }
@@ -306,17 +311,21 @@ void clm_size_of_exp(ClmExpNode *node, ClmScope *scope, int *out_rows,
 
     switch (left_type) {
     case CLM_TYPE_STRING:
-      size_of_arith_string_any(node->arithExp.operand, right_type, lrows, rrows, out_rows);
+      size_of_arith_string_any(node->arithExp.operand, right_type, lrows, rrows,
+                               out_rows);
       *out_cols = 1;
       return;
     case CLM_TYPE_INT:
-      size_of_arith_int_any(node->arithExp.operand, right_type, rrows, rcols, out_rows, out_cols);
+      size_of_arith_int_any(node->arithExp.operand, right_type, rrows, rcols,
+                            out_rows, out_cols);
       return;
     case CLM_TYPE_FLOAT:
-      size_of_arith_float_any(node->arithExp.operand, right_type, rrows, rcols, out_rows, out_cols);
+      size_of_arith_float_any(node->arithExp.operand, right_type, rrows, rcols,
+                              out_rows, out_cols);
       return;
     case CLM_TYPE_MATRIX:
-      size_of_arith_matrix_any(node->arithExp.operand, right_type, lrows, lcols, rrows, rcols, out_rows, out_cols);
+      size_of_arith_matrix_any(node->arithExp.operand, right_type, lrows, lcols,
+                               rrows, rcols, out_rows, out_cols);
       return;
     default:
       return;
@@ -335,10 +344,12 @@ void clm_size_of_exp(ClmExpNode *node, ClmScope *scope, int *out_rows,
     ClmSymbol *symbol = clm_scope_find(scope, node->indExp.id);
     ClmStmtNode *declaration = symbol->declaration;
     clm_size_of_exp(declaration->assignStmt.rhs, scope, out_rows, out_cols);
-    
-    //note: if both are NULL, then we have the size of the whole matrix
-    //      if only col is !NULL, then we are doing A[#,x], which is all rows 1 col
-    //      if only row is !NULL, then we are doing A[x,#], which is 1 row all cols
+
+    // note: if both are NULL, then we have the size of the whole matrix
+    //      if only col is !NULL, then we are doing A[#,x], which is all rows 1
+    //      col
+    //      if only row is !NULL, then we are doing A[x,#], which is 1 row all
+    //      cols
     //      if both are !NULL, then we are doing A[x,y], which is 1 row 1 col
 
     if (node->indExp.rowIndex != NULL)
@@ -347,7 +358,7 @@ void clm_size_of_exp(ClmExpNode *node, ClmScope *scope, int *out_rows,
     if (node->indExp.colIndex != NULL)
       *out_cols = 1;
 
-    return;    
+    return;
   }
   case EXP_TYPE_MAT_DEC:
     decompose_matrix_size(node->matDecExp.size, out_rows, out_cols);

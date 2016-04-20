@@ -125,7 +125,7 @@ ClmExpNode *clm_exp_new_unary(UnaryOp operand, ClmExpNode *node) {
   return unaryNode;
 }
 
-static void matrix_size_free(MatrixSize size){
+static void matrix_size_free(MatrixSize size) {
   free(size.rowVar);
   free(size.colVar);
 }
@@ -308,7 +308,8 @@ void clm_exp_print(void *data, int level) {
     } else {
       int i;
       printf("type : mat dec, data : ");
-      for (i = 0; i < node->matDecExp.size.rows * node->matDecExp.size.cols - 1; i++) {
+      for (i = 0; i < node->matDecExp.size.rows * node->matDecExp.size.cols - 1;
+           i++) {
         printf("%f ", node->matDecExp.arr[i]);
       }
       printf("%f", node->matDecExp.arr[i]);
