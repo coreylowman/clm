@@ -52,6 +52,13 @@ typedef enum ExpType {
   EXP_TYPE_UNARY
 } ExpType;
 
+typedef struct MatrixSize {
+  int rows;
+  int cols;
+  char *rowVar;
+  char *colVar;
+} MatrixSize;
+
 typedef struct ClmExpNode {
   ExpType type;
 
@@ -88,19 +95,13 @@ typedef struct ClmExpNode {
     struct {
       float *arr;
       int length;
-      int rows; // for constant sized matrix
-      int cols;
-      char *rowVar; // for variable sized matrix
-      char *colVar;
+      MatrixSize size;
     } matDecExp;
 
     struct {
       char *name;
       ClmType type;
-      int rows;
-      int cols;
-      char *rowVar;
-      char *colVar;
+      MatrixSize size;
     } paramExp;
 
     struct {
@@ -174,10 +175,7 @@ typedef struct ClmStmtNode {
       char *name;
       ArrayList *parameters; // array list of ClmExpNode
       ClmType returnType;
-      int returnRows;
-      char *returnRowsVar;
-      int returnCols;
-      char *returnColsVar;
+      MatrixSize returnSize;
       ArrayList *body; // array list of ClmStmtNode
     } funcDecStmt;
 

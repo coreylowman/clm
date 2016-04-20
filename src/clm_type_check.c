@@ -4,7 +4,6 @@
 #include "clm_ast.h"
 #include "clm_scope.h"
 #include "clm_type.h"
-#include "clm_type_of.h"
 
 // valid arith ops
 // string string         +
@@ -101,6 +100,9 @@ static void type_check_expression(ClmExpNode *node, ClmScope *scope) {
   case EXP_TYPE_STRING:
     break;
   case EXP_TYPE_ARITH: {
+    // TODO check if can arith for constant sized matrices?
+    // e.g. [4:3] * [3:1] is OK
+    // e.g. [4:3] * [2:2] is NOT OK
     type_check_expression(node->arithExp.right, scope);
     type_check_expression(node->arithExp.left, scope);
     ClmType left_type = clm_type_of_exp(node->arithExp.left, scope);
@@ -115,6 +117,9 @@ static void type_check_expression(ClmExpNode *node, ClmScope *scope) {
     break;
   }
   case EXP_TYPE_BOOL: {
+    // TODO check if can compare for constant sized matrices?
+    // e.g. [4:3] == [4:3] is OK
+    // e.g. [4:3] == [2:2] is NOT OK
     type_check_expression(node->boolExp.right, scope);
     type_check_expression(node->boolExp.left, scope);
     ClmType left_type = clm_type_of_exp(node->boolExp.left, scope);
@@ -156,6 +161,10 @@ static void type_check_expression(ClmExpNode *node, ClmScope *scope) {
       ClmExpNode *expected = stmt->funcDecStmt.parameters->data[i];
       type_check_expression(param, scope);
 
+      // TODO check if size of passed in expression matches size of expected
+      // e.g. \f A[m:n] ... f([4:3]) is OK
+      // e.g. \f A[2:n] ... f([2:4]) is OK
+      // e.g. \f A[2:n] ... f([4:4]) is NOT OK
       if (expected->paramExp.type != clm_type_of_exp(param, scope)) {
         // error... incorrect type passed in
         clm_error(node->lineNo, node->colNo,
@@ -169,6 +178,7 @@ static void type_check_expression(ClmExpNode *node, ClmScope *scope) {
     break;
   }
   case EXP_TYPE_INDEX: {
+    // TODO check if index is greater than constant sized matrix size
     type_check_expression(node->indExp.rowIndex, scope);
     type_check_expression(node->indExp.colIndex, scope);
 
@@ -196,7 +206,7 @@ static void type_check_expression(ClmExpNode *node, ClmScope *scope) {
   }
   case EXP_TYPE_MAT_DEC:
     if (node->matDecExp.arr != NULL &&
-        node->matDecExp.rows * node->matDecExp.cols != node->matDecExp.length) {
+        node->matDecExp.size.rows * node->matDecExp.size.cols != node->matDecExp.length) {
       // error... mat dec rows or cols have in specific number of items
       clm_error(node->lineNo, node->colNo, "Invalid matrix declaration");
     }
@@ -224,6 +234,7 @@ static void type_check_stmts(ArrayList *statements, ClmScope *scope) {
     ClmStmtNode *node = statements->data[i];
     switch (node->type) {
     case STMT_TYPE_ASSIGN:
+      // TODO check if size of expression matches size of variable
       type_check_expression(node->assignStmt.lhs, scope);
       type_check_expression(node->assignStmt.rhs, scope);
       if (node->assignStmt.lhs->type != EXP_TYPE_INDEX)

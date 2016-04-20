@@ -83,10 +83,10 @@ ClmExpNode *clm_exp_new_mat_dec(float *arr, int length, int cols) {
   node->type = EXP_TYPE_MAT_DEC;
   node->matDecExp.arr = arr;
   node->matDecExp.length = length;
-  node->matDecExp.rows = length / cols;
-  node->matDecExp.cols = cols;
-  node->matDecExp.rowVar = NULL;
-  node->matDecExp.colVar = NULL;
+  node->matDecExp.size.rows = length / cols;
+  node->matDecExp.size.cols = cols;
+  node->matDecExp.size.rowVar = NULL;
+  node->matDecExp.size.colVar = NULL;
   return node;
 }
 
@@ -96,10 +96,10 @@ ClmExpNode *clm_exp_new_empty_mat_dec(int rows, int cols, const char *rowVar,
   node->type = EXP_TYPE_MAT_DEC;
   node->matDecExp.arr = NULL;
   node->matDecExp.length = 0;
-  node->matDecExp.rows = rows;
-  node->matDecExp.cols = cols;
-  node->matDecExp.rowVar = string_copy(rowVar);
-  node->matDecExp.colVar = string_copy(colVar);
+  node->matDecExp.size.rows = rows;
+  node->matDecExp.size.cols = cols;
+  node->matDecExp.size.rowVar = string_copy(rowVar);
+  node->matDecExp.size.colVar = string_copy(colVar);
   return node;
 }
 
@@ -110,10 +110,10 @@ ClmExpNode *clm_exp_new_param(const char *name, ClmType type, int rows,
   node->type = EXP_TYPE_PARAM;
   node->paramExp.name = string_copy(name);
   node->paramExp.type = type;
-  node->paramExp.rows = rows;
-  node->paramExp.cols = cols;
-  node->paramExp.rowVar = string_copy(rowVar);
-  node->paramExp.colVar = string_copy(colVar);
+  node->paramExp.size.rows = rows;
+  node->paramExp.size.cols = cols;
+  node->paramExp.size.rowVar = string_copy(rowVar);
+  node->paramExp.size.colVar = string_copy(colVar);
   return node;
 }
 
@@ -123,6 +123,11 @@ ClmExpNode *clm_exp_new_unary(UnaryOp operand, ClmExpNode *node) {
   node->unaryExp.operand = operand;
   node->unaryExp.node = node;
   return unaryNode;
+}
+
+static void matrix_size_free(MatrixSize size){
+  free(size.rowVar);
+  free(size.colVar);
 }
 
 void clm_exp_free(void *data) {
@@ -156,13 +161,11 @@ void clm_exp_free(void *data) {
     break;
   case EXP_TYPE_MAT_DEC:
     free(node->matDecExp.arr);
-    free(node->matDecExp.rowVar);
-    free(node->matDecExp.colVar);
+    matrix_size_free(node->matDecExp.size);
     break;
   case EXP_TYPE_PARAM:
     free(node->paramExp.name);
-    free(node->paramExp.rowVar);
-    free(node->paramExp.colVar);
+    matrix_size_free(node->paramExp.size);
     break;
   case EXP_TYPE_UNARY:
     clm_exp_free(node->unaryExp.node);
@@ -298,27 +301,27 @@ void clm_exp_print(void *data, int level) {
     break;
   case EXP_TYPE_MAT_DEC:
     if (node->matDecExp.arr == NULL) {
-      printf("type : mat dec, rows : %d", node->matDecExp.rows);
-      printf(", cols : %d", node->matDecExp.cols);
-      printf(", rowVar : %s", node->matDecExp.rowVar);
-      printf(", colVar : %s", node->matDecExp.colVar);
+      printf("type : mat dec, rows : %d", node->matDecExp.size.rows);
+      printf(", cols : %d", node->matDecExp.size.cols);
+      printf(", rowVar : %s", node->matDecExp.size.rowVar);
+      printf(", colVar : %s", node->matDecExp.size.colVar);
     } else {
       int i;
       printf("type : mat dec, data : ");
-      for (i = 0; i < node->matDecExp.rows * node->matDecExp.cols - 1; i++) {
+      for (i = 0; i < node->matDecExp.size.rows * node->matDecExp.size.cols - 1; i++) {
         printf("%f ", node->matDecExp.arr[i]);
       }
       printf("%f", node->matDecExp.arr[i]);
-      printf(", rows : %d, cols : %d", node->matDecExp.rows,
-             node->matDecExp.cols);
+      printf(", rows : %d, cols : %d", node->matDecExp.size.rows,
+             node->matDecExp.size.cols);
     }
     break;
   case EXP_TYPE_PARAM:
     printf("type : param, name : %s", node->paramExp.name);
-    printf(", rows : %d", node->paramExp.rows);
-    printf(", cols : %d", node->paramExp.cols);
-    printf(", rowVar : %s", node->paramExp.rowVar);
-    printf(", colVar : %s", node->paramExp.colVar);
+    printf(", rows : %d", node->paramExp.size.rows);
+    printf(", cols : %d", node->paramExp.size.cols);
+    printf(", rowVar : %s", node->paramExp.size.rowVar);
+    printf(", colVar : %s", node->paramExp.size.colVar);
     break;
   case EXP_TYPE_UNARY:
     printf("type : unary, op : %d\n", node->unaryExp.operand);
@@ -372,10 +375,10 @@ ClmStmtNode *clm_stmt_new_dec(char *name, ArrayList *params, ClmType returnType,
   node->funcDecStmt.name = string_copy(name);
   node->funcDecStmt.parameters = params;
   node->funcDecStmt.returnType = returnType;
-  node->funcDecStmt.returnRows = returnRows;
-  node->funcDecStmt.returnRowsVar = string_copy(returnRowsVars);
-  node->funcDecStmt.returnCols = returnCols;
-  node->funcDecStmt.returnColsVar = string_copy(returnColsVar);
+  node->funcDecStmt.returnSize.rows = returnRows;
+  node->funcDecStmt.returnSize.cols = returnCols;
+  node->funcDecStmt.returnSize.rowVar = string_copy(returnRowsVars);
+  node->funcDecStmt.returnSize.colVar = string_copy(returnColsVar);
   node->funcDecStmt.body = body;
   return node;
 }
@@ -430,6 +433,7 @@ void clm_stmt_free(void *data) {
     break;
   case STMT_TYPE_FUNC_DEC:
     free(node->funcDecStmt.name);
+    matrix_size_free(node->funcDecStmt.returnSize);
     array_list_free(node->funcDecStmt.parameters);
     array_list_free(node->funcDecStmt.body);
     break;
@@ -515,10 +519,10 @@ void clm_stmt_print(void *data, int level) {
     while (q-- > 0)
       printf("  ");
     printf("return type : %d, ", node->funcDecStmt.returnType);
-    printf("ret rows : %d | %s, ", node->funcDecStmt.returnRows,
-           node->funcDecStmt.returnRowsVar);
-    printf("ret cols : %d | %s", node->funcDecStmt.returnCols,
-           node->funcDecStmt.returnColsVar);
+    printf("ret rows : %d | %s, ", node->funcDecStmt.returnSize.rows,
+           node->funcDecStmt.returnSize.rowVar);
+    printf("ret cols : %d | %s", node->funcDecStmt.returnSize.cols,
+           node->funcDecStmt.returnSize.colVar);
 
     q = level + 1;
     printf("\n");

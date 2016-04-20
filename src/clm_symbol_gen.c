@@ -3,7 +3,7 @@
 #include "clm.h"
 #include "clm_ast.h"
 #include "clm_type.h"
-#include "clm_type_of.h"
+#include "clm_scope.h"
 
 static void gen_expnode_symbols(ClmScope *scope, ClmExpNode *node);
 static void gen_statement_symbols(ClmScope *scope, ClmStmtNode *node);
@@ -41,25 +41,25 @@ static void gen_expnode_symbols(ClmScope *scope, ClmExpNode *node) {
                 node->indExp.id);
     break;
   case EXP_TYPE_MAT_DEC: {
-    if (node->matDecExp.rowVar != NULL &&
-        !clm_scope_contains(scope, node->matDecExp.rowVar))
+    if (node->matDecExp.size.rowVar != NULL &&
+        !clm_scope_contains(scope, node->matDecExp.size.rowVar))
       clm_error(node->lineNo, node->colNo, "Use of undeclared variable %s",
-                node->matDecExp.rowVar);
-    if (node->matDecExp.colVar != NULL &&
-        !clm_scope_contains(scope, node->matDecExp.colVar))
+                node->matDecExp.size.rowVar);
+    if (node->matDecExp.size.colVar != NULL &&
+        !clm_scope_contains(scope, node->matDecExp.size.colVar))
       clm_error(node->lineNo, node->colNo, "Use of undeclared variable %s",
-                node->matDecExp.colVar);
+                node->matDecExp.size.colVar);
     break;
   }
   case EXP_TYPE_PARAM: {
-    if (node->paramExp.rowVar != NULL &&
-        !clm_scope_contains(scope, node->paramExp.rowVar))
+    if (node->paramExp.size.rowVar != NULL &&
+        !clm_scope_contains(scope, node->paramExp.size.rowVar))
       clm_error(node->lineNo, node->colNo, "Use of undeclared variable %s",
-                node->paramExp.rowVar);
-    if (node->paramExp.colVar != NULL &&
-        !clm_scope_contains(scope, node->paramExp.colVar))
+                node->paramExp.size.rowVar);
+    if (node->paramExp.size.colVar != NULL &&
+        !clm_scope_contains(scope, node->paramExp.size.colVar))
       clm_error(node->lineNo, node->colNo, "Use of undeclared variable %s",
-                node->paramExp.colVar);
+                node->paramExp.size.colVar);
     break;
   }
   case EXP_TYPE_UNARY:

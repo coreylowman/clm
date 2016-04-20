@@ -124,16 +124,20 @@ static ClmExpNode *consume_parameter() {
     node->colNo = prev()->colNo;
     expect(TOKEN_COLON);
     if (accept(TOKEN_LCURL)) {
-      node->paramExp.rows = consume_param_size();
-      if (!node->paramExp.rows) {
-        node->paramExp.rowVar = string_copy(data.prevTokenRaw);
+      node->paramExp.size.rows = consume_param_size();
+      if (!node->paramExp.size.rows) {
+        node->paramExp.size.rowVar = string_copy(data.prevTokenRaw);
       }
+
       expect(TOKEN_COLON);
-      node->paramExp.cols = consume_param_size();
-      if (!node->paramExp.cols) {
-        node->paramExp.colVar = string_copy(data.prevTokenRaw);
+
+      node->paramExp.size.cols = consume_param_size();
+      if (!node->paramExp.size.cols) {
+        node->paramExp.size.colVar = string_copy(data.prevTokenRaw);
       }
+
       expect(TOKEN_RCURL);
+
       node->paramExp.type = CLM_TYPE_MATRIX;
     } else {
       if (accept(KEYWORD_INT)) {
@@ -271,7 +275,7 @@ static ClmStmtNode *consume_statement() {
       param = consume_parameter();
     }
 
-    int r = -2, c = -2;
+    int r = -1, c = -1;
     char *rv = NULL, *cv = NULL;
     ClmType returnType = CLM_TYPE_NONE;
     if (accept(TOKEN_MINUS)) {

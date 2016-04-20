@@ -8,7 +8,7 @@
 #include "clm_ast.h"
 #include "clm_type.h"
 #include "clm_type_gen.h"
-#include "clm_type_of.h"
+#include "clm_scope.h"
 
 typedef struct {
   char *code;
@@ -119,29 +119,35 @@ static void gen_unary(ClmExpNode *node) {
 /* pushes the number of column and then the number of rows */
 static void gen_matrix_size(ClmExpNode *node) {
   char index_str[32];
-  // this is a matDecExp
-  if (node->matDecExp.colVar != NULL) {
+
+  MatrixSize size;
+  if(node->type == EXP_TYPE_MAT_DEC){
+    size = node->matDecExp.size;
+  }else if(node->type == EXP_TYPE_PARAM) {
+    size = node->paramExp.size;
+  }
+
+  if (size.colVar != NULL) {
     // push dword [ebp+offset]
-    ClmSymbol *sym = clm_scope_find(data.scope, node->matDecExp.colVar);
+    ClmSymbol *sym = clm_scope_find(data.scope, size.colVar);
     sprintf(index_str, "dword [ebp+%d]", sym->offset + 8);
     asm_push(index_str);
   } else {
     // push $colInd
-    asm_push_i(node->matDecExp.cols);
+    asm_push_i(size.cols);
   }
 
-  if (node->matDecExp.rowVar != NULL) {
+  if (size.rowVar != NULL) {
     // push dword [ebp+offset]
-    ClmSymbol *sym = clm_scope_find(data.scope, node->matDecExp.rowVar);
+    ClmSymbol *sym = clm_scope_find(data.scope, size.rowVar);
     sprintf(index_str, "dword [ebp+%d]", sym->offset + 4);
     asm_push(index_str);
   } else {
     // push $rowInd
-    asm_push_i(node->matDecExp.rows);
+    asm_push_i(size.rows);
   }
 }
 
-// TODO rename this pop_int_intoo_var
 static void pop_into_lhs(ClmExpNode *node) {
   // it is an index node - otherwise it is a type check fail
   char index_str[64];
@@ -332,8 +338,8 @@ static void gen_expression(ClmExpNode *node) {
         // TODO... push f or push i?
         asm_push_i(node->matDecExp.arr[i]);
       }
-      asm_push_i(node->matDecExp.cols);
-      asm_push_i(node->matDecExp.rows);
+      asm_push_i(node->matDecExp.size.cols);
+      asm_push_i(node->matDecExp.size.rows);
       asm_push_i((int)expression_type);
     } else {
       // push a matrix onto the stack with all 0s
@@ -438,7 +444,7 @@ static void gen_func_dec(ClmStmtNode *node) {
   // for matrices, the value is a pointer to the location on the stack
   // these are all declared below the local variables
   ClmSymbol *sym;
-  ClmStmtNode *dec;
+  ClmExpNode *dec;
   char start_label[LABEL_SIZE];
   char end_label[LABEL_SIZE];
   char index_str[32];
@@ -461,7 +467,7 @@ static void gen_func_dec(ClmStmtNode *node) {
       next_label(start_label);
       next_label(end_label);
 
-      gen_matrix_size(dec->assignStmt.rhs);
+      gen_matrix_size(dec);
       asm_pop(EAX); // eax contains num of rows
       asm_pop(EBX); // ebx contains num of cols
       asm_mov(ECX, EAX);
@@ -492,7 +498,7 @@ static void gen_func_dec(ClmStmtNode *node) {
   data.scope = funcScope->parent;
   data.inFunction = 0;
 
-  if (node->funcDecStmt.returnRows == -2) {
+  if (node->funcDecStmt.returnSize.rows == -1) {
     // no return value!
     asm_mov(ESP, EBP);
     asm_pop(EBP);
@@ -610,12 +616,12 @@ static void gen_statement(ClmStmtNode *node) {
 static void gen_globals(ClmScope *globalScope) {
   int i;
   ClmSymbol *symbol;
-  char buffer[128];
+  char buffer[256];
   for (i = 0; i < globalScope->symbols->length; i++) {
     symbol = globalScope->symbols->data[i];
     switch (symbol->type) {
     case CLM_TYPE_INT:
-      sprintf(buffer, "%s dd 0", symbol->name);
+      sprintf(buffer, "%s dd %d, 0", symbol->name, (int)CLM_TYPE_INT);
       writeLine(buffer);
       break;
     case CLM_TYPE_FLOAT:
@@ -627,7 +633,15 @@ static void gen_globals(ClmScope *globalScope) {
     case CLM_TYPE_MATRIX: {
       ClmStmtNode *node = symbol->declaration;
       ClmExpNode *val = node->assignStmt.rhs;
-      // TODO
+      if(clm_exp_has_size(val, globalScope)){
+        int i, rows, cols;
+        clm_size_of_exp(val, globalScope, &rows, &cols);
+        sprintf(buffer, "%s dd %d, %d, %d", symbol->name, (int) CLM_TYPE_MATRIX, rows, cols);
+        for(i = 0;i < rows * cols;i++){
+          strcat(buffer, ", 0");
+        }
+        writeLine(buffer);
+      }
       break;
     }
     default:
