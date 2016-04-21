@@ -28,22 +28,22 @@ A[,3] //fourth column
 ```
 for i = [0,5] do
   print i
-;
+end
 => 012345
 
 for i = [0,5) do
   print i
-;
+end
 => 01234
 
 for i = (0,5] do
   print i
-;
+end
 => 12345
 
 for i = (0,5) do
   print i
-;
+end
 => 1234
 ```
 
@@ -52,7 +52,7 @@ In addition, you can specify the delta of the range by using the 'by' keyword:
 ```
 for i = (5, 0] by -1 do
   print i
-;
+end
 => 43210
 ```
 
@@ -78,7 +78,7 @@ for i = (5, 0] by -1 do
 	I = [size:size]
 	for i = [0, size) do
 		I[i,i] = 1
-	;
+	end
 	return I
 ;
 ```
@@ -107,7 +107,7 @@ for i = (5, 0] by -1 do
 ###Function Calling
 
 ```
-//calling a function named foo that has 2 parameters
+//calling a function named foo that has 2 parameters and no return value
 call foo(param1,param2)
 
 //calling a function named foo with no arguments and a return value
