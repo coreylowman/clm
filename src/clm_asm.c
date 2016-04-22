@@ -109,13 +109,26 @@ void asm_fxch(const char *arg1, const char *arg2){
   ASM_WRITE("fxch %s,%s\n", arg1, arg2);
 }
 
+void asm_fild(const char *src){
+  ASM_WRITE("fild %s\n", src);
+}
+
 void asm_fiadd(const char *dest, const char *other){
   ASM_WRITE("fiadd %s,%s\n", dest, other);
 }
 
-void asm_fild(const char *src){
-  ASM_WRITE("fild %s\n", src);
+void asm_fisub(const char *dest, const char *other){
+  ASM_WRITE("fisub %s,%s\n", dest, other);
 }
+
+void asm_fimul(const char *dest, const char *other){
+  ASM_WRITE("fimul %s,%s\n", dest, other);
+}
+
+void asm_fidiv(const char *dest, const char *other){
+  ASM_WRITE("fidiv %s,%s\n", dest, other);
+}
+
 /*
   from fasm doc:
 
@@ -142,6 +155,55 @@ void asm_fmul(const char *dest, const char *other) {
 void asm_fdiv(const char *dest, const char *other) {
   ASM_WRITE("fdiv %s,%s\n", dest, other);
 }
+
+void asm_faddp(const char *dest, const char *other){
+  ASM_WRITE("faddp %s,%s\n", dest, other);
+}
+
+void asm_fsubp(const char *dest, const char *other){
+  ASM_WRITE("fsubp %s,%s\n", dest, other);
+}
+
+void asm_fmulp(const char *dest, const char *other){
+  ASM_WRITE("fmulp %s,%s\n", dest, other);
+}
+
+void asm_fdivp(const char *dest, const char *other){
+  ASM_WRITE("fdivp %s,%s\n", dest, other);
+}
+
+void asm_faddr(const char *dest, const char *other){
+  ASM_WRITE("faddr %s,%s\n", dest, other);
+}
+
+void asm_fsubr(const char *dest, const char *other){
+  ASM_WRITE("fsubr %s,%s\n", dest, other);
+}
+
+void asm_fmulr(const char *dest, const char *other){
+  ASM_WRITE("fmulr %s,%s\n", dest, other);
+}
+
+void asm_fdivr(const char *dest, const char *other){
+  ASM_WRITE("fdivr %s,%s\n", dest, other);
+}
+
+void asm_faddrp(const char *dest, const char *other){
+  ASM_WRITE("faddpr %s,%s\n", dest, other);
+}
+
+void asm_fsubrp(const char *dest, const char *other){
+  ASM_WRITE("fsubpr %s,%s\n", dest, other);
+}
+
+void asm_fmulrp(const char *dest, const char *other){
+  ASM_WRITE("fmulpr %s,%s\n", dest, other);
+}
+
+void asm_fdivrp(const char *dest, const char *other){
+  ASM_WRITE("fdivpr %s,%s\n", dest, other);
+}
+
 
 void asm_inc(const char *arg) {
   ASM_WRITE("inc %s\n", arg);

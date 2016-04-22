@@ -67,6 +67,7 @@ void pop_int_into(const char *dest);
 void pop_float_into(const char *dest);
 void pop_matrix_of_size(const char *size_location);
 
+// general commands
 void asm_comment(const char *line);
 void asm_pop(const char *dest);
 void asm_push(const char *src);
@@ -75,31 +76,57 @@ void asm_push_f(const char *src);
 void asm_push_const_i(int val);
 void asm_push_const_f(float val);
 void asm_push_const_c(char val);
+
+// integer arithmetic
 void asm_add(const char *dest, const char *other);
 void asm_add_i(const char *dest, int i);
 void asm_sub(const char *dest, const char *other);
 void asm_imul(const char *dest, const char *other);
 void asm_div(const char *denom);
 
+// general fpu commands
 void asm_fxch(const char *arg1, const char *arg2);
-void asm_fiadd(const char *dest, const char *other);
 void asm_fild(const char *src);
+
+// fpu arithmetic with integers
+void asm_fiadd(const char *dest, const char *other);
+void asm_fisub(const char *dest, const char *other);
+void asm_fimul(const char *dest, const char *other);
+void asm_fidiv(const char *dest, const char *other);
+
+// fpu arithmetic
 void asm_fadd(const char *dest, const char *other);
 void asm_fsub(const char *dest, const char *other);
 void asm_fmul(const char *dest, const char *other);
 void asm_fdiv(const char *dest, const char *other);
+void asm_faddp(const char *dest, const char *other);
+void asm_fsubp(const char *dest, const char *other);
+void asm_fmulp(const char *dest, const char *other);
+void asm_fdivp(const char *dest, const char *other);
+void asm_faddr(const char *dest, const char *other);
+void asm_fsubr(const char *dest, const char *other);
+void asm_fmulr(const char *dest, const char *other);
+void asm_fdivr(const char *dest, const char *other);
+void asm_faddrp(const char *dest, const char *other);
+void asm_fsubrp(const char *dest, const char *other);
+void asm_fmulrp(const char *dest, const char *other);
+void asm_fdivrp(const char *dest, const char *other);
 
 void asm_inc(const char *arg);
 void asm_dec(const char *arg);
 void asm_neg(const char *arg);
+
 void asm_mov(const char *dest, const char *src);
 void asm_mov_i(const char *dest, int i);
+
 void asm_lea(const char *dest, const char *src);
 void asm_xchg(const char *arg1, const char *arg2);
+
 void asm_and(const char *arg1, const char *arg2);
 void asm_or(const char *arg1, const char *arg2);
 void asm_xor(const char *arg1, const char *arg2);
 void asm_cmp(const char *arg1, const char *arg2);
+
 void asm_jmp(const char *label);
 void asm_jmp_g(const char *label);
 void asm_jmp_ge(const char *label);
@@ -107,9 +134,11 @@ void asm_jmp_l(const char *label);
 void asm_jmp_le(const char *label);
 void asm_jmp_eq(const char *label);
 void asm_jmp_neq(const char *label);
+
 void asm_label(const char *name);
 void asm_call(const char *name);
 void asm_ret();
+
 // TODO improve this interface
 void asm_print_float(const char *src, int spc, int nl);
 void asm_print_int(const char *src, int spc, int nl);

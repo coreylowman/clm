@@ -279,20 +279,17 @@ static void gen_int_add_float() {
 
 static void gen_int_sub_float() {  
   pop_int_into(EAX); // pop int into eax
-  asm_fild(EAX); // load integer value into fpu stack
-  asm_fsub(ST0, ST1);
+  asm_fisub(ST0, EAX);
 }
 
 static void gen_int_mul_float() {
   pop_int_into(EAX); // pop int into eax
-  asm_fild(EAX); // load integer value into fpu stack
-  asm_fmul(ST0, ST1);
+  asm_fimul(ST0, EAX);
 }
 
 static void gen_int_div_float() {
   pop_int_into(EAX); // pop int into eax
-  asm_fild(EAX); // load integer value into fpu stack
-  asm_fdiv(ST0, ST1);
+  asm_fidiv(ST0, EAX);
 }
 
 /*
@@ -376,26 +373,21 @@ static void gen_float_add_int() {
 static void gen_float_sub_int() {
   asm_pop(EBX); // pop float type value
   pop_int_into(EAX); // pop int into eax
-  asm_fild(EAX); // load integer value into fpu stack
-  asm_fxch(ST0, ST1); //switch values, float is ST0, int is ST1
-  asm_fsub(ST0, ST1);
+  asm_fisub(ST0, EAX);
   asm_push(EBX); // push float value
 }
 
 static void gen_float_mul_int() {
   asm_pop(EBX); // pop float type value
   pop_int_into(EAX); // pop int into eax
-  asm_fild(EAX); // load integer value into fpu stack
-  asm_fmul(ST0, ST1);
+  asm_fimul(ST0, EAX);
   asm_push(EBX); // push float value
 }
 
 static void gen_float_div_int() {
   asm_pop(EBX); // pop float type value
   pop_int_into(EAX); // pop int into eax
-  asm_fild(EAX); // load integer value into fpu stack
-  asm_fxch(ST0, ST1); //switch values, float is ST0, int is ST1
-  asm_fdiv(ST0, ST1);
+  asm_fidiv(ST0, EAX);
   asm_push(EBX); // push float value
 }
 
@@ -404,22 +396,22 @@ static void gen_float_add_float() {
   // note: there are 2 type values on regular stack, but leave one because
   // we are still generating a float
   asm_pop(EAX);
-  asm_fadd(ST0, ST1);
+  asm_faddp(ST0, ST1);
 }
 
 static void gen_float_sub_float() {
   asm_pop(EAX);  
-  asm_fsub(ST0, ST1);
+  asm_fsubp(ST0, ST1);
 }
 
 static void gen_float_mul_float() {
   asm_pop(EAX);  
-  asm_fmul(ST0, ST1);
+  asm_fmulp(ST0, ST1);
 }
 
 static void gen_float_div_float() {
   asm_pop(EAX);  
-  asm_fdiv(ST0, ST1);
+  asm_fdivp(ST0, ST1);
 }
 
 static void gen_float_mul_mat() {
