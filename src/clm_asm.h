@@ -64,6 +64,7 @@ static const char ASM_DATA[] = "section '.data' data readable writable\n"
 #define LABEL_SIZE 32
 
 void pop_int_into(const char *dest);
+void pop_float_into(const char *dest);
 void pop_matrix_of_size(const char *size_location);
 
 void asm_comment(const char *line);
@@ -79,10 +80,15 @@ void asm_add_i(const char *dest, int i);
 void asm_sub(const char *dest, const char *other);
 void asm_imul(const char *dest, const char *other);
 void asm_div(const char *denom);
+
+void asm_fxch(const char *arg1, const char *arg2);
+void asm_fiadd(const char *dest, const char *other);
+void asm_fild(const char *src);
 void asm_fadd(const char *dest, const char *other);
 void asm_fsub(const char *dest, const char *other);
 void asm_fmul(const char *dest, const char *other);
 void asm_fdiv(const char *dest, const char *other);
+
 void asm_inc(const char *arg);
 void asm_dec(const char *arg);
 void asm_neg(const char *arg);

@@ -1,6 +1,12 @@
+#include <stdarg.h>
 #include <stdio.h>
 
 #include "clm_asm.h"
+
+#define ASM_WRITE(format, args...) \
+  char buffer[32]; \
+  sprintf(buffer, format, args); \
+  writeLine(buffer);
 
 extern void writeLine(const char *line);
 
@@ -10,6 +16,14 @@ void pop_int_into(const char *dest) {
 
   // overwrite type with int value
   asm_pop(dest);
+}
+
+void pop_float_into(const char *dest) {
+  // pop type off of general stack
+  asm_pop(dest);
+
+  // pop value off of fpu stack
+  asm_pop_f(dest);
 }
 
 // size_location is the location of the numbber of elements the matrix has
@@ -35,228 +49,178 @@ void asm_comment(const char *line) {
 }
 
 void asm_pop(const char *dest) {
-  char buffer[32];
-  sprintf(buffer, "pop %s\n", dest);
-  writeLine(buffer);
+  ASM_WRITE("pop %s\n", dest);
 }
 
 void asm_push(const char *src) {
-  char buffer[32];
-  sprintf(buffer, "push %s\n", src);
-  writeLine(buffer);
-}
-
-void asm_pop_f(const char *dest){
-  char buffer[32];
-  sprintf(buffer, "fstp %s\n", dest);
-  writeLine(buffer);
-}
-
-void asm_push_f(const char *src){
-  char buffer[32];
-  sprintf(buffer, "fld %s\n", src);
-  writeLine(buffer);
-}
-
-void asm_push_const_i(int val) {
-  char buffer[32];
-  sprintf(buffer, "push %d\n", val);
-  writeLine(buffer);
-}
-
-void asm_push_const_f(float val) {
-  char buffer[32];
-  sprintf(buffer, "fld %f\n", val);
-  writeLine(buffer);
-}
-
-void asm_push_const_c(char val) {
-  char buffer[32];
-  sprintf(buffer, "push %c\n", val);
-  writeLine(buffer);
-}
-
-void asm_add(const char *dest, const char *other) {
-  char buffer[32];
-  sprintf(buffer, "add %s,%s\n", dest, other);
-  writeLine(buffer);
-}
-
-void asm_add_i(const char *dest, int i) {
-  char buffer[32];
-  sprintf(buffer, "add %s,%d\n", dest, i);
-  writeLine(buffer);
-}
-
-void asm_sub(const char *dest, const char *other) {
-  char buffer[32];
-  sprintf(buffer, "sub %s,%s\n", dest, other);
-  writeLine(buffer);
-}
-
-void asm_imul(const char *dest, const char *other) {
-  char buffer[32];
-  sprintf(buffer, "imul %s,%s\n", dest, other);
-  writeLine(buffer);
-}
-
-void asm_div(const char *denom) {
-  char buffer[32];
-  sprintf(buffer, "div %s\n", denom);
-  writeLine(buffer);
+  ASM_WRITE("push %s\n", src);
 }
 
 /*
+  from fasm docs:
+
+  "fst copies the value of ST0 register to the destination operand,
+  which can be 32-bit or 64-bit memory location or another FPU register.
+  fstp performs the same operation as fst and then pops the register stack,
+  getting rid of ST0. fstp accepts the same operands as the fst instruction and
+  can also store value in the 80-bit memory.""
+*/
+void asm_pop_f(const char *dest) {
+  ASM_WRITE("fstp %s\n", dest);
+}
+
+void asm_push_f(const char *src) {
+  ASM_WRITE("fld %s\n", src);
+}
+
+void asm_push_const_i(int val) {
+  ASM_WRITE("push %d\n", val);
+}
+
+void asm_push_const_f(float val) {
+  ASM_WRITE("fld %f\n", val);
+}
+
+void asm_push_const_c(char val) {
+  ASM_WRITE("push %c\n", val);
+}
+
+void asm_add(const char *dest, const char *other) {
+  ASM_WRITE("add %s,%s\n", dest, other);
+}
+
+void asm_add_i(const char *dest, int i) {
+  ASM_WRITE("add %s,%d\n", dest, i);
+}
+
+void asm_sub(const char *dest, const char *other) {
+  ASM_WRITE("sub %s,%s\n", dest, other);
+}
+
+void asm_imul(const char *dest, const char *other) {
+  ASM_WRITE("imul %s,%s\n", dest, other);
+}
+
+void asm_div(const char *denom) {
+  ASM_WRITE("div %s\n", denom);
+}
+
+void asm_fxch(const char *arg1, const char *arg2){
+  ASM_WRITE("fxch %s,%s\n", arg1, arg2);
+}
+
+void asm_fiadd(const char *dest, const char *other){
+  ASM_WRITE("fiadd %s,%s\n", dest, other);
+}
+
+void asm_fild(const char *src){
+  ASM_WRITE("fild %s\n", src);
+}
+/*
   from fasm doc:
 
-  "fadd adds the destination and source operand and stores the sum in the destination location.
-  The destination operand is always an FPU register, if the source is a memory location,
-  the destination is ST0 register and only source operand should be specified.
-  If both operands are FPU registers, at least one of them should be ST0 register.
-  An operand in memory can be a 32-bit or 64-bit value."
+  "fadd adds the destination and source operand and stores the sum in the
+  destination location. The destination operand is always an FPU register, if
+  the source is a memory
+  location, the destination is ST0 register and only source operand should be
+  specified.
+  If both operands are FPU registers, at least one of them should be ST0
+  register. An operand in memory can be a 32-bit or 64-bit value."
 */
 void asm_fadd(const char *dest, const char *other) {
-  char buffer[32];
-  sprintf(buffer, "fadd %s,%s\n", dest, other);
-  writeLine(buffer);
+  ASM_WRITE("fadd %s,%s\n", dest, other);
 }
 
 void asm_fsub(const char *dest, const char *other) {
-  char buffer[32];
-  sprintf(buffer, "fsub %s,%s\n", dest, other);
-  writeLine(buffer);
+  ASM_WRITE("fsub %s,%s\n", dest, other);
 }
 
 void asm_fmul(const char *dest, const char *other) {
-  char buffer[32];
-  sprintf(buffer, "fmul %s,%s\n", dest, other);
-  writeLine(buffer);
+  ASM_WRITE("fmul %s,%s\n", dest, other);
 }
 
 void asm_fdiv(const char *dest, const char *other) {
-  char buffer[32];
-  sprintf(buffer, "fdiv %s,%s\n", dest, other);
-  writeLine(buffer);
+  ASM_WRITE("fdiv %s,%s\n", dest, other);
 }
 
 void asm_inc(const char *arg) {
-  char buffer[32];
-  sprintf(buffer, "inc %s\n", arg);
-  writeLine(buffer);
+  ASM_WRITE("inc %s\n", arg);
 }
 
 void asm_dec(const char *arg) {
-  char buffer[32];
-  sprintf(buffer, "dec %s\n", arg);
-  writeLine(buffer);
+  ASM_WRITE("dec %s\n", arg);
 }
 
 void asm_neg(const char *arg) {
-  char buffer[32];
-  sprintf(buffer, "dec %s\n", arg);
-  writeLine(buffer);
+  ASM_WRITE("dec %s\n", arg);
 }
 
 void asm_mov(const char *dest, const char *src) {
-  char buffer[32];
-  sprintf(buffer, "mov %s,%s\n", dest, src);
-  writeLine(buffer);
+  ASM_WRITE("mov %s,%s\n", dest, src);
 }
 
 void asm_mov_i(const char *dest, int i) {
-  char buffer[32];
-  sprintf(buffer, "mov %s,%d\n", dest, i);
-  writeLine(buffer);
+  ASM_WRITE("mov %s,%d\n", dest, i);
 }
 
 void asm_lea(const char *dest, const char *src) {
-  char buffer[32];
-  sprintf(buffer, "lea %s,%s\n", dest, src);
-  writeLine(buffer);
+  ASM_WRITE("lea %s,%s\n", dest, src);
 }
 
 void asm_xchg(const char *arg1, const char *arg2) {
-  char buffer[32];
-  sprintf(buffer, "xchg %s,%s\n", arg1, arg2);
-  writeLine(buffer);
+  ASM_WRITE("xchg %s,%s\n", arg1, arg2);
 }
 
 void asm_and(const char *arg1, const char *arg2) {
-  char buffer[32];
-  sprintf(buffer, "and %s,%s\n", arg1, arg2);
-  writeLine(buffer);
+  ASM_WRITE("and %s,%s\n", arg1, arg2);
 }
 
 void asm_or(const char *arg1, const char *arg2) {
-  char buffer[32];
-  sprintf(buffer, "or %s,%s\n", arg1, arg2);
-  writeLine(buffer);
+  ASM_WRITE("or %s,%s\n", arg1, arg2);
 }
 
 void asm_xor(const char *arg1, const char *arg2) {
-  char buffer[32];
-  sprintf(buffer, "xor %s,%s\n", arg1, arg2);
-  writeLine(buffer);
+  ASM_WRITE("xor %s,%s\n", arg1, arg2);
 }
 
 void asm_cmp(const char *arg1, const char *arg2) {
-  char buffer[32];
-  sprintf(buffer, "cmp %s,%s\n", arg1, arg2);
-  writeLine(buffer);
+  ASM_WRITE("cmp %s,%s\n", arg1, arg2);
 }
 
 void asm_jmp(const char *label) {
-  char buffer[32];
-  sprintf(buffer, "jmp %s\n", label);
-  writeLine(buffer);
+  ASM_WRITE("jmp %s\n", label);
 }
 
 void asm_jmp_g(const char *label) {
-  char buffer[32];
-  sprintf(buffer, "jmp %s\n", label);
-  writeLine(buffer);
+  ASM_WRITE("jmp %s\n", label);
 }
 
 void asm_jmp_ge(const char *label) {
-  char buffer[32];
-  sprintf(buffer, "jge %s\n", label);
-  writeLine(buffer);
+  ASM_WRITE("jge %s\n", label);
 }
 
 void asm_jmp_l(const char *label) {
-  char buffer[32];
-  sprintf(buffer, "jl %s\n", label);
-  writeLine(buffer);
+  ASM_WRITE("jl %s\n", label);
 }
 
 void asm_jmp_le(const char *label) {
-  char buffer[32];
-  sprintf(buffer, "jle %s\n", label);
-  writeLine(buffer);
+  ASM_WRITE("jle %s\n", label);
 }
 
 void asm_jmp_eq(const char *label) {
-  char buffer[32];
-  sprintf(buffer, "je %s\n", label);
-  writeLine(buffer);
+  ASM_WRITE("je %s\n", label);
 }
 
 void asm_jmp_neq(const char *label) {
-  char buffer[32];
-  sprintf(buffer, "jne %s\n", label);
-  writeLine(buffer);
+  ASM_WRITE("jne %s\n", label);
 }
 
 void asm_label(const char *name) {
-  char buffer[32];
-  sprintf(buffer, "%s:\n", name);
-  writeLine(buffer);
+  ASM_WRITE("%s:\n", name);
 }
 
 void asm_call(const char *name) {
-  char buffer[32];
-  sprintf(buffer, "call _%s\n", name);
-  writeLine(buffer);
+  ASM_WRITE("call _%s\n", name);
 }
 
 void asm_ret() { writeLine("ret\n"); }
