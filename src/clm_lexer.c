@@ -200,10 +200,12 @@ static ClmLexerToken *read_string_literal() {
   }
 
   while (valid() && (c = curr()) != '"') {
-    // TODO allow strings inside of strings? using \" ?
     if (c == '\n' || c == '\r') {
       data.lineNo++;
       data.colNo = 0;
+    }
+    if (c == '\\' && next() == '"') {
+      consume();
     }
     consume();
   }

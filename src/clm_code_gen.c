@@ -162,7 +162,11 @@ static void pop_into_lhs(ClmExpNode *node) {
     pop_int_into(index_str);
     break;
   case CLM_TYPE_FLOAT:
-    // TODO floats
+    if (var->isParam)
+      sprintf(index_str, "dword [ebp+%d]", var->offset + 4);
+    else
+      sprintf(index_str, "dword [ebp+%d]", var->offset - 4);
+    pop_float_into(index_str);
     break;
   case CLM_TYPE_MATRIX: {
     // TODO case where matrix is actually a pointer
@@ -232,7 +236,12 @@ static void gen_index(ClmExpNode *node) {
     asm_push_const_i((int)var->type);
     break;
   case CLM_TYPE_FLOAT:
-    // TODO floats
+    if (var->isParam)
+      sprintf(index_str, "dword [ebp+%d]", var->offset + 4);
+    else
+      sprintf(index_str, "dword [ebp+%d]", var->offset - 4);
+    asm_push_f(index_str);
+    asm_push_const_i((int)var->type);
     break;
   case CLM_TYPE_MATRIX: {
     // TODO case where matrix is actually a pointer

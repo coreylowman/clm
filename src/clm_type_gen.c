@@ -273,19 +273,26 @@ static void gen_int_div_int() {
 }
 
 static void gen_int_add_float() {
-  // TODO
+  pop_int_into(EAX); // pop int into eax
+  asm_fiadd(ST0, EAX);
 }
 
-static void gen_int_sub_float() {
-  // TODO
+static void gen_int_sub_float() {  
+  pop_int_into(EAX); // pop int into eax
+  asm_fild(EAX); // load integer value into fpu stack
+  asm_fsub(ST0, ST1);
 }
 
 static void gen_int_mul_float() {
-  // TODO
+  pop_int_into(EAX); // pop int into eax
+  asm_fild(EAX); // load integer value into fpu stack
+  asm_fmul(ST0, ST1);
 }
 
 static void gen_int_div_float() {
-  // TODO
+  pop_int_into(EAX); // pop int into eax
+  asm_fild(EAX); // load integer value into fpu stack
+  asm_fdiv(ST0, ST1);
 }
 
 /*
@@ -360,35 +367,59 @@ void gen_float_arith(ArithOp op, ClmType other_type) {
 }
 
 static void gen_float_add_int() {
-  // TODO
+  asm_pop(EBX); // pop float type value
+  pop_int_into(EAX); // pop int into eax
+  asm_fiadd(ST0, EAX);
+  asm_push(EBX); // push float value
 }
 
 static void gen_float_sub_int() {
-  // TODO
+  asm_pop(EBX); // pop float type value
+  pop_int_into(EAX); // pop int into eax
+  asm_fild(EAX); // load integer value into fpu stack
+  asm_fxch(ST0, ST1); //switch values, float is ST0, int is ST1
+  asm_fsub(ST0, ST1);
+  asm_push(EBX); // push float value
 }
 
 static void gen_float_mul_int() {
-  // TODO
+  asm_pop(EBX); // pop float type value
+  pop_int_into(EAX); // pop int into eax
+  asm_fild(EAX); // load integer value into fpu stack
+  asm_fmul(ST0, ST1);
+  asm_push(EBX); // push float value
 }
 
 static void gen_float_div_int() {
-  // TODO
+  asm_pop(EBX); // pop float type value
+  pop_int_into(EAX); // pop int into eax
+  asm_fild(EAX); // load integer value into fpu stack
+  asm_fxch(ST0, ST1); //switch values, float is ST0, int is ST1
+  asm_fdiv(ST0, ST1);
+  asm_push(EBX); // push float value
 }
 
 static void gen_float_add_float() {
-  // TODO
+  // pop the type values from the regular stack
+  // note: there are 2 type values on regular stack, but leave one because
+  // we are still generating a float
+  asm_pop(EAX);
+  asm_fadd(ST0, ST1);
 }
 
 static void gen_float_sub_float() {
-  // TODO
+  asm_pop(EAX);  
+  asm_fsub(ST0, ST1);
 }
 
 static void gen_float_mul_float() {
-  // TODO
+  asm_pop(EAX);  
+  asm_fmul(ST0, ST1);
 }
 
 static void gen_float_div_float() {
-  // TODO
+  asm_pop(EAX);  
+  asm_fdiv(ST0, ST1);
 }
 
 static void gen_float_mul_mat() {
