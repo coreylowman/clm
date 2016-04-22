@@ -249,7 +249,7 @@ static void gen_int_add_int() {
   pop_int_into(EBX);
   asm_add(EAX, EBX);
   asm_push(EAX);
-  asm_push_i((int)CLM_TYPE_INT);
+  asm_push_const_i((int)CLM_TYPE_INT);
 }
 
 static void gen_int_sub_int() {
@@ -257,7 +257,7 @@ static void gen_int_sub_int() {
   pop_int_into(EBX);
   asm_sub(EAX, EBX);
   asm_push(EAX);
-  asm_push_i((int)CLM_TYPE_INT);
+  asm_push_const_i((int)CLM_TYPE_INT);
 }
 
 static void gen_int_mul_int() {
@@ -265,7 +265,7 @@ static void gen_int_mul_int() {
   pop_int_into(EBX);
   asm_imul(EAX, EBX);
   asm_push(EAX);
-  asm_push_i((int)CLM_TYPE_INT);
+  asm_push_const_i((int)CLM_TYPE_INT);
 }
 
 static void gen_int_div_int() {
@@ -516,12 +516,12 @@ static void gen_mat_cmp_mat(BoolOp op) {
 
   asm_label(true_label);
   pop_matrix_of_size(EBX); // ebx still contains number of elements
-  asm_push_i(1);
+  asm_push_const_i(1);
   asm_jmp(end_label);
 
   asm_label(false_label);
   pop_matrix_of_size(EBX); // ebx still contains number of elements
-  asm_push_i(0);
+  asm_push_const_i(0);
 
   asm_label(end_label);
 }
@@ -612,10 +612,10 @@ static void gen_int_cmp_int(BoolOp op) {
 
   jmp_func(false_label);
 
-  asm_push_i(1);
+  asm_push_const_i(1);
   asm_jmp(end_label);
   asm_label(false_label);
-  asm_push_i(0);
+  asm_push_const_i(0);
   asm_label(end_label);
 }
 

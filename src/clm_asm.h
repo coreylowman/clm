@@ -36,12 +36,23 @@ static const char ASM_DATA[] = "section '.data' data readable writable\n"
                                "__T_ROW_END__ dd 0\n"
                                "__T_ESP__ dd 0\n";
 
+// general 32 bit registers
 #define EAX "eax"
 #define EBX "ebx"
 #define ECX "ecx"
 #define EDX "edx"
 #define ESP "esp"
 #define EBP "ebp"
+
+// FPU registers
+#define ST0 "st0"
+#define ST1 "st1"
+#define ST2 "st2"
+#define ST3 "st3"
+#define ST4 "st4"
+#define ST5 "st5"
+#define ST6 "st6"
+#define ST7 "st7"
 
 // compiler only globals to give more temporary
 #define T_EAX "__T_EAX__"
@@ -58,9 +69,11 @@ void pop_matrix_of_size(const char *size_location);
 void asm_comment(const char *line);
 void asm_pop(const char *dest);
 void asm_push(const char *src);
-void asm_push_i(int val);
-void asm_push_f(float val);
-void asm_push_c(char val);
+void asm_pop_f(const char *dest);
+void asm_push_f(const char *src);
+void asm_push_const_i(int val);
+void asm_push_const_f(float val);
+void asm_push_const_c(char val);
 void asm_add(const char *dest, const char *other);
 void asm_add_i(const char *dest, int i);
 void asm_sub(const char *dest, const char *other);
@@ -69,6 +82,7 @@ void asm_div(const char *denom);
 void asm_fadd(const char *dest, const char *other);
 void asm_fsub(const char *dest, const char *other);
 void asm_fmul(const char *dest, const char *other);
+void asm_fdiv(const char *dest, const char *other);
 void asm_inc(const char *arg);
 void asm_dec(const char *arg);
 void asm_neg(const char *arg);

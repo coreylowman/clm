@@ -134,7 +134,7 @@ static void gen_matrix_size(ClmExpNode *node) {
     asm_push(index_str);
   } else {
     // push $colInd
-    asm_push_i(size.cols);
+    asm_push_const_i(size.cols);
   }
 
   if (size.rowVar != NULL) {
@@ -144,7 +144,7 @@ static void gen_matrix_size(ClmExpNode *node) {
     asm_push(index_str);
   } else {
     // push $rowInd
-    asm_push_i(size.rows);
+    asm_push_const_i(size.rows);
   }
 }
 
@@ -229,7 +229,7 @@ static void gen_index(ClmExpNode *node) {
     else
       sprintf(index_str, "dword [ebp+%d]", var->offset - 4);
     asm_push(index_str);
-    asm_push_i((int)var->type);
+    asm_push_const_i((int)var->type);
     break;
   case CLM_TYPE_FLOAT:
     // TODO floats
@@ -253,7 +253,7 @@ static void gen_index(ClmExpNode *node) {
       // in the matrix
       sprintf(index_str, "dword [ebp+%d+eax]", var->offset + 12);
       asm_push(index_str);
-      asm_push_i((int)CLM_TYPE_INT);
+      asm_push_const_i((int)CLM_TYPE_INT);
     }
     break;
   }
@@ -273,12 +273,12 @@ static void gen_expression(ClmExpNode *node) {
   ClmType expression_type = clm_type_of_exp(node, data.scope);
   switch (node->type) {
   case EXP_TYPE_INT:
-    asm_push_i(node->ival);
-    asm_push_i((int)expression_type);
+    asm_push_const_i(node->ival);
+    asm_push_const_i((int)expression_type);
     break;
   case EXP_TYPE_FLOAT:
-    asm_push_f(node->fval);
-    asm_push_i((int)expression_type);
+    asm_push_const_f(node->fval);
+    asm_push_const_i((int)expression_type);
     break;
   case EXP_TYPE_STRING:
     // TODO
@@ -336,11 +336,11 @@ static void gen_expression(ClmExpNode *node) {
     if (node->matDecExp.arr != NULL) {
       for (i = node->matDecExp.length - 1; i >= 0; i--) {
         // TODO... push f or push i?
-        asm_push_i(node->matDecExp.arr[i]);
+        asm_push_const_i(node->matDecExp.arr[i]);
       }
-      asm_push_i(node->matDecExp.size.cols);
-      asm_push_i(node->matDecExp.size.rows);
-      asm_push_i((int)expression_type);
+      asm_push_const_i(node->matDecExp.size.cols);
+      asm_push_const_i(node->matDecExp.size.rows);
+      asm_push_const_i((int)expression_type);
     } else {
       // push a matrix onto the stack with all 0s
 
@@ -359,13 +359,13 @@ static void gen_expression(ClmExpNode *node) {
       asm_label(cmp_label);
       asm_cmp(ECX, "0");
       asm_jmp_l(end_label);
-      asm_push_i(0);
+      asm_push_const_i(0);
       asm_dec(ECX);
       asm_jmp(cmp_label);
       asm_label(end_label);
       asm_push(EBX);
       asm_push(EAX);
-      asm_push_i((int)expression_type);
+      asm_push_const_i((int)expression_type);
     }
     break;
   }
@@ -476,7 +476,7 @@ static void gen_func_dec(ClmStmtNode *node) {
       asm_dec(ECX);
       asm_cmp(ECX, "0");
       asm_jmp_eq(end_label);
-      asm_push_i(0);
+      asm_push_const_i(0);
       asm_jmp(start_label);
       asm_label(end_label);
       asm_push(EBX); // cols
@@ -526,7 +526,7 @@ static void gen_loop(ClmStmtNode *node) {
     asm_add(EBX, EAX);
 
     asm_push(EBX); // push start back on stack
-    asm_push_i((int)CLM_TYPE_INT);
+    asm_push_const_i((int)CLM_TYPE_INT);
   }
   pop_int_into(loop_var);
   asm_label(start_label);

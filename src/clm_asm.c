@@ -46,17 +46,31 @@ void asm_push(const char *src) {
   writeLine(buffer);
 }
 
-void asm_push_i(int val) {
+void asm_pop_f(const char *dest){
+  char buffer[32];
+  sprintf(buffer, "fstp %s\n", dest);
+  writeLine(buffer);
+}
+
+void asm_push_f(const char *src){
+  char buffer[32];
+  sprintf(buffer, "fld %s\n", src);
+  writeLine(buffer);
+}
+
+void asm_push_const_i(int val) {
   char buffer[32];
   sprintf(buffer, "push %d\n", val);
   writeLine(buffer);
 }
 
-void asm_push_f(float val) {
-  // TODO
+void asm_push_const_f(float val) {
+  char buffer[32];
+  sprintf(buffer, "fld %f\n", val);
+  writeLine(buffer);
 }
 
-void asm_push_c(char val) {
+void asm_push_const_c(char val) {
   char buffer[32];
   sprintf(buffer, "push %c\n", val);
   writeLine(buffer);
@@ -92,16 +106,37 @@ void asm_div(const char *denom) {
   writeLine(buffer);
 }
 
+/*
+  from fasm doc:
+
+  "fadd adds the destination and source operand and stores the sum in the destination location.
+  The destination operand is always an FPU register, if the source is a memory location,
+  the destination is ST0 register and only source operand should be specified.
+  If both operands are FPU registers, at least one of them should be ST0 register.
+  An operand in memory can be a 32-bit or 64-bit value."
+*/
 void asm_fadd(const char *dest, const char *other) {
-  // TODO
+  char buffer[32];
+  sprintf(buffer, "fadd %s,%s\n", dest, other);
+  writeLine(buffer);
 }
 
 void asm_fsub(const char *dest, const char *other) {
-  // TODO
+  char buffer[32];
+  sprintf(buffer, "fsub %s,%s\n", dest, other);
+  writeLine(buffer);
 }
 
 void asm_fmul(const char *dest, const char *other) {
-  // TODO
+  char buffer[32];
+  sprintf(buffer, "fmul %s,%s\n", dest, other);
+  writeLine(buffer);
+}
+
+void asm_fdiv(const char *dest, const char *other) {
+  char buffer[32];
+  sprintf(buffer, "fdiv %s,%s\n", dest, other);
+  writeLine(buffer);
 }
 
 void asm_inc(const char *arg) {
@@ -141,19 +176,27 @@ void asm_lea(const char *dest, const char *src) {
 }
 
 void asm_xchg(const char *arg1, const char *arg2) {
-  // TODO
+  char buffer[32];
+  sprintf(buffer, "xchg %s,%s\n", arg1, arg2);
+  writeLine(buffer);
 }
 
 void asm_and(const char *arg1, const char *arg2) {
-  // TODO
+  char buffer[32];
+  sprintf(buffer, "and %s,%s\n", arg1, arg2);
+  writeLine(buffer);
 }
 
 void asm_or(const char *arg1, const char *arg2) {
-  // TODO
+  char buffer[32];
+  sprintf(buffer, "or %s,%s\n", arg1, arg2);
+  writeLine(buffer);
 }
 
 void asm_xor(const char *arg1, const char *arg2) {
-  // TODO
+  char buffer[32];
+  sprintf(buffer, "xor %s,%s\n", arg1, arg2);
+  writeLine(buffer);
 }
 
 void asm_cmp(const char *arg1, const char *arg2) {
