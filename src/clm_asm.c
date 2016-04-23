@@ -3,9 +3,9 @@
 
 #include "clm_asm.h"
 
-#define ASM_WRITE(format, args...) \
+#define ASM_WRITE(...) \
   char buffer[32]; \
-  sprintf(buffer, format, args); \
+  sprintf(buffer, __VA_ARGS__); \
   writeLine(buffer);
 
 extern void writeLine(const char *line);

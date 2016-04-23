@@ -1,3 +1,11 @@
+#ifdef _WIN32
+#define _CRTDBG_MAP_ALLOC // for heap corruption debugging
+#include <crtdbg.h>
+#include <windows.h>
+
+#include <shellapi.h>
+#endif
+
 #include <stdio.h>
 
 #include "clm_tests.h"

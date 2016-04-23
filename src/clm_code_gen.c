@@ -148,6 +148,84 @@ static void gen_matrix_size(ClmExpNode *node) {
   }
 }
 
+static void pop_into_matrix(ClmExpNode *node){
+  char index_str[64];
+  ClmSymbol *var = clm_scope_find(data.scope, node->indExp.id);
+  // TODO case where matrix is actually a pointer
+  if (node->indExp.rowIndex == NULL && node->indExp.colIndex == NULL) {
+    char start_label[LABEL_SIZE];
+    char end_label[LABEL_SIZE];
+    next_label(start_label);
+    next_label(end_label);
+
+    asm_pop(EAX);       // pop type
+    asm_pop(ECX);       // pop rows
+    asm_pop(EBX);       // pop cols;
+    asm_imul(ECX, EBX); // ecx now contains rows * cols
+    asm_dec(ECX);
+
+    asm_label(start_label);
+    asm_cmp(ECX, "0");
+    asm_jmp_l(end_label);
+
+    asm_mov(EAX, ECX);
+    asm_imul(EAX, "4");
+    asm_add(EAX, "12");
+    // TODO does this offset have to be - in some cases?
+    sprintf(index_str, "dword [ebp+%d+eax]", var->offset);
+    asm_pop(index_str);
+
+    asm_dec(ECX);
+    asm_jmp(start_label);
+    asm_label(end_label);
+  } else if (node->indExp.rowIndex == NULL || node->indExp.colIndex == NULL) {
+    char cmp_label[LABEL_SIZE];
+    char end_label[LABEL_SIZE];
+    next_label(cmp_label);
+    next_label(end_label);
+
+    sprintf(index_str, "dword [ebp+%d]", var->offset + 8);
+    asm_mov(EBX, index_str); // ebx contains number of cols
+
+    asm_pop(EAX); // pop type
+    asm_pop(ECX); // pop rows
+    asm_pop(EAX); // pop cols
+    asm_imul(ECX, EAX); // ecx now contains rows * cols
+    asm_dec(ECX);
+
+    asm_label(cmp_label);
+    asm_cmp(ECX, "0");
+    asm_jmp_l(end_label);
+
+    if(node->indExp.rowIndex == NULL){
+      // TODO pop a whole col off the stack
+    }else{
+      // TODO pop a whole row off the stack
+
+    }
+
+    asm_dec(ECX);
+    asm_jmp(cmp_label);
+    asm_label(end_label);
+  } else {
+    gen_expression(node->indExp.colIndex);
+    gen_expression(node->indExp.rowIndex);
+    pop_int_into(EAX);  // pop rows into eax
+    pop_int_into(EBX);  // pop cols into ebx
+
+    // TODO does this offset and the one below have to be - in some cases?
+    sprintf(index_str, "dword [ebp+%d]", var->offset + 8);
+    asm_mov(ECX, index_str); // mov number of columns into ecx
+    asm_imul(EAX, ECX); // eax = nc * row
+    asm_add(EAX, EBX); // eax = nc * row + col
+    asm_imul(EAX, "4"); // eax = 4 * (row * nc + col)
+    // var->offset points at type... 3 elements above is the first item in
+    // the matrix
+    sprintf(index_str, "dword [ebp+%d+eax]", var->offset + 12);
+    pop_int_into(index_str);
+  }
+}
+
 static void pop_into_lhs(ClmExpNode *node) {
   // it is an index node - otherwise it is a type check fail
   char index_str[64];
@@ -168,51 +246,9 @@ static void pop_into_lhs(ClmExpNode *node) {
       sprintf(index_str, "dword [ebp+%d]", var->offset - 4);
     pop_float_into(index_str);
     break;
-  case CLM_TYPE_MATRIX: {
-    // TODO case where matrix is actually a pointer
-    if (node->indExp.rowIndex == NULL && node->indExp.colIndex == NULL) {
-      char start_label[LABEL_SIZE];
-      char end_label[LABEL_SIZE];
-      next_label(start_label);
-      next_label(end_label);
-
-      asm_pop(EAX);       // pop type
-      asm_pop(ECX);       // pop rows
-      asm_pop(EBX);       // pop cols;
-      asm_imul(ECX, EBX); // ecx now contains rows * cols
-      asm_dec(ECX);
-
-      asm_label(start_label);
-      asm_cmp(ECX, "0");
-      asm_jmp_l(end_label);
-
-      asm_mov(EAX, ECX);
-      asm_imul(EAX, "4");
-      asm_add(EAX, "12");
-      sprintf(index_str, "dword [ebp+%d+eax]", var->offset);
-      asm_pop(index_str);
-
-      asm_dec(ECX);
-      asm_jmp(start_label);
-      asm_label(end_label);
-    } else if (node->indExp.rowIndex == NULL) {
-      // TODO pop a whole row off the stack
-    } else if (node->indExp.colIndex == NULL) {
-      // TODO pop a whole col off the stack
-    } else {
-      gen_expression(node->indExp.colIndex);
-      gen_expression(node->indExp.rowIndex);
-      pop_int_into(EAX);  // pop rows into eax
-      pop_int_into(EBX);  // pop cols into ebx
-      asm_imul(EAX, EBX); // eax = row * col
-      asm_imul(EAX, "4"); // eax = 4 * row * col
-      // var->offset points at type... 3 elements above is the first item in
-      // the matrix
-      sprintf(index_str, "dword [ebp+%d+eax]", var->offset + 12);
-      pop_int_into(index_str);
-    }
+  case CLM_TYPE_MATRIX:
+    pop_into_matrix(node);
     break;
-  }
   case CLM_TYPE_STRING:
     // uhh
     break;

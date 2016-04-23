@@ -24,9 +24,7 @@ char *string_copy_n(const char *string, size_t n) {
 int string_equals(const char *string1, const char *string2) {
   if (string1 == NULL && string2 == NULL)
     return 1;
-  else if (string1 == NULL)
-    return 0;
-  else if (string2 == NULL)
+  else if (string1 == NULL || string2 == NULL)
     return 0;
   else
     return !strcmp(string1, string2);
@@ -35,9 +33,7 @@ int string_equals(const char *string1, const char *string2) {
 int string_equals_n(const char *string1, const char *string2, size_t n) {
   if (string1 == NULL && string2 == NULL)
     return 1;
-  else if (string1 == NULL)
-    return 0;
-  else if (string2 == NULL)
+  else if (string1 == NULL || string2 == NULL)
     return 0;
   else
     return !strncmp(string1, string2, n);

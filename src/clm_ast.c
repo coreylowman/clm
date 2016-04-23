@@ -98,8 +98,8 @@ ClmExpNode *clm_exp_new_empty_mat_dec(int rows, int cols, const char *rowVar,
   node->matDecExp.length = 0;
   node->matDecExp.size.rows = rows;
   node->matDecExp.size.cols = cols;
-  node->matDecExp.size.rowVar = string_copy(rowVar);
-  node->matDecExp.size.colVar = string_copy(colVar);
+  node->matDecExp.size.rowVar = rowVar;
+  node->matDecExp.size.colVar = colVar;
   return node;
 }
 
@@ -378,8 +378,8 @@ ClmStmtNode *clm_stmt_new_dec(char *name, ArrayList *params, ClmType returnType,
   node->funcDecStmt.returnType = returnType;
   node->funcDecStmt.returnSize.rows = returnRows;
   node->funcDecStmt.returnSize.cols = returnCols;
-  node->funcDecStmt.returnSize.rowVar = string_copy(returnRowsVars);
-  node->funcDecStmt.returnSize.colVar = string_copy(returnColsVar);
+  node->funcDecStmt.returnSize.rowVar = returnRowsVars;
+  node->funcDecStmt.returnSize.colVar = returnColsVar;
   node->funcDecStmt.body = body;
   return node;
 }

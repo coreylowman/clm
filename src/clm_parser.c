@@ -23,8 +23,7 @@ static ArrayList *consume_statements(int ifElse);
 static ClmStmtNode *consume_statement();
 static int consume_int();
 static float consume_float();
-static int consume_param_size();
-static int consume_return_size();
+static int consume_int_or_id(char **dest);
 static ClmExpNode *consume_parameter();
 static ClmExpNode *consume_lhs();
 static ClmExpNode *consume_expression();
@@ -76,6 +75,18 @@ static ArrayList *consume_statements(int ifElse) {
   return statements;
 }
 
+static int curr_is_int() {
+  return curr()->sym == LITERAL_INT || (curr()->sym == TOKEN_MINUS && next()->sym == LITERAL_INT);
+}
+
+static int curr_is_float() {
+  return curr()->sym == LITERAL_FLOAT || (curr()->sym == TOKEN_MINUS && next()->sym == LITERAL_FLOAT);
+}
+
+static int curr_is_number(){
+  return curr_is_int() || curr_is_float();
+}
+
 static int consume_int() {
   int val = 0;
   int neg = 0;
@@ -98,23 +109,24 @@ static float consume_float() {
   return neg ? -val : val;
 }
 
-static int consume_param_size() {
+static float consume_number() {
+  if(curr_is_int()){
+    return consume_int();
+  }
+  return consume_float();
+}
+
+static int consume_int_or_id(char **dest) {
   if (accept(LITERAL_INT)) {
+    dest = NULL;
     return atoi(data.prevTokenRaw);
   }
   expect(LITERAL_ID);
+  *dest = string_copy(data.prevTokenRaw);
   return 0;
 }
 
-static int consume_return_size() {
-  if (accept(LITERAL_INT)) {
-    return atoi(data.prevTokenRaw);
-  }
-  expect(LITERAL_ID);
-  return 0;
-}
-
-// id:{r:c}
+// id:[r:c]
 // id:type
 static ClmExpNode *consume_parameter() {
   ClmExpNode *node = NULL;
@@ -123,20 +135,14 @@ static ClmExpNode *consume_parameter() {
     node->lineNo = prev()->lineNo;
     node->colNo = prev()->colNo;
     expect(TOKEN_COLON);
-    if (accept(TOKEN_LCURL)) {
-      node->paramExp.size.rows = consume_param_size();
-      if (!node->paramExp.size.rows) {
-        node->paramExp.size.rowVar = string_copy(data.prevTokenRaw);
-      }
+    if (accept(TOKEN_LBRACK)) {
+      node->paramExp.size.rows = consume_int_or_id(&node->paramExp.size.rowVar);
 
       expect(TOKEN_COLON);
 
-      node->paramExp.size.cols = consume_param_size();
-      if (!node->paramExp.size.cols) {
-        node->paramExp.size.colVar = string_copy(data.prevTokenRaw);
-      }
+      node->paramExp.size.cols = consume_int_or_id(&node->paramExp.size.colVar);
 
-      expect(TOKEN_RCURL);
+      expect(TOKEN_RBRACK);
 
       node->paramExp.type = CLM_TYPE_MATRIX;
     } else {
@@ -207,7 +213,9 @@ static ClmStmtNode *consume_statement() {
   } else if (accept(KEYWORD_FOR)) {
     expect(LITERAL_ID);
     char *name = data.prevTokenRaw;
+    
     expect(TOKEN_EQ);
+    
     int startInclusive = 0;
     if (accept(TOKEN_LBRACK))
       startInclusive = 1;
@@ -217,6 +225,7 @@ static ClmStmtNode *consume_statement() {
     ClmExpNode *start = consume_expression();
     expect(TOKEN_COMMA);
     ClmExpNode *end = consume_expression();
+
     int endInclusive = 0;
     if (accept(TOKEN_RBRACK))
       endInclusive = 1;
@@ -241,7 +250,9 @@ static ClmStmtNode *consume_statement() {
     return stmt;
   } else if (accept(KEYWORD_IF)) {
     ClmExpNode *condition = consume_expression();
+    
     expect(KEYWORD_THEN);
+    
     ArrayList *trueBody = consume_statements(1);
 
     ArrayList *falseBody = NULL;
@@ -269,8 +280,8 @@ static ClmStmtNode *consume_statement() {
 
       if (curr()->sym == TOKEN_MINUS || curr()->sym == TOKEN_EQ)
         break;
-      else
-        expect(TOKEN_COMMA);
+      // else
+      //   expect(TOKEN_COMMA);
 
       param = consume_parameter();
     }
@@ -288,13 +299,9 @@ static ClmStmtNode *consume_statement() {
         returnType = CLM_TYPE_STRING;
       } else { //\x ... -> [m:n]
         expect(TOKEN_LBRACK);
-        r = consume_return_size();
-        if (!r)
-          rv = data.prevTokenRaw;
+        r = consume_int_or_id(&rv);
         expect(TOKEN_COLON);
-        c = consume_return_size();
-        if (!c)
-          cv = data.prevTokenRaw;
+        c = consume_int_or_id(&cv);
         expect(TOKEN_RBRACK);
 
         returnType = CLM_TYPE_MATRIX;
@@ -316,13 +323,64 @@ static ClmStmtNode *consume_statement() {
   return NULL;
 }
 
+static BoolOp sym_to_bool_op(ClmLexerSymbol sym){
+  switch(sym){
+    case KEYWORD_AND:
+      return BOOL_OP_AND;
+    case KEYWORD_OR:
+      return BOOL_OP_OR;
+    case TOKEN_EQ:
+      return BOOL_OP_EQ;
+    case TOKEN_BANGEQ:
+      return BOOL_OP_NEQ;
+    case TOKEN_GT:
+      return BOOL_OP_GT;
+    case TOKEN_LT:
+      return BOOL_OP_LT;
+    case TOKEN_GTE:
+      return BOOL_OP_GTE;
+    case TOKEN_LTE:
+      //fallthrough
+    default:
+      return BOOL_OP_LTE;
+  }
+}
+
+static ArithOp sym_to_arith_op(ClmLexerSymbol sym){
+  switch(sym){
+    case TOKEN_PLUS:
+      return ARITH_OP_ADD;
+    case TOKEN_MINUS:
+      return ARITH_OP_SUB;
+    case TOKEN_STAR:
+      return ARITH_OP_MULT;
+    case TOKEN_FSLASH:
+      //fallthrough
+    default:
+      return ARITH_OP_DIV;
+  }
+}
+
+static UnaryOp sym_to_unary_op(ClmLexerSymbol sym){
+  switch(sym){
+    case TOKEN_MINUS:
+      return UNARY_OP_MINUS;
+    case TOKEN_BANG:
+      return UNARY_OP_NOT;
+    case TOKEN_TILDA:
+      //fallthrough
+    default:
+      return UNARY_OP_TRANSPOSE;
+    }
+}
+
 static ClmExpNode *consume_expression() {
   //&& or ||
   ClmExpNode *node1, *node2;
   BoolOp op;
   node1 = consume_expression_2();
-  while (curr()->sym == KEYWORD_AND || curr()->sym == KEYWORD_OR) {
-    op = accept(KEYWORD_AND) ? BOOL_OP_AND : BOOL_OP_OR, accept(KEYWORD_OR);
+  while (accept(KEYWORD_AND) || accept(KEYWORD_OR)) {
+    op = sym_to_bool_op(prev()->sym);
     node2 = consume_expression_2();
     node1 = clm_exp_new_bool(op, node1, node2);
   }
@@ -334,8 +392,8 @@ static ClmExpNode *consume_expression_2() {
   ClmExpNode *node1, *node2;
   BoolOp op;
   node1 = consume_expression_3();
-  while (curr()->sym == TOKEN_EQ || curr()->sym == TOKEN_BANGEQ) {
-    op = accept(TOKEN_EQ) ? BOOL_OP_EQ : BOOL_OP_NEQ, accept(TOKEN_BANGEQ);
+  while (accept(TOKEN_EQ) || accept(TOKEN_BANGEQ)) {
+    op = sym_to_bool_op(prev()->sym);
     node2 = consume_expression_2();
     node1 = clm_exp_new_bool(op, node1, node2);
   }
@@ -348,13 +406,9 @@ static ClmExpNode *consume_expression_3() {
   ClmExpNode *node2;
   BoolOp op;
   node1 = consume_expression_4();
-  while (curr()->sym == TOKEN_GT || curr()->sym == TOKEN_LT ||
-         curr()->sym == TOKEN_GTE || curr()->sym == TOKEN_LTE) {
-    op = accept(TOKEN_GT) ? BOOL_OP_GT : accept(TOKEN_LT)
-                                             ? BOOL_OP_LT
-                                             : accept(TOKEN_GTE) ? BOOL_OP_GTE
-                                                                 : BOOL_OP_LTE,
-    accept(TOKEN_LTE);
+  while (accept(TOKEN_GT) || accept(TOKEN_LT) ||
+         accept(TOKEN_GTE) || accept(TOKEN_LTE)) {
+    op = sym_to_bool_op(prev()->sym);
     node2 = consume_expression_4();
     node1 = clm_exp_new_bool(op, node1, node2);
   }
@@ -367,8 +421,8 @@ static ClmExpNode *consume_expression_4() {
   ClmExpNode *node2;
   ArithOp op;
   node1 = consume_expression_5();
-  while (curr()->sym == TOKEN_PLUS || curr()->sym == TOKEN_MINUS) {
-    op = accept(TOKEN_PLUS) ? ARITH_OP_ADD : ARITH_OP_SUB, accept(TOKEN_MINUS);
+  while (accept(TOKEN_PLUS) || accept(TOKEN_MINUS)) {
+    op = sym_to_arith_op(prev()->sym);
     node2 = consume_expression_5();
     node1 = clm_exp_new_arith(op, node1, node2);
   }
@@ -381,9 +435,8 @@ static ClmExpNode *consume_expression_5() {
   ClmExpNode *node2;
   ArithOp op;
   node1 = consume_expression_6();
-  while (curr()->sym == TOKEN_STAR || curr()->sym == TOKEN_FSLASH) {
-    op = accept(TOKEN_STAR) ? ARITH_OP_MULT : ARITH_OP_DIV,
-    accept(TOKEN_FSLASH);
+  while (accept(TOKEN_STAR) || accept(TOKEN_FSLASH)) {
+    op = sym_to_arith_op(prev()->sym);
     node2 = consume_expression_6();
     node1 = clm_exp_new_arith(op, node1, node2);
   }
@@ -399,6 +452,11 @@ static ClmExpNode *consume_expression_6() {
     exp->lineNo = lineNo;
     exp->colNo = colNo;
     return exp;
+  } else if (accept(TOKEN_MINUS) || accept(TOKEN_BANG) || accept(TOKEN_TILDA)) {
+    ClmExpNode *exp = clm_exp_new_unary(sym_to_unary_op(prev()->sym), consume_expression_6());
+    exp->lineNo = lineNo;
+    exp->colNo = colNo;
+    return exp;
   } else if (accept(LITERAL_INT)) {
     ClmExpNode *exp = clm_exp_new_int(atoi(data.prevTokenRaw));
     exp->lineNo = lineNo;
@@ -411,20 +469,6 @@ static ClmExpNode *consume_expression_6() {
     return exp;
   } else if (accept(LITERAL_STRING)) {
     ClmExpNode *exp = clm_exp_new_string(data.prevTokenRaw);
-    exp->lineNo = lineNo;
-    exp->colNo = colNo;
-    return exp;
-  } else if (accept(TOKEN_MINUS)) {
-    ClmExpNode *exp = clm_exp_new_unary(UNARY_OP_MINUS, consume_expression_6());
-    return exp;
-  } else if (accept(TOKEN_BANG)) {
-    ClmExpNode *exp = clm_exp_new_unary(UNARY_OP_NOT, consume_expression_6());
-    exp->lineNo = lineNo;
-    exp->colNo = colNo;
-    return exp;
-  } else if (accept(TOKEN_TILDA)) {
-    ClmExpNode *exp =
-        clm_exp_new_unary(UNARY_OP_TRANSPOSE, consume_expression_6());
     exp->lineNo = lineNo;
     exp->colNo = colNo;
     return exp;
@@ -457,19 +501,10 @@ static ClmExpNode *consume_expression_6() {
   } else if (accept(TOKEN_LBRACK)) {
     int rows = 0, cols = 0;
     char *rowVar = NULL, *colVar = NULL;
-    if (accept(LITERAL_ID)) {
-      rowVar = data.prevTokenRaw;
-    } else {
-      expect(LITERAL_INT);
-      rows = atoi(data.prevTokenRaw);
-    }
+
+    rows = consume_int_or_id(&rowVar);
     expect(TOKEN_COLON);
-    if (accept(LITERAL_ID)) {
-      colVar = data.prevTokenRaw;
-    } else {
-      expect(LITERAL_INT);
-      cols = atoi(data.prevTokenRaw);
-    }
+    cols = consume_int_or_id(&colVar);
     expect(TOKEN_RBRACK);
 
     ClmExpNode *exp = clm_exp_new_empty_mat_dec(rows, cols, rowVar, colVar);
@@ -482,39 +517,23 @@ static ClmExpNode *consume_expression_6() {
     int start = prev()->lineNo;
 
     list = malloc(sizeof(*list));
-    if (curr()->sym == LITERAL_INT ||
-        (curr()->sym == TOKEN_MINUS && next()->sym == LITERAL_INT))
-      list[num++] = consume_int();
-    else {
-      list[num++] = consume_float();
-    }
-
-    // curr is int or float
-    // or curr is negative and next is int or float
-    while (curr()->sym == LITERAL_INT || curr()->sym == LITERAL_FLOAT ||
-           (curr()->sym == TOKEN_MINUS &&
-            (next()->sym == LITERAL_INT || next()->sym == LITERAL_FLOAT))) {
+    
+    // TODO consume expressions instead of just numbers
+    do{
       list = realloc(list, (num + 1) * sizeof(*list));
-      if (curr()->sym == LITERAL_INT)
-        list[num++] = consume_int();
-      else {
-        list[num++] = consume_float();
-      }
-    }
+      list[num++] = consume_number();
+    } while(curr_is_number());
 
     cols = num;
+
+    int i;
     while (accept(TOKEN_COMMA)) {
-      while (curr()->sym == LITERAL_INT || curr()->sym == LITERAL_FLOAT ||
-             (curr()->sym == TOKEN_MINUS &&
-              (next()->sym == LITERAL_INT || next()->sym == LITERAL_FLOAT))) {
-        list = realloc(list, (num + 1) * sizeof(*list));
-        if (curr()->sym == LITERAL_INT)
-          list[num++] = consume_int();
-        else {
-          list[num++] = consume_float();
+        for(i = 0;i < cols;i++){
+            list = realloc(list, (num + 1) * sizeof(*list));
+            list[num++] = consume_number();
         }
-      }
     }
+
     expect(TOKEN_RCURL);
 
     ClmExpNode *exp = clm_exp_new_mat_dec(list, num, cols);
@@ -527,5 +546,5 @@ static ClmExpNode *consume_expression_6() {
   }
 
   // should never return from here... as it will error and exit
-  return clm_exp_new_int(-1);
+  return NULL;
 }

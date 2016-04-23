@@ -85,7 +85,7 @@ end
 
 ```
 //a function taking an m by n matrix and return a size n column vector
-\foo A[m:n] -> [n:1] =
+\foo A:[m:n] -> [n:1] =
   B = [n:1]
   // some code here...
   return B
@@ -94,7 +94,7 @@ end
 
 ```
 //a function taking an m by n matrix and return an matrix with n rows and an unknown amount of columns
-\foo A[m:n] -> [n:q] =
+\foo A:[m:n] -> [n:q] =
   ...
   q = (...)
   ...

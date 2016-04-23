@@ -29,32 +29,8 @@ void clm_symbol_print(void *data, int level) {
   printf("\n");
   while (q-- > 0)
     printf("  ");
-  switch (symbol->type) {
-  case CLM_TYPE_INT:
-    printf("Symbol name : %s, type : int, param : %d, offset : %d",
-           symbol->name, symbol->isParam, symbol->offset);
-    break;
-  case CLM_TYPE_MATRIX:
-    printf("Symbol name : %s, type : matrix, param : %d, offset : %d",
-           symbol->name, symbol->isParam, symbol->offset);
-    break;
-  case CLM_TYPE_STRING:
-    printf("Symbol name : %s, type : string, param : %d, offset : %d",
-           symbol->name, symbol->isParam, symbol->offset);
-    break;
-  case CLM_TYPE_FLOAT:
-    printf("Symbol name : %s, type : float, param : %d, offset : %d",
-           symbol->name, symbol->isParam, symbol->offset);
-    break;
-  case CLM_TYPE_FUNCTION:
-    printf("Symbol name : %s, type : function, param : %d, offset : %d",
-           symbol->name, symbol->isParam, symbol->offset);
-    break;
-  case CLM_TYPE_NONE:
-    printf("Symbol name : %s, type : none, param : %d, offset : %d",
-           symbol->name, symbol->isParam, symbol->offset);
-    break;
-  }
+  printf("Symbol name : %s, type : %s, param : %d, offset : %d",
+           symbol->name, clm_type_to_string(symbol->type), symbol->isParam, symbol->offset);  
 }
 
 ClmScope *clm_scope_new(ClmScope *parent, void *startNode) {
