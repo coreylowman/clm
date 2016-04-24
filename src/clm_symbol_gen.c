@@ -2,13 +2,33 @@
 
 #include "clm.h"
 #include "clm_ast.h"
-#include "clm_type.h"
 #include "clm_scope.h"
+#include "clm_type.h"
 
 static void gen_expnode_symbols(ClmScope *scope, ClmExpNode *node);
 static void gen_statement_symbols(ClmScope *scope, ClmStmtNode *node);
 static void gen_statements_symbols(ClmScope *scope, ArrayList *statements);
 static void gen_symbol_offsets(ClmScope *scope);
+
+static ClmSymbol *gen_new_sym(ClmScope *scope, const char *name, ClmType type,
+                              void *declaration, int isParam) {
+  ClmSymbol *symbol = clm_symbol_new(name, type, declaration);
+  if (isParam) {
+    // parameter to a function
+    symbol->isParam = 1;
+    symbol->isGlobal = 0;
+  } else if (scope->parent == NULL) {
+    // global variable
+    symbol->isGlobal = 1;
+    symbol->isParam = 0;
+  } else {
+    // local variable
+    symbol->isGlobal = 0;
+    symbol->isParam = 0;
+    symbol->offset = clm_scope_next_local_offset(scope);
+  }
+  return symbol;
+}
 
 static void gen_expnode_symbols(ClmScope *scope, ClmExpNode *node) {
   switch (node->type) {
@@ -78,11 +98,8 @@ static void gen_statement_symbols(ClmScope *scope, ClmStmtNode *node) {
     gen_expnode_symbols(scope, rhs);
 
     if (clm_exp_has_no_inds(lhs) && symbol == NULL) {
-      ClmSymbol *symbol =
-          clm_symbol_new(lhs->indExp.id, clm_type_of_exp(rhs, scope), node);
-      symbol->isParam = 0;
-      symbol->offset = clm_scope_next_local_offset(scope);
-      clm_scope_push(scope, symbol);
+      clm_scope_push(scope, gen_new_sym(scope, lhs->indExp.id,
+                                        clm_type_of_exp(rhs, scope), node, 0));
     } else if (symbol == NULL) {
       clm_error(node->lineNo, node->colNo, "Use of undeclared variable %s",
                 lhs->indExp.id);
@@ -110,9 +127,9 @@ static void gen_statement_symbols(ClmScope *scope, ClmStmtNode *node) {
       int i;
       for (i = 0; i < node->funcDecStmt.parameters->length; i++) {
         ClmExpNode *param = node->funcDecStmt.parameters->data[i];
-        symbol =
-            clm_symbol_new(param->paramExp.name, param->paramExp.type, param);
-        symbol->isParam = 1;
+        symbol = gen_new_sym(functionScope, param->paramExp.name,
+                             param->paramExp.type, param, 1);
+        symbol->offset = i * 8 + 8;
         // framepointer + 8 is first param
         // matrices are passed as an address
         // val <- ebp + 20
@@ -122,31 +139,23 @@ static void gen_statement_symbols(ClmScope *scope, ClmStmtNode *node) {
         // func:
 
         // i * 8 because each param takes up 2 places on the stack
-        symbol->offset = i * 8 + 8;
         clm_scope_push(functionScope, symbol);
       }
     }
     gen_statements_symbols(functionScope, node->funcDecStmt.body);
-
-    symbol = clm_symbol_new(node->funcDecStmt.name, CLM_TYPE_FUNCTION, node);
-    clm_scope_push(scope, symbol);
+    clm_scope_push(scope, gen_new_sym(scope, node->funcDecStmt.name,
+                                      CLM_TYPE_FUNCTION, node, 0));
     break;
   }
   case STMT_TYPE_LOOP: {
     if (!clm_scope_contains(scope, node->loopStmt.varId)) {
-      ClmSymbol *symbol =
-          clm_symbol_new(node->loopStmt.varId, CLM_TYPE_INT, node);
-      symbol->isParam = 0;
-      symbol->offset = clm_scope_next_local_offset(scope);
-      clm_scope_push(scope, symbol);
+      clm_scope_push(scope, gen_new_sym(scope, node->loopStmt.varId,
+                                        CLM_TYPE_INT, node, 0));
     }
-    // TODO should this create a new scope? - need to allocate local variable
-    // space for these vars
-    ClmScope *loopScope = clm_scope_new(scope, node);
-    gen_expnode_symbols(loopScope, node->loopStmt.start);
-    gen_expnode_symbols(loopScope, node->loopStmt.end);
-    gen_expnode_symbols(loopScope, node->loopStmt.delta);
-    gen_statements_symbols(loopScope, node->loopStmt.body);
+    gen_expnode_symbols(scope, node->loopStmt.start);
+    gen_expnode_symbols(scope, node->loopStmt.end);
+    gen_expnode_symbols(scope, node->loopStmt.delta);
+    gen_statements_symbols(scope, node->loopStmt.body);
     break;
   }
   case STMT_TYPE_PRINT:

@@ -34,7 +34,10 @@ static const char ASM_DATA[] = "section '.data' data readable writable\n"
                                "__T_EBX__ dd 0\n"
                                "__T_END__ dd 0\n"
                                "__T_ROW_END__ dd 0\n"
-                               "__T_ESP__ dd 0\n";
+                               "__T_ESP__ dd 0\n"
+                               "__INT_CONSTANT__ dd 0\n"
+                               "__FLOAT_CONSTANT__ dd 0\n"
+                               "__DOUBLE_CONSTANT__ dq 0\n";
 
 // general 32 bit registers
 #define EAX "eax"
@@ -60,6 +63,9 @@ static const char ASM_DATA[] = "section '.data' data readable writable\n"
 #define T_END "__T_END__"
 #define T_ROW_END "__T_ROW_END__"
 #define T_ESP "__T_ESP__"
+#define INT_CONST "__INT_CONSTANT__"
+#define FLOAT_CONST "__FLOAT_CONSTANT__"
+#define DOUBLE_CONST "__DOUBLE_CONSTANT__"
 
 #define LABEL_SIZE 32
 
@@ -89,10 +95,12 @@ void asm_fxch(const char *arg1, const char *arg2);
 void asm_fild(const char *src);
 
 // fpu arithmetic with integers
-void asm_fiadd(const char *dest, const char *other);
-void asm_fisub(const char *dest, const char *other);
-void asm_fimul(const char *dest, const char *other);
-void asm_fidiv(const char *dest, const char *other);
+void asm_fiadd(const char *other);
+void asm_fisub(const char *other);
+void asm_fimul(const char *other);
+void asm_fidiv(const char *other);
+void asm_fisubr(const char *other);
+void asm_fidivr(const char *other);
 
 // fpu arithmetic
 void asm_fadd(const char *dest, const char *other);
@@ -103,13 +111,9 @@ void asm_faddp(const char *dest, const char *other);
 void asm_fsubp(const char *dest, const char *other);
 void asm_fmulp(const char *dest, const char *other);
 void asm_fdivp(const char *dest, const char *other);
-void asm_faddr(const char *dest, const char *other);
 void asm_fsubr(const char *dest, const char *other);
-void asm_fmulr(const char *dest, const char *other);
 void asm_fdivr(const char *dest, const char *other);
-void asm_faddrp(const char *dest, const char *other);
 void asm_fsubrp(const char *dest, const char *other);
-void asm_fmulrp(const char *dest, const char *other);
 void asm_fdivrp(const char *dest, const char *other);
 
 void asm_inc(const char *arg);

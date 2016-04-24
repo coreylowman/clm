@@ -89,7 +89,7 @@ static void write_to_file(const char *name, const char *contents) {
 }
 
 int main(int argc, char *argv[]) {
-  file_name = "test_indexing.clm";
+  file_name = "test_floats.clm";
 
   char *contents = file_contents(file_name);
   if (contents == NULL)

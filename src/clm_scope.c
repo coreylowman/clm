@@ -29,8 +29,8 @@ void clm_symbol_print(void *data, int level) {
   printf("\n");
   while (q-- > 0)
     printf("  ");
-  printf("Symbol name : %s, type : %s, param : %d, offset : %d",
-           symbol->name, clm_type_to_string(symbol->type), symbol->isParam, symbol->offset);  
+  printf("Symbol name : %s, type : %s, param : %d, offset : %d", symbol->name,
+         clm_type_to_string(symbol->type), symbol->isParam, symbol->offset);
 }
 
 ClmScope *clm_scope_new(ClmScope *parent, void *startNode) {

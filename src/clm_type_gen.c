@@ -273,23 +273,23 @@ static void gen_int_div_int() {
 }
 
 static void gen_int_add_float() {
-  pop_int_into(EAX); // pop int into eax
-  asm_fiadd(ST0, EAX);
+  pop_int_into("dword [" INT_CONST "]");
+  asm_fiadd("dword [" INT_CONST "]");
 }
 
-static void gen_int_sub_float() {  
-  pop_int_into(EAX); // pop int into eax
-  asm_fisub(ST0, EAX);
+static void gen_int_sub_float() {
+  pop_int_into("dword [" INT_CONST "]");
+  asm_fisub("dword [" INT_CONST "]");
 }
 
 static void gen_int_mul_float() {
-  pop_int_into(EAX); // pop int into eax
-  asm_fimul(ST0, EAX);
+  pop_int_into("dword [" INT_CONST "]");
+  asm_fimul("dword [" INT_CONST "]");
 }
 
 static void gen_int_div_float() {
-  pop_int_into(EAX); // pop int into eax
-  asm_fidiv(ST0, EAX);
+  pop_int_into("dword [" INT_CONST "]");
+  asm_fidiv("dword [" INT_CONST "]");
 }
 
 /*
@@ -365,29 +365,29 @@ void gen_float_arith(ArithOp op, ClmType other_type) {
 
 static void gen_float_add_int() {
   asm_pop(EBX); // pop float type value
-  pop_int_into(EAX); // pop int into eax
-  asm_fiadd(ST0, EAX);
+  pop_int_into("dword [" INT_CONST "]");
+  asm_fiadd("dword [" INT_CONST "]");
   asm_push(EBX); // push float value
 }
 
 static void gen_float_sub_int() {
   asm_pop(EBX); // pop float type value
-  pop_int_into(EAX); // pop int into eax
-  asm_fisub(ST0, EAX);
+  pop_int_into("dword [" INT_CONST "]");
+  asm_fisubr("dword [" INT_CONST "]");
   asm_push(EBX); // push float value
 }
 
 static void gen_float_mul_int() {
   asm_pop(EBX); // pop float type value
-  pop_int_into(EAX); // pop int into eax
-  asm_fimul(ST0, EAX);
+  pop_int_into("dword [" INT_CONST "]");
+  asm_fimul("dword [" INT_CONST "]");
   asm_push(EBX); // push float value
 }
 
 static void gen_float_div_int() {
   asm_pop(EBX); // pop float type value
-  pop_int_into(EAX); // pop int into eax
-  asm_fidiv(ST0, EAX);
+  pop_int_into("dword [" INT_CONST "]");
+  asm_fidivr("dword [" INT_CONST "]");
   asm_push(EBX); // push float value
 }
 
@@ -396,22 +396,22 @@ static void gen_float_add_float() {
   // note: there are 2 type values on regular stack, but leave one because
   // we are still generating a float
   asm_pop(EAX);
-  asm_faddp(ST0, ST1);
+  asm_faddp(ST1, ST0);
 }
 
 static void gen_float_sub_float() {
-  asm_pop(EAX);  
-  asm_fsubp(ST0, ST1);
+  asm_pop(EAX);
+  asm_fsubp(ST1, ST0);
 }
 
 static void gen_float_mul_float() {
-  asm_pop(EAX);  
-  asm_fmulp(ST0, ST1);
+  asm_pop(EAX);
+  asm_fmulp(ST1, ST0);
 }
 
 static void gen_float_div_float() {
-  asm_pop(EAX);  
-  asm_fdivp(ST0, ST1);
+  asm_pop(EAX);
+  asm_fdivp(ST1, ST0);
 }
 
 static void gen_float_mul_mat() {
@@ -863,7 +863,9 @@ void gen_print_int(int nl) {
 }
 
 void gen_print_float(int nl) {
-  // TODO
+  pop_float_into("qword [" DOUBLE_CONST "]");
+  asm_print_float("dword [" DOUBLE_CONST "], dword [" DOUBLE_CONST "+4]", 0,
+                  nl);
 }
 
 void gen_print_string(int nl) {

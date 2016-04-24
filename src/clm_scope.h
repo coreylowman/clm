@@ -8,6 +8,7 @@ typedef struct ClmSymbol {
   ClmType type;
   void *declaration;
   int offset;
+  int isGlobal;
   int isParam;
 } ClmSymbol;
 

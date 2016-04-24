@@ -6,9 +6,9 @@
 #include "clm.h"
 #include "clm_asm.h"
 #include "clm_ast.h"
+#include "clm_scope.h"
 #include "clm_type.h"
 #include "clm_type_gen.h"
-#include "clm_scope.h"
 
 typedef struct {
   char *code;
@@ -29,6 +29,33 @@ void writeLine(const char *line) {
   // each time (make sure to append \0)
   data.code = realloc(data.code, strlen(data.code) + strlen(line) + 1);
   strcat(data.code, line);
+}
+
+static void gen_var_location(ClmSymbol *sym, char *out_buffer, int offset,
+                             const char *offset_loc) {
+  char temp_buffer[64];
+
+  sprintf(out_buffer, "dword [");
+
+  if (sym->isGlobal) {
+    if (offset != 0) {
+      sprintf(temp_buffer, "_%s+%d", sym->name, offset);
+    } else {
+      sprintf(temp_buffer, "_%s", sym->name);
+    }
+  } else if (sym->isParam) {
+    sprintf(temp_buffer, "ebp+%d", sym->offset + offset);
+  } else {
+    sprintf(temp_buffer, "ebp+%d", sym->offset + offset);
+  }
+  strcat(out_buffer, temp_buffer);
+
+  if (offset_loc != NULL) {
+    sprintf(temp_buffer, "+%s", offset_loc);
+    strcat(out_buffer, temp_buffer);
+  }
+
+  strcat(out_buffer, "]");
 }
 
 /*
@@ -130,7 +157,7 @@ static void gen_matrix_size(ClmExpNode *node) {
   if (size.colVar != NULL) {
     // push dword [ebp+offset]
     ClmSymbol *sym = clm_scope_find(data.scope, size.colVar);
-    sprintf(index_str, "dword [ebp+%d]", sym->offset + 8);
+    gen_var_location(sym, index_str, 8, NULL);
     asm_push(index_str);
   } else {
     // push $colInd
@@ -140,7 +167,7 @@ static void gen_matrix_size(ClmExpNode *node) {
   if (size.rowVar != NULL) {
     // push dword [ebp+offset]
     ClmSymbol *sym = clm_scope_find(data.scope, size.rowVar);
-    sprintf(index_str, "dword [ebp+%d]", sym->offset + 4);
+    gen_var_location(sym, index_str, 4, NULL);
     asm_push(index_str);
   } else {
     // push $rowInd
@@ -148,7 +175,7 @@ static void gen_matrix_size(ClmExpNode *node) {
   }
 }
 
-static void pop_into_matrix(ClmExpNode *node){
+static void pop_into_matrix(ClmExpNode *node) {
   char index_str[64];
   ClmSymbol *var = clm_scope_find(data.scope, node->indExp.id);
   // TODO case where matrix is actually a pointer
@@ -171,8 +198,8 @@ static void pop_into_matrix(ClmExpNode *node){
     asm_mov(EAX, ECX);
     asm_imul(EAX, "4");
     asm_add(EAX, "12");
-    // TODO does this offset have to be - in some cases?
-    sprintf(index_str, "dword [ebp+%d+eax]", var->offset);
+
+    gen_var_location(var, index_str, 0, EAX);
     asm_pop(index_str);
 
     asm_dec(ECX);
@@ -184,12 +211,12 @@ static void pop_into_matrix(ClmExpNode *node){
     next_label(cmp_label);
     next_label(end_label);
 
-    sprintf(index_str, "dword [ebp+%d]", var->offset + 8);
+    gen_var_location(var, index_str, 8, NULL);
     asm_mov(EBX, index_str); // ebx contains number of cols
 
-    asm_pop(EAX); // pop type
-    asm_pop(ECX); // pop rows
-    asm_pop(EAX); // pop cols
+    asm_pop(EAX);       // pop type
+    asm_pop(ECX);       // pop rows
+    asm_pop(EAX);       // pop cols
     asm_imul(ECX, EAX); // ecx now contains rows * cols
     asm_dec(ECX);
 
@@ -197,11 +224,10 @@ static void pop_into_matrix(ClmExpNode *node){
     asm_cmp(ECX, "0");
     asm_jmp_l(end_label);
 
-    if(node->indExp.rowIndex == NULL){
+    if (node->indExp.rowIndex == NULL) {
       // TODO pop a whole col off the stack
-    }else{
+    } else {
       // TODO pop a whole row off the stack
-
     }
 
     asm_dec(ECX);
@@ -210,18 +236,15 @@ static void pop_into_matrix(ClmExpNode *node){
   } else {
     gen_expression(node->indExp.colIndex);
     gen_expression(node->indExp.rowIndex);
-    pop_int_into(EAX);  // pop rows into eax
-    pop_int_into(EBX);  // pop cols into ebx
+    pop_int_into(EAX); // pop rows into eax
+    pop_int_into(EBX); // pop cols into ebx
 
-    // TODO does this offset and the one below have to be - in some cases?
-    sprintf(index_str, "dword [ebp+%d]", var->offset + 8);
+    gen_var_location(var, index_str, 8, NULL);
     asm_mov(ECX, index_str); // mov number of columns into ecx
-    asm_imul(EAX, ECX); // eax = nc * row
-    asm_add(EAX, EBX); // eax = nc * row + col
-    asm_imul(EAX, "4"); // eax = 4 * (row * nc + col)
-    // var->offset points at type... 3 elements above is the first item in
-    // the matrix
-    sprintf(index_str, "dword [ebp+%d+eax]", var->offset + 12);
+    asm_imul(EAX, ECX);      // eax = nc * row
+    asm_add(EAX, EBX);       // eax = nc * row + col
+    asm_imul(EAX, "4");      // eax = 4 * (row * nc + col)
+    gen_var_location(var, index_str, 12, EAX);
     pop_int_into(index_str);
   }
 }
@@ -233,17 +256,11 @@ static void pop_into_lhs(ClmExpNode *node) {
 
   switch (var->type) {
   case CLM_TYPE_INT:
-    if (var->isParam)
-      sprintf(index_str, "dword [ebp+%d]", var->offset + 4);
-    else
-      sprintf(index_str, "dword [ebp+%d]", var->offset - 4);
+    gen_var_location(var, index_str, 4, NULL);
     pop_int_into(index_str);
     break;
   case CLM_TYPE_FLOAT:
-    if (var->isParam)
-      sprintf(index_str, "dword [ebp+%d]", var->offset + 4);
-    else
-      sprintf(index_str, "dword [ebp+%d]", var->offset - 4);
+    gen_var_location(var, index_str, 4, NULL);
     pop_float_into(index_str);
     break;
   case CLM_TYPE_MATRIX:
@@ -264,18 +281,12 @@ static void gen_index(ClmExpNode *node) {
   ClmSymbol *var = clm_scope_find(data.scope, node->indExp.id);
   switch (var->type) {
   case CLM_TYPE_INT:
-    if (var->isParam)
-      sprintf(index_str, "dword [ebp+%d]", var->offset + 4);
-    else
-      sprintf(index_str, "dword [ebp+%d]", var->offset - 4);
+    gen_var_location(var, index_str, 4, NULL);
     asm_push(index_str);
     asm_push_const_i((int)var->type);
     break;
   case CLM_TYPE_FLOAT:
-    if (var->isParam)
-      sprintf(index_str, "dword [ebp+%d]", var->offset + 4);
-    else
-      sprintf(index_str, "dword [ebp+%d]", var->offset - 4);
+    gen_var_location(var, index_str, 4, NULL);
     asm_push_f(index_str);
     asm_push_const_i((int)var->type);
     break;
@@ -296,7 +307,7 @@ static void gen_index(ClmExpNode *node) {
       asm_imul(EAX, "4"); // now eax contains row * col * 4
       // var->offset points at type... 3 elements above is the first item
       // in the matrix
-      sprintf(index_str, "dword [ebp+%d+eax]", var->offset + 12);
+      gen_var_location(var, index_str, 12, EAX);
       asm_push(index_str);
       asm_push_const_i((int)CLM_TYPE_INT);
     }
@@ -500,11 +511,11 @@ static void gen_func_dec(ClmStmtNode *node) {
     if (sym->isParam)
       continue;
     // setting the type of the local var
-    sprintf(index_str, "dword [ebp+%d]", sym->offset);
+    gen_var_location(sym, index_str, 0, NULL);
     asm_mov_i(index_str, (int)sym->type);
 
     // setting the value of the local var
-    sprintf(index_str, "dword [ebp+%d]", sym->offset - 4);
+    gen_var_location(sym, index_str, 4, NULL);
     asm_mov_i(index_str, 0);
 
     if (sym->type == CLM_TYPE_MATRIX) {
@@ -529,7 +540,7 @@ static void gen_func_dec(ClmStmtNode *node) {
       // setting the pointer to point at the rows
       // note: push changes the value at esp and THEN
       // decrements it
-      sprintf(index_str, "dword [ebp+%d]", sym->offset - 4);
+      gen_var_location(sym, index_str, 4, NULL);
       asm_mov(index_str, ESP);
 
       asm_push(EAX); // rows
@@ -559,7 +570,7 @@ static void gen_loop(ClmStmtNode *node) {
 
   ClmSymbol *var = clm_scope_find(data.scope, node->loopStmt.varId);
   char loop_var[32];
-  sprintf(loop_var, "dword [ebp+%d]", var->offset + (var->isParam ? 4 : -4));
+  gen_var_location(var, loop_var, 4, NULL);
 
   // don't need to store this - just evaluate and put into loop var
   gen_expression(node->loopStmt.start);
@@ -587,10 +598,7 @@ static void gen_loop(ClmStmtNode *node) {
   else
     asm_jmp_ge(end_label);
 
-  ClmScope *loopScope = clm_scope_find_child(data.scope, node);
-  data.scope = loopScope;
   gen_statements(node->loopStmt.body);
-  data.scope = loopScope->parent;
 
   if (node->loopStmt.delta->type == EXP_TYPE_INT &&
       node->loopStmt.delta->ival == 1) {
@@ -666,11 +674,12 @@ static void gen_globals(ClmScope *globalScope) {
     symbol = globalScope->symbols->data[i];
     switch (symbol->type) {
     case CLM_TYPE_INT:
-      sprintf(buffer, "%s dd %d, 0", symbol->name, (int)CLM_TYPE_INT);
+      sprintf(buffer, "_%s dd %d, 0\n", symbol->name, (int)CLM_TYPE_INT);
       writeLine(buffer);
       break;
     case CLM_TYPE_FLOAT:
-      // TODO
+      sprintf(buffer, "_%s dd %d, 0\n", symbol->name, (int)CLM_TYPE_FLOAT);
+      writeLine(buffer);
       break;
     case CLM_TYPE_STRING:
       // TODO
@@ -681,11 +690,12 @@ static void gen_globals(ClmScope *globalScope) {
       if (clm_exp_has_size(val, globalScope)) {
         int i, rows, cols;
         clm_size_of_exp(val, globalScope, &rows, &cols);
-        sprintf(buffer, "%s dd %d, %d, %d", symbol->name, (int)CLM_TYPE_MATRIX,
+        sprintf(buffer, "_%s dd %d, %d, %d", symbol->name, (int)CLM_TYPE_MATRIX,
                 rows, cols);
         for (i = 0; i < rows * cols; i++) {
           strcat(buffer, ", 0");
         }
+        strcat(buffer, "\n");
         writeLine(buffer);
       }
       break;

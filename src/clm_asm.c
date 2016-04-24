@@ -3,9 +3,9 @@
 
 #include "clm_asm.h"
 
-#define ASM_WRITE(...) \
-  char buffer[32]; \
-  sprintf(buffer, __VA_ARGS__); \
+#define ASM_WRITE(...)                                                         \
+  char buffer[64];                                                             \
+  sprintf(buffer, __VA_ARGS__);                                                \
   writeLine(buffer);
 
 extern void writeLine(const char *line);
@@ -20,7 +20,7 @@ void pop_int_into(const char *dest) {
 
 void pop_float_into(const char *dest) {
   // pop type off of general stack
-  asm_pop(dest);
+  asm_pop(EAX);
 
   // pop value off of fpu stack
   asm_pop_f(dest);
@@ -48,13 +48,9 @@ void asm_comment(const char *line) {
   writeLine(buffer);
 }
 
-void asm_pop(const char *dest) {
-  ASM_WRITE("pop %s\n", dest);
-}
+void asm_pop(const char *dest) { ASM_WRITE("pop %s\n", dest); }
 
-void asm_push(const char *src) {
-  ASM_WRITE("push %s\n", src);
-}
+void asm_push(const char *src) { ASM_WRITE("push %s\n", src); }
 
 /*
   from fasm docs:
@@ -65,33 +61,23 @@ void asm_push(const char *src) {
   getting rid of ST0. fstp accepts the same operands as the fst instruction and
   can also store value in the 80-bit memory.""
 */
-void asm_pop_f(const char *dest) {
-  ASM_WRITE("fstp %s\n", dest);
-}
+void asm_pop_f(const char *dest) { ASM_WRITE("fstp %s\n", dest); }
 
-void asm_push_f(const char *src) {
-  ASM_WRITE("fld %s\n", src);
-}
+void asm_push_f(const char *src) { ASM_WRITE("fld %s\n", src); }
 
-void asm_push_const_i(int val) {
-  ASM_WRITE("push %d\n", val);
-}
+void asm_push_const_i(int val) { ASM_WRITE("push %d\n", val); }
 
 void asm_push_const_f(float val) {
-  ASM_WRITE("fld %f\n", val);
+  ASM_WRITE("mov [" FLOAT_CONST "],%f\nfld [" FLOAT_CONST "]\n", val);
 }
 
-void asm_push_const_c(char val) {
-  ASM_WRITE("push %c\n", val);
-}
+void asm_push_const_c(char val) { ASM_WRITE("push %c\n", val); }
 
 void asm_add(const char *dest, const char *other) {
   ASM_WRITE("add %s,%s\n", dest, other);
 }
 
-void asm_add_i(const char *dest, int i) {
-  ASM_WRITE("add %s,%d\n", dest, i);
-}
+void asm_add_i(const char *dest, int i) { ASM_WRITE("add %s,%d\n", dest, i); }
 
 void asm_sub(const char *dest, const char *other) {
   ASM_WRITE("sub %s,%s\n", dest, other);
@@ -101,33 +87,25 @@ void asm_imul(const char *dest, const char *other) {
   ASM_WRITE("imul %s,%s\n", dest, other);
 }
 
-void asm_div(const char *denom) {
-  ASM_WRITE("div %s\n", denom);
-}
+void asm_div(const char *denom) { ASM_WRITE("div %s\n", denom); }
 
-void asm_fxch(const char *arg1, const char *arg2){
+void asm_fxch(const char *arg1, const char *arg2) {
   ASM_WRITE("fxch %s,%s\n", arg1, arg2);
 }
 
-void asm_fild(const char *src){
-  ASM_WRITE("fild %s\n", src);
-}
+void asm_fild(const char *src) { ASM_WRITE("fild %s\n", src); }
 
-void asm_fiadd(const char *dest, const char *other){
-  ASM_WRITE("fiadd %s,%s\n", dest, other);
-}
+void asm_fiadd(const char *other) { ASM_WRITE("fiadd %s\n", other); }
 
-void asm_fisub(const char *dest, const char *other){
-  ASM_WRITE("fisub %s,%s\n", dest, other);
-}
+void asm_fisub(const char *other) { ASM_WRITE("fisub %s\n", other); }
 
-void asm_fimul(const char *dest, const char *other){
-  ASM_WRITE("fimul %s,%s\n", dest, other);
-}
+void asm_fimul(const char *other) { ASM_WRITE("fimul %s\n", other); }
 
-void asm_fidiv(const char *dest, const char *other){
-  ASM_WRITE("fidiv %s,%s\n", dest, other);
-}
+void asm_fidiv(const char *other) { ASM_WRITE("fidiv %s\n", other); }
+
+void asm_fisubr(const char *other) { ASM_WRITE("fisubr %s\n", other); }
+
+void asm_fidivr(const char *other) { ASM_WRITE("fidivr %s\n", other); }
 
 /*
   from fasm doc:
@@ -156,74 +134,49 @@ void asm_fdiv(const char *dest, const char *other) {
   ASM_WRITE("fdiv %s,%s\n", dest, other);
 }
 
-void asm_faddp(const char *dest, const char *other){
+void asm_faddp(const char *dest, const char *other) {
   ASM_WRITE("faddp %s,%s\n", dest, other);
 }
 
-void asm_fsubp(const char *dest, const char *other){
+void asm_fsubp(const char *dest, const char *other) {
   ASM_WRITE("fsubp %s,%s\n", dest, other);
 }
 
-void asm_fmulp(const char *dest, const char *other){
+void asm_fmulp(const char *dest, const char *other) {
   ASM_WRITE("fmulp %s,%s\n", dest, other);
 }
 
-void asm_fdivp(const char *dest, const char *other){
+void asm_fdivp(const char *dest, const char *other) {
   ASM_WRITE("fdivp %s,%s\n", dest, other);
 }
 
-void asm_faddr(const char *dest, const char *other){
-  ASM_WRITE("faddr %s,%s\n", dest, other);
-}
-
-void asm_fsubr(const char *dest, const char *other){
+void asm_fsubr(const char *dest, const char *other) {
   ASM_WRITE("fsubr %s,%s\n", dest, other);
 }
 
-void asm_fmulr(const char *dest, const char *other){
-  ASM_WRITE("fmulr %s,%s\n", dest, other);
-}
-
-void asm_fdivr(const char *dest, const char *other){
+void asm_fdivr(const char *dest, const char *other) {
   ASM_WRITE("fdivr %s,%s\n", dest, other);
 }
 
-void asm_faddrp(const char *dest, const char *other){
-  ASM_WRITE("faddpr %s,%s\n", dest, other);
+void asm_fsubrp(const char *dest, const char *other) {
+  ASM_WRITE("fsubrp %s,%s\n", dest, other);
 }
 
-void asm_fsubrp(const char *dest, const char *other){
-  ASM_WRITE("fsubpr %s,%s\n", dest, other);
+void asm_fdivrp(const char *dest, const char *other) {
+  ASM_WRITE("fdivrp %s,%s\n", dest, other);
 }
 
-void asm_fmulrp(const char *dest, const char *other){
-  ASM_WRITE("fmulpr %s,%s\n", dest, other);
-}
+void asm_inc(const char *arg) { ASM_WRITE("inc %s\n", arg); }
 
-void asm_fdivrp(const char *dest, const char *other){
-  ASM_WRITE("fdivpr %s,%s\n", dest, other);
-}
+void asm_dec(const char *arg) { ASM_WRITE("dec %s\n", arg); }
 
-
-void asm_inc(const char *arg) {
-  ASM_WRITE("inc %s\n", arg);
-}
-
-void asm_dec(const char *arg) {
-  ASM_WRITE("dec %s\n", arg);
-}
-
-void asm_neg(const char *arg) {
-  ASM_WRITE("dec %s\n", arg);
-}
+void asm_neg(const char *arg) { ASM_WRITE("dec %s\n", arg); }
 
 void asm_mov(const char *dest, const char *src) {
   ASM_WRITE("mov %s,%s\n", dest, src);
 }
 
-void asm_mov_i(const char *dest, int i) {
-  ASM_WRITE("mov %s,%d\n", dest, i);
-}
+void asm_mov_i(const char *dest, int i) { ASM_WRITE("mov %s,%d\n", dest, i); }
 
 void asm_lea(const char *dest, const char *src) {
   ASM_WRITE("lea %s,%s\n", dest, src);
@@ -249,48 +202,30 @@ void asm_cmp(const char *arg1, const char *arg2) {
   ASM_WRITE("cmp %s,%s\n", arg1, arg2);
 }
 
-void asm_jmp(const char *label) {
-  ASM_WRITE("jmp %s\n", label);
-}
+void asm_jmp(const char *label) { ASM_WRITE("jmp %s\n", label); }
 
-void asm_jmp_g(const char *label) {
-  ASM_WRITE("jmp %s\n", label);
-}
+void asm_jmp_g(const char *label) { ASM_WRITE("jmp %s\n", label); }
 
-void asm_jmp_ge(const char *label) {
-  ASM_WRITE("jge %s\n", label);
-}
+void asm_jmp_ge(const char *label) { ASM_WRITE("jge %s\n", label); }
 
-void asm_jmp_l(const char *label) {
-  ASM_WRITE("jl %s\n", label);
-}
+void asm_jmp_l(const char *label) { ASM_WRITE("jl %s\n", label); }
 
-void asm_jmp_le(const char *label) {
-  ASM_WRITE("jle %s\n", label);
-}
+void asm_jmp_le(const char *label) { ASM_WRITE("jle %s\n", label); }
 
-void asm_jmp_eq(const char *label) {
-  ASM_WRITE("je %s\n", label);
-}
+void asm_jmp_eq(const char *label) { ASM_WRITE("je %s\n", label); }
 
-void asm_jmp_neq(const char *label) {
-  ASM_WRITE("jne %s\n", label);
-}
+void asm_jmp_neq(const char *label) { ASM_WRITE("jne %s\n", label); }
 
-void asm_label(const char *name) {
-  ASM_WRITE("%s:\n", name);
-}
+void asm_label(const char *name) { ASM_WRITE("%s:\n", name); }
 
-void asm_call(const char *name) {
-  ASM_WRITE("call _%s\n", name);
-}
+void asm_call(const char *name) { ASM_WRITE("call _%s\n", name); }
 
 void asm_ret() { writeLine("ret\n"); }
 
 void asm_print_float(const char *src, int spc, int nl) {
   asm_push_regs();
 
-  char buffer[64];
+  char buffer[128];
   if (nl)
     sprintf(buffer, "cinvoke printf, print_float_nl, %s\n", src);
   else if (spc)

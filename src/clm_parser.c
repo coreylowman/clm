@@ -76,16 +76,16 @@ static ArrayList *consume_statements(int ifElse) {
 }
 
 static int curr_is_int() {
-  return curr()->sym == LITERAL_INT || (curr()->sym == TOKEN_MINUS && next()->sym == LITERAL_INT);
+  return curr()->sym == LITERAL_INT ||
+         (curr()->sym == TOKEN_MINUS && next()->sym == LITERAL_INT);
 }
 
 static int curr_is_float() {
-  return curr()->sym == LITERAL_FLOAT || (curr()->sym == TOKEN_MINUS && next()->sym == LITERAL_FLOAT);
+  return curr()->sym == LITERAL_FLOAT ||
+         (curr()->sym == TOKEN_MINUS && next()->sym == LITERAL_FLOAT);
 }
 
-static int curr_is_number(){
-  return curr_is_int() || curr_is_float();
-}
+static int curr_is_number() { return curr_is_int() || curr_is_float(); }
 
 static int consume_int() {
   int val = 0;
@@ -110,7 +110,7 @@ static float consume_float() {
 }
 
 static float consume_number() {
-  if(curr_is_int()){
+  if (curr_is_int()) {
     return consume_int();
   }
   return consume_float();
@@ -213,9 +213,9 @@ static ClmStmtNode *consume_statement() {
   } else if (accept(KEYWORD_FOR)) {
     expect(LITERAL_ID);
     char *name = data.prevTokenRaw;
-    
+
     expect(TOKEN_EQ);
-    
+
     int startInclusive = 0;
     if (accept(TOKEN_LBRACK))
       startInclusive = 1;
@@ -250,9 +250,9 @@ static ClmStmtNode *consume_statement() {
     return stmt;
   } else if (accept(KEYWORD_IF)) {
     ClmExpNode *condition = consume_expression();
-    
+
     expect(KEYWORD_THEN);
-    
+
     ArrayList *trueBody = consume_statements(1);
 
     ArrayList *falseBody = NULL;
@@ -323,55 +323,55 @@ static ClmStmtNode *consume_statement() {
   return NULL;
 }
 
-static BoolOp sym_to_bool_op(ClmLexerSymbol sym){
-  switch(sym){
-    case KEYWORD_AND:
-      return BOOL_OP_AND;
-    case KEYWORD_OR:
-      return BOOL_OP_OR;
-    case TOKEN_EQ:
-      return BOOL_OP_EQ;
-    case TOKEN_BANGEQ:
-      return BOOL_OP_NEQ;
-    case TOKEN_GT:
-      return BOOL_OP_GT;
-    case TOKEN_LT:
-      return BOOL_OP_LT;
-    case TOKEN_GTE:
-      return BOOL_OP_GTE;
-    case TOKEN_LTE:
-      //fallthrough
-    default:
-      return BOOL_OP_LTE;
+static BoolOp sym_to_bool_op(ClmLexerSymbol sym) {
+  switch (sym) {
+  case KEYWORD_AND:
+    return BOOL_OP_AND;
+  case KEYWORD_OR:
+    return BOOL_OP_OR;
+  case TOKEN_EQ:
+    return BOOL_OP_EQ;
+  case TOKEN_BANGEQ:
+    return BOOL_OP_NEQ;
+  case TOKEN_GT:
+    return BOOL_OP_GT;
+  case TOKEN_LT:
+    return BOOL_OP_LT;
+  case TOKEN_GTE:
+    return BOOL_OP_GTE;
+  case TOKEN_LTE:
+  // fallthrough
+  default:
+    return BOOL_OP_LTE;
   }
 }
 
-static ArithOp sym_to_arith_op(ClmLexerSymbol sym){
-  switch(sym){
-    case TOKEN_PLUS:
-      return ARITH_OP_ADD;
-    case TOKEN_MINUS:
-      return ARITH_OP_SUB;
-    case TOKEN_STAR:
-      return ARITH_OP_MULT;
-    case TOKEN_FSLASH:
-      //fallthrough
-    default:
-      return ARITH_OP_DIV;
+static ArithOp sym_to_arith_op(ClmLexerSymbol sym) {
+  switch (sym) {
+  case TOKEN_PLUS:
+    return ARITH_OP_ADD;
+  case TOKEN_MINUS:
+    return ARITH_OP_SUB;
+  case TOKEN_STAR:
+    return ARITH_OP_MULT;
+  case TOKEN_FSLASH:
+  // fallthrough
+  default:
+    return ARITH_OP_DIV;
   }
 }
 
-static UnaryOp sym_to_unary_op(ClmLexerSymbol sym){
-  switch(sym){
-    case TOKEN_MINUS:
-      return UNARY_OP_MINUS;
-    case TOKEN_BANG:
-      return UNARY_OP_NOT;
-    case TOKEN_TILDA:
-      //fallthrough
-    default:
-      return UNARY_OP_TRANSPOSE;
-    }
+static UnaryOp sym_to_unary_op(ClmLexerSymbol sym) {
+  switch (sym) {
+  case TOKEN_MINUS:
+    return UNARY_OP_MINUS;
+  case TOKEN_BANG:
+    return UNARY_OP_NOT;
+  case TOKEN_TILDA:
+  // fallthrough
+  default:
+    return UNARY_OP_TRANSPOSE;
+  }
 }
 
 static ClmExpNode *consume_expression() {
@@ -406,8 +406,8 @@ static ClmExpNode *consume_expression_3() {
   ClmExpNode *node2;
   BoolOp op;
   node1 = consume_expression_4();
-  while (accept(TOKEN_GT) || accept(TOKEN_LT) ||
-         accept(TOKEN_GTE) || accept(TOKEN_LTE)) {
+  while (accept(TOKEN_GT) || accept(TOKEN_LT) || accept(TOKEN_GTE) ||
+         accept(TOKEN_LTE)) {
     op = sym_to_bool_op(prev()->sym);
     node2 = consume_expression_4();
     node1 = clm_exp_new_bool(op, node1, node2);
@@ -453,7 +453,8 @@ static ClmExpNode *consume_expression_6() {
     exp->colNo = colNo;
     return exp;
   } else if (accept(TOKEN_MINUS) || accept(TOKEN_BANG) || accept(TOKEN_TILDA)) {
-    ClmExpNode *exp = clm_exp_new_unary(sym_to_unary_op(prev()->sym), consume_expression_6());
+    ClmExpNode *exp =
+        clm_exp_new_unary(sym_to_unary_op(prev()->sym), consume_expression_6());
     exp->lineNo = lineNo;
     exp->colNo = colNo;
     return exp;
@@ -517,21 +518,21 @@ static ClmExpNode *consume_expression_6() {
     int start = prev()->lineNo;
 
     list = malloc(sizeof(*list));
-    
+
     // TODO consume expressions instead of just numbers
-    do{
+    do {
       list = realloc(list, (num + 1) * sizeof(*list));
       list[num++] = consume_number();
-    } while(curr_is_number());
+    } while (curr_is_number());
 
     cols = num;
 
     int i;
     while (accept(TOKEN_COMMA)) {
-        for(i = 0;i < cols;i++){
-            list = realloc(list, (num + 1) * sizeof(*list));
-            list[num++] = consume_number();
-        }
+      for (i = 0; i < cols; i++) {
+        list = realloc(list, (num + 1) * sizeof(*list));
+        list[num++] = consume_number();
+      }
     }
 
     expect(TOKEN_RCURL);
