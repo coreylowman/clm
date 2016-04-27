@@ -206,8 +206,8 @@ ClmStmtNode *clm_stmt_new_call(ClmExpNode *callExpr);
 ClmStmtNode *clm_stmt_new_cond(ClmExpNode *condition, ArrayList *trueBody,
                                ArrayList *falseBody);
 ClmStmtNode *clm_stmt_new_dec(char *name, ArrayList *params, ClmType returnType,
-                              int returnRows, char *returnRowsVars,
-                              int returnCols, char *returnColsVar,
+                              int returnRows, int returnCols,
+                              char *returnRowsVars, char *returnColsVar,
                               ArrayList *functionBody);
 ClmStmtNode *clm_stmt_new_loop(char *varId, ClmExpNode *start, ClmExpNode *end,
                                ClmExpNode *delta, ArrayList *loopBody,

@@ -100,9 +100,6 @@ static void type_check_expression(ClmExpNode *node, ClmScope *scope) {
   case EXP_TYPE_STRING:
     break;
   case EXP_TYPE_ARITH: {
-    // TODO check if can arith for constant sized matrices?
-    // e.g. [4:3] * [3:1] is OK
-    // e.g. [4:3] * [2:2] is NOT OK
     type_check_expression(node->arithExp.right, scope);
     type_check_expression(node->arithExp.left, scope);
     ClmType left_type = clm_type_of_exp(node->arithExp.left, scope);
@@ -114,12 +111,38 @@ static void type_check_expression(ClmExpNode *node, ClmScope *scope) {
                 arith_op_to_string(node->arithExp.operand),
                 clm_type_to_string(left_type), clm_type_to_string(right_type));
     }
+
+    if (left_type == CLM_TYPE_MATRIX && right_type == CLM_TYPE_MATRIX) {
+      int rrows, rcols;
+      int lrows, lcols;
+      clm_size_of_exp(node->arithExp.right, scope, &rrows, &rcols);
+      clm_size_of_exp(node->arithExp.left, scope, &lrows, &lcols);
+
+      switch (node->arithExp.operand) {
+      case ARITH_OP_MULT:
+        if (lcols > 0 && rrows > 0 && lcols != rrows) {
+          clm_error(node->lineNo, node->colNo, "Matrix multiply expects "
+                                               "matrices A:[m:n], B:[q:r], "
+                                               "where n == q");
+        }
+        break;
+      case ARITH_OP_DIV:
+      case ARITH_OP_ADD:
+      case ARITH_OP_SUB:
+        if ((rrows > 0 && lrows > 0 && rrows != lrows) ||
+            (rcols > 0 && lcols > 0 && rcols != lcols)) {
+          clm_error(node->lineNo, node->colNo,
+                    "Matrix element wise arith operation expects matrices "
+                    "A:[m:n], B:[q:r], where m == q and n == r");
+        }
+        break;
+      default:
+        break;
+      }
+    }
     break;
   }
   case EXP_TYPE_BOOL: {
-    // TODO check if can compare for constant sized matrices?
-    // e.g. [4:3] == [4:3] is OK
-    // e.g. [4:3] == [2:2] is NOT OK
     type_check_expression(node->boolExp.right, scope);
     type_check_expression(node->boolExp.left, scope);
     ClmType left_type = clm_type_of_exp(node->boolExp.left, scope);
@@ -130,6 +153,19 @@ static void type_check_expression(ClmExpNode *node, ClmScope *scope) {
                 "Boolean operand %s not valid for types %s and %s",
                 bool_op_to_string(node->boolExp.operand),
                 clm_type_to_string(left_type), clm_type_to_string(right_type));
+    }
+
+    if (left_type == CLM_TYPE_MATRIX && right_type == CLM_TYPE_MATRIX) {
+      int rrows, rcols;
+      int lrows, lcols;
+      clm_size_of_exp(node->arithExp.right, scope, &rrows, &rcols);
+      clm_size_of_exp(node->arithExp.left, scope, &lrows, &lcols);
+      if ((rrows > 0 && lrows > 0 && rrows != lrows) ||
+          (rcols > 0 && lcols > 0 && rcols != lcols)) {
+        clm_error(node->lineNo, node->colNo,
+                  "Matrix element wise boolean operation expects matrices "
+                  "A:[m:n], B:[q:r], where m == q and n == r");
+      }
     }
     break;
   }
@@ -161,10 +197,6 @@ static void type_check_expression(ClmExpNode *node, ClmScope *scope) {
       ClmExpNode *expected = stmt->funcDecStmt.parameters->data[i];
       type_check_expression(param, scope);
 
-      // TODO check if size of passed in expression matches size of expected
-      // e.g. \f A[m:n] ... f([4:3]) is OK
-      // e.g. \f A[2:n] ... f([2:4]) is OK
-      // e.g. \f A[2:n] ... f([4:4]) is NOT OK
       if (expected->paramExp.type != clm_type_of_exp(param, scope)) {
         // error... incorrect type passed in
         clm_error(node->lineNo, node->colNo,
@@ -173,6 +205,27 @@ static void type_check_expression(ClmExpNode *node, ClmScope *scope) {
                   node->callExp.name,
                   clm_type_to_string(expected->paramExp.type), i,
                   clm_type_to_string(clm_type_of_exp(param, scope)));
+      }
+
+      if (expected->paramExp.type == CLM_TYPE_MATRIX) {
+        int eRows, eCols;
+        int pRows, pCols;
+        clm_size_of_exp(expected, scope, &eRows, &eCols);
+        clm_size_of_exp(param, scope, &pRows, &pCols);
+
+        if (eRows > 0 && pRows > 0 && eRows != pRows) {
+          clm_error(node->lineNo, node->colNo, "Parameter was expecting a "
+                                               "matrix with %d rows, but is "
+                                               "passed a matrix with %d rows",
+                    eRows, pRows);
+        }
+
+        if (eCols > 0 && pCols > 0 && eCols != pCols) {
+          clm_error(node->lineNo, node->colNo, "Parameter was expecting a "
+                                               "matrix with %d cols, but is "
+                                               "passed a matrix with %d cols",
+                    eCols, pCols);
+        }
       }
     }
     break;

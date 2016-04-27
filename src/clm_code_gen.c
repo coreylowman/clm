@@ -687,9 +687,9 @@ static void gen_globals(ClmScope *globalScope) {
     case CLM_TYPE_MATRIX: {
       ClmStmtNode *node = symbol->declaration;
       ClmExpNode *val = node->assignStmt.rhs;
-      if (clm_exp_has_size(val, globalScope)) {
-        int i, rows, cols;
-        clm_size_of_exp(val, globalScope, &rows, &cols);
+      int rows, cols;
+      if (clm_size_of_exp(val, globalScope, &rows, &cols)) {
+        int i;
         sprintf(buffer, "_%s dd %d, %d, %d", symbol->name, (int)CLM_TYPE_MATRIX,
                 rows, cols);
         for (i = 0; i < rows * cols; i++) {

@@ -122,7 +122,7 @@ static int consume_int_or_id(char **dest) {
     return atoi(data.prevTokenRaw);
   }
   expect(LITERAL_ID);
-  *dest = string_copy(data.prevTokenRaw);
+  *dest = data.prevTokenRaw;
   return 0;
 }
 
@@ -130,30 +130,38 @@ static int consume_int_or_id(char **dest) {
 // id:type
 static ClmExpNode *consume_parameter() {
   ClmExpNode *node = NULL;
+  char *name;
+  ClmType type;
+  int rows, cols;
+  char *rowVar, *colVar;
+
   if (accept(LITERAL_ID)) {
-    node = clm_exp_new_param(data.prevTokenRaw, CLM_TYPE_INT, 1, 1, NULL, NULL);
-    node->lineNo = prev()->lineNo;
-    node->colNo = prev()->colNo;
+    name = data.prevTokenRaw;
+
     expect(TOKEN_COLON);
     if (accept(TOKEN_LBRACK)) {
-      node->paramExp.size.rows = consume_int_or_id(&node->paramExp.size.rowVar);
+      rows = consume_int_or_id(&rowVar);
 
       expect(TOKEN_COLON);
 
-      node->paramExp.size.cols = consume_int_or_id(&node->paramExp.size.colVar);
+      cols = consume_int_or_id(&colVar);
 
       expect(TOKEN_RBRACK);
 
-      node->paramExp.type = CLM_TYPE_MATRIX;
+      type = CLM_TYPE_MATRIX;
     } else {
       if (accept(KEYWORD_INT)) {
-        node->paramExp.type = CLM_TYPE_INT;
+        type = CLM_TYPE_INT;
       } else if (accept(KEYWORD_FLOAT)) {
-        node->paramExp.type = CLM_TYPE_FLOAT;
+        type = CLM_TYPE_FLOAT;
       } else if (accept(KEYWORD_STRING)) {
-        node->paramExp.type = CLM_TYPE_STRING;
+        type = CLM_TYPE_STRING;
       }
     }
+
+    node = clm_exp_new_param(name, type, rows, cols, rowVar, colVar);
+    node->lineNo = prev()->lineNo;
+    node->colNo = prev()->colNo;
   }
   return node;
 }
@@ -286,8 +294,8 @@ static ClmStmtNode *consume_statement() {
       param = consume_parameter();
     }
 
-    int r = -1, c = -1;
-    char *rv = NULL, *cv = NULL;
+    int rows = -1, cols = -1;
+    char *rowVar = NULL, *colVar = NULL;
     ClmType returnType = CLM_TYPE_NONE;
     if (accept(TOKEN_MINUS)) {
       expect(TOKEN_GT);
@@ -299,9 +307,9 @@ static ClmStmtNode *consume_statement() {
         returnType = CLM_TYPE_STRING;
       } else { //\x ... -> [m:n]
         expect(TOKEN_LBRACK);
-        r = consume_int_or_id(&rv);
+        rows = consume_int_or_id(&rowVar);
         expect(TOKEN_COLON);
-        c = consume_int_or_id(&cv);
+        cols = consume_int_or_id(&colVar);
         expect(TOKEN_RBRACK);
 
         returnType = CLM_TYPE_MATRIX;
@@ -311,8 +319,8 @@ static ClmStmtNode *consume_statement() {
     expect(TOKEN_EQ);
     ArrayList *body = consume_statements(0);
 
-    ClmStmtNode *stmt =
-        clm_stmt_new_dec(name, params, returnType, r, rv, c, cv, body);
+    ClmStmtNode *stmt = clm_stmt_new_dec(name, params, returnType, rows, cols,
+                                         rowVar, colVar, body);
     stmt->lineNo = lineNo;
     stmt->colNo = colNo;
     return stmt;
