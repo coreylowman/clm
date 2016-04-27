@@ -125,6 +125,7 @@ static void type_check_expression(ClmExpNode *node, ClmScope *scope) {
                                                "matrices A:[m:n], B:[q:r], "
                                                "where n == q");
         }
+        // TODO warn if rowVar != rowVar || colVar != colVar?
         break;
       case ARITH_OP_DIV:
       case ARITH_OP_ADD:
@@ -135,6 +136,7 @@ static void type_check_expression(ClmExpNode *node, ClmScope *scope) {
                     "Matrix element wise arith operation expects matrices "
                     "A:[m:n], B:[q:r], where m == q and n == r");
         }
+        // TODO warn if rowVar != rowVar || colVar != colVar?
         break;
       default:
         break;
@@ -166,6 +168,7 @@ static void type_check_expression(ClmExpNode *node, ClmScope *scope) {
                   "Matrix element wise boolean operation expects matrices "
                   "A:[m:n], B:[q:r], where m == q and n == r");
       }
+      // TODO warn if rowVar != rowVar || colVar != colVar?
     }
     break;
   }
