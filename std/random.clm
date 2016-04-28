@@ -1,0 +1,54 @@
+// implements mersenne twister
+// https://en.wikipedia.org/wiki/Mersenne_Twister
+
+local mt = [1:624]
+local index = 0
+
+\init seed:int =
+  index = mt.cols + 1
+  mt[1,1] = seed
+  last = mt[1,1]
+  for i = [2,624] do
+    last = 1812433253 * (last ^ last >> 30) + i)
+    mt[1, i] = last
+  end
+end
+
+\random -> int =
+  if index > 624 then
+    call twist()
+  end
+  
+  y = mt[1, index]
+  y = y ^ y >> 11
+  y = y ^ y << 7 & 2636928640
+  y = y ^ y << 15 & 4022730752
+  y = y ^ y >> 18
+
+  index = index + 1
+
+  return y
+end
+
+\twist =
+  for i = [1, 624) do
+    y = mt[1, i] & 0x80000000 + mt[1, (i + 1) % 624] & 0x7fffffff
+    
+    mt[1, i] = mt[1, (i + 397) % 624] ^ y >> 1
+
+    if y % 2 != 0 then
+        mt[i] = mt[i] ^ 0x9908b0df
+    end
+  end
+  
+  index = 0
+end
+
+
+\range<T> low:T high:T -> T =
+  val = random()
+  val = val / 2147483647
+  val = val + 1
+  val = val / 2
+  return val * (high - low) + low
+end
