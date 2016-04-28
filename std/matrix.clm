@@ -1,4 +1,4 @@
-import maxi, mini, absi from math
+import max, min, abs from math
 
 \swap_rows A[m:n] a:int b:int =
 	t_row = A[a,]
@@ -13,17 +13,17 @@ end
 end
 
 \reduce A[m:n] =
-	q = mini(m, n)
+	q = min(m, n)
 	for k = [1, q] do
 		i_max = 0
 
-		for i = [k, m] do i_max = maxi(i_max, absi(A[i, k])) end
+		for i = [k, m] do i_max = max(i_max, abs(A[i, k])) end
 
 		if A[i_max, k] == 0 then return end
 
 		swap_rows(A, k, i_max)
 
-		for i = [k+1,m] do
+		for i = [k+1, m] do
 			t = A[i,k] / A[k,k]
 
 			for j = [k+1, n] do
