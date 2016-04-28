@@ -1,47 +1,11 @@
-\mini a:int b:int -> int =
-  if a < b then
-    return a
-  else
-    return b
-  end
+\min<T> a:T b:T -> T =
+  return a < b ? a : b
 end
 
-\minf a:float b:float -> float =
-  if a < b then
-    return a
-  else
-    return b
-  end
+\max<T> a:T b:T -> T =
+  return a > b ? a : b
 end
 
-\maxi a:int b:int -> int =
-  if a > b then
-    return a
-  else
-    return b
-  end
-end
-
-\maxf a:float b:float -> float =
-  if a > b then
-    return a
-  else
-    return b
-  end
-end
-
-\absi a:int -> int =
-	if a < 0 then
-		return -a
-	else
-		return a
-	end
-end
-
-\absf a:float -> float =
-	if a < 0 then
-		return -a
-	else
-		return a
-	end
+\abs<T> a:T -> T =
+  return a < 0 ? -a : a
 end
