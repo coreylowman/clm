@@ -34,3 +34,13 @@ end
 		end
 	end
 end
+
+\ident m:int n:int -> [m:n] =
+	A = [m:n]
+	for (i, j) in A do
+		if i == j then
+			A[i, j] = 1
+		end
+	end
+	return A
+end
