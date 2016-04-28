@@ -1,0 +1,47 @@
+\mini a:int b:int -> int =
+  if a < b then
+    return a
+  else
+    return b
+  end
+end
+
+\minf a:float b:float -> float =
+  if a < b then
+    return a
+  else
+    return b
+  end
+end
+
+\maxi a:int b:int -> int =
+  if a > b then
+    return a
+  else
+    return b
+  end
+end
+
+\maxf a:float b:float -> float =
+  if a > b then
+    return a
+  else
+    return b
+  end
+end
+
+\absi a:int -> int =
+	if a < 0 then
+		return -a
+	else
+		return a
+	end
+end
+
+\absf a:float -> float =
+	if a < 0 then
+		return -a
+	else
+		return a
+	end
+end
