@@ -10,7 +10,6 @@ ClmSymbol *clm_symbol_new(const char *name, ClmType type, void *declaration) {
   symbol->type = type;
   symbol->declaration = declaration;
   symbol->offset = 0;
-  symbol->isParam = 0;
   return symbol;
 }
 
@@ -29,8 +28,8 @@ void clm_symbol_print(void *data, int level) {
   printf("\n");
   while (q-- > 0)
     printf("  ");
-  printf("Symbol name : %s, type : %s, param : %d, offset : %d", symbol->name,
-         clm_type_to_string(symbol->type), symbol->isParam, symbol->offset);
+  printf("Symbol name : %s, type : %s, location : %d, offset : %d", symbol->name,
+         clm_type_to_string(symbol->type), symbol->location, symbol->offset);
 }
 
 ClmScope *clm_scope_new(ClmScope *parent, void *startNode) {
@@ -125,7 +124,7 @@ int clm_scope_next_local_offset(ClmScope *scope) {
 
   ClmSymbol *last_sym = scope->symbols->data[scope->symbols->length - 1];
 
-  if (last_sym->isParam) {
+  if (last_sym->location == LOCATION_PARAMETER) {
     return 0;
   } else {
     // every local will be a type and a value

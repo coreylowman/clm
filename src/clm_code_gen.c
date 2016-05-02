@@ -12,6 +12,9 @@
 
 typedef struct {
   char *code;
+  int size;
+  int capacity;
+
   ClmScope *scope;
   int labelID;
   int inFunction;
@@ -25,9 +28,11 @@ void next_label(char *buffer) {
 }
 
 void writeLine(const char *line) {
-  // TODO instead of realloc each time... keep track of capacity and double it
-  // each time (make sure to append \0)
-  data.code = realloc(data.code, strlen(data.code) + strlen(line) + 1);
+  if(data.size == data.capacity){
+    data.capacity *= 2;
+    data.code = realloc(data.code, data.capacity * sizeof(*data.code));
+  }
+  data.size += strlen(line);
   strcat(data.code, line);
 }
 
@@ -37,16 +42,23 @@ static void gen_var_location(ClmSymbol *sym, char *out_buffer, int offset,
 
   sprintf(out_buffer, "dword [");
 
-  if (sym->isGlobal) {
-    if (offset != 0) {
-      sprintf(temp_buffer, "_%s+%d", sym->name, offset);
-    } else {
-      sprintf(temp_buffer, "_%s", sym->name);
-    }
-  } else if (sym->isParam) {
-    sprintf(temp_buffer, "ebp+%d", sym->offset + offset);
-  } else {
-    sprintf(temp_buffer, "ebp+%d", sym->offset + offset);
+  switch(sym->location){
+    case LOCATION_GLOBAL:
+      if (offset != 0) {
+        sprintf(temp_buffer, "_%s+%d", sym->name, offset);
+      } else {
+        sprintf(temp_buffer, "_%s", sym->name);
+      }
+      break;
+    case LOCATION_PARAMETER:
+      sprintf(temp_buffer, "ebp+%d", sym->offset + offset);
+      break;
+    case LOCATION_LOCAL:
+      sprintf(temp_buffer, "ebp+%d", sym->offset + offset);
+      break;
+    default:
+      //shouldn't get here
+      break;
   }
   strcat(out_buffer, temp_buffer);
 
@@ -211,6 +223,24 @@ static void pop_into_matrix(ClmExpNode *node) {
     next_label(cmp_label);
     next_label(end_label);
 
+/*
+  assume rowIndex != null
+
+  A[x,]
+  A[x * #c]
+
+  rs = pop
+  cs = pop
+  i = rs * cs - 1
+  while i >= 0 {
+    v = pop
+    
+
+  }
+*/
+
+
+
     gen_var_location(var, index_str, 8, NULL);
     asm_mov(EBX, index_str); // ebx contains number of cols
 
@@ -294,6 +324,10 @@ static void gen_index(ClmExpNode *node) {
     // TODO case where matrix is actually a pointer
     if (node->indExp.rowIndex == NULL && node->indExp.colIndex == NULL) {
       // TODO push whole matrix on stack
+
+      gen_var_location(var, index_str, 12, EAX);
+      
+      asm_push_const_i((int) CLM_TYPE_MATRIX);
     } else if (node->indExp.rowIndex == NULL) {
       // TODO push a whole row onto the stack
     } else if (node->indExp.colIndex == NULL) {
@@ -732,12 +766,12 @@ const char *clm_code_gen_main(ArrayList *statements, ClmScope *globalScope) {
   data.scope = globalScope;
   data.labelID = 0;
   data.inFunction = 0;
+  data.size = strlen(ASM_HEADER) + 1;
+  data.capacity = data.size;
   data.code = malloc(strlen(ASM_HEADER) + 1);
   strcpy(data.code, ASM_HEADER);
 
   gen_functions(statements);
-
-  // TODO make it start in the main function!
 
   writeLine(ASM_START);
   gen_statements(statements);

@@ -3,13 +3,18 @@
 
 #include "clm_type.h"
 
+typedef enum ClmSymbolLocation {
+  LOCATION_LOCAL,
+  LOCATION_GLOBAL,
+  LOCATION_PARAMETER,
+} ClmSymbolLocation;
+
 typedef struct ClmSymbol {
   char *name;
   ClmType type;
   void *declaration;
   int offset;
-  int isGlobal;
-  int isParam;
+  ClmSymbolLocation location;
 } ClmSymbol;
 
 ClmSymbol *clm_symbol_new(const char *name, ClmType type, void *declaration);

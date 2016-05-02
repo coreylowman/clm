@@ -15,16 +15,13 @@ static ClmSymbol *gen_new_sym(ClmScope *scope, const char *name, ClmType type,
   ClmSymbol *symbol = clm_symbol_new(name, type, declaration);
   if (isParam) {
     // parameter to a function
-    symbol->isParam = 1;
-    symbol->isGlobal = 0;
+    symbol->location = LOCATION_PARAMETER;
   } else if (scope->parent == NULL) {
     // global variable
-    symbol->isGlobal = 1;
-    symbol->isParam = 0;
+    symbol->location = LOCATION_GLOBAL;
   } else {
     // local variable
-    symbol->isGlobal = 0;
-    symbol->isParam = 0;
+    symbol->location = LOCATION_LOCAL;
     symbol->offset = clm_scope_next_local_offset(scope);
   }
   return symbol;

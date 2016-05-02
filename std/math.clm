@@ -1,3 +1,4 @@
+//todo generics
 \min<T> a:T b:T -> T =
   return a < b ? a : b
 end
