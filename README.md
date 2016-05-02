@@ -41,7 +41,7 @@ end
 => 1234
 
 A = [2:2]
-for (i,j) = A do
+for (i,j) in A do
   print i
   printl j
 end
@@ -79,11 +79,11 @@ end
 ```
 // a function taking an integer parameter and return a size by size identity matrix
 \foo size:int -> [size:size] =
-	I = [size:size]
-	for i = [0, size) do
-		I[i,i] = 1
-	end
-	return I
+  I = [size:size]
+  for i = [1, size] do
+    I[i,i] = 1
+  end
+  return I
 ;
 ```
 
