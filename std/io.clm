@@ -1,0 +1,38 @@
+// todo any type parameter
+\toString val:? -> string =
+    delegate val to
+    if val is matrix then
+        // todo
+        return matToString(val)
+    // todo else if
+    else if val is int then
+        return intToString(val)
+    else if val is float then
+        return floatToString(val)
+    else if val is string then
+        return val
+    end
+end
+
+\intToString val:int -> string =
+
+end
+
+\floatToString val:float -> string =
+
+
+end
+
+\matToString A[m:n] -> string =
+
+end
+
+//printl expand("hello %d", 5)
+//=> hello 5
+\expand_first_arg format:string val:? -> string =
+    val_str = toString(val)
+
+end
+
+
+
