@@ -79,6 +79,8 @@ static void load_var_location(ClmSymbol *sym, char *out_buffer, int offset,
  *  FUNCTION FORWARD DECLARATIONS
  *
  */
+static void gen_index_into(const char *dest, ClmExpNode *index);
+
 static void gen_arith(ClmExpNode *node);
 static void gen_bool(ClmExpNode *node);
 static void gen_unary(ClmExpNode *node);
@@ -90,6 +92,12 @@ static void gen_statement(ClmStmtNode *node);
 
 static void gen_functions(ArrayList *statements);
 static void gen_statements(ArrayList *statements);
+
+static void gen_index_into(const char *dest, ClmExpNode *index){
+  push_expression(index);
+  pop_int_into(dest);
+  asm_dec(dest);
+}
 
 static void gen_arith(ClmExpNode *node) {
   ClmType left_type = clm_type_of_exp(node->arithExp.left, data.scope);
@@ -303,9 +311,12 @@ static void pop_into_row_or_col(ClmExpNode *node) {
   next_label(cmp_label);
   next_label(end_label);
 
-  push_expression(node->indExp.rowIndex);
-  push_expression(node->indExp.colIndex);
-  asm_pop(EDX); // edx now contains the index value
+  // put index value into EDX
+  if(node->indExp.rowIndex != NULL){
+    gen_index_into(EDX, node->indExp.rowIndex);
+  }else{
+    gen_index_into(EDX, node->indExp.colIndex);
+  }
 
   asm_pop(EAX); // pop type
   asm_pop(EAX); // pop rows
@@ -369,9 +380,12 @@ static void push_row_or_col(ClmExpNode *node) {
   next_label(cmp_label);
   next_label(end_label);
 
-  push_expression(node->indExp.rowIndex);
-  push_expression(node->indExp.colIndex);
-  asm_pop(EDX); // edx now contains the index value
+  // put index value into EDX
+  if(node->indExp.rowIndex != NULL){
+    gen_index_into(EDX, node->indExp.rowIndex);
+  }else{
+    gen_index_into(EDX, node->indExp.colIndex);
+  }
 
   if (node->indExp.rowIndex != NULL) {
     /*
@@ -430,10 +444,8 @@ static void pop_matrix(ClmExpNode *node) {
   } else {
     char index_str[64];
     ClmSymbol *var = clm_scope_find(data.scope, node->indExp.id);
-    push_expression(node->indExp.colIndex);
-    push_expression(node->indExp.rowIndex);
-    pop_int_into(EAX); // pop rows into eax
-    pop_int_into(EBX); // pop cols into ebx
+    gen_index_into(EAX, node->indExp.rowIndex);
+    gen_index_into(EBX, node->indExp.colIndex);
 
     LOAD_COLS(var, index_str);
     asm_mov(ECX, index_str); // mov number of columns into ecx
@@ -454,10 +466,8 @@ static void push_matrix(ClmExpNode *node) {
     char index_str[64];
     ClmSymbol *var = clm_scope_find(data.scope, node->indExp.id);
     // A[x * nc + y]
-    push_expression(node->indExp.colIndex);
-    push_expression(node->indExp.rowIndex);
-    pop_int_into(EAX); // pop row index into eax
-    pop_int_into(EBX); // pop col index into ebx
+    gen_index_into(EAX, node->indExp.rowIndex);
+    gen_index_into(EBX, node->indExp.colIndex);
 
     LOAD_COLS(var, index_str);
     asm_imul(EAX, index_str); // EAX = rowIndex * nc
@@ -776,30 +786,16 @@ static void gen_loop(ClmStmtNode *node) {
   load_var_location(var, loop_var, 4, NULL);
 
   // don't need to store this - just evaluate and put into loop var
-  push_expression(node->loopStmt.start);
-
-  if (!node->loopStmt.startInclusive) {
-    push_expression(node->loopStmt.delta);
-    pop_int_into(EAX); // eax contains delta
-    pop_int_into(EBX); // ebx contains start
-    asm_add(EBX, EAX);
-
-    asm_push(EBX); // push start back on stack
-    asm_push_const_i((int)CLM_TYPE_INT);
-  }
+  push_expression(node->loopStmt.start);  
   pop_int_into(loop_var);
+
   asm_label(cmp_label);
 
   // don't need to store this - just evaulate every loop
   push_expression(node->loopStmt.end);
-
   pop_int_into(EAX);
-
   asm_cmp(loop_var, EAX);
-  if (node->loopStmt.endInclusive)
-    asm_jmp_g(end_label);
-  else
-    asm_jmp_ge(end_label);
+  asm_jmp_g(end_label);
 
   gen_statements(node->loopStmt.body);
 

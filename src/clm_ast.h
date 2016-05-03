@@ -181,8 +181,6 @@ typedef struct ClmStmtNode {
 
     struct {
       char *varId;
-      int startInclusive;
-      int endInclusive;
       ClmExpNode *start;
       ClmExpNode *end;
       ClmExpNode *delta;
@@ -210,8 +208,7 @@ ClmStmtNode *clm_stmt_new_dec(char *name, ArrayList *params, ClmType returnType,
                               char *returnRowsVars, char *returnColsVar,
                               ArrayList *functionBody);
 ClmStmtNode *clm_stmt_new_loop(char *varId, ClmExpNode *start, ClmExpNode *end,
-                               ClmExpNode *delta, ArrayList *loopBody,
-                               int startInclusive, int endInclusive);
+                               ClmExpNode *delta, ArrayList *loopBody);
 ClmStmtNode *clm_stmt_new_print(ClmExpNode *expression, int appendNewline);
 ClmStmtNode *clm_stmt_new_return(ClmExpNode *returnExpr);
 

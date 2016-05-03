@@ -1,5 +1,4 @@
 keyword(KEYWORD_AND, "and")
-keyword(KEYWORD_BY, "by")
 keyword(KEYWORD_CALL, "call")
 keyword(KEYWORD_DO, "do")
 keyword(KEYWORD_ELSE, "else")

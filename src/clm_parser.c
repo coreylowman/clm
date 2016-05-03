@@ -20,6 +20,8 @@ static ClmLexerToken *prev() { return data.tokens[data.curInd - 1]; }
 static ClmLexerToken *next() { return data.tokens[data.curInd + 1]; }
 
 static ArrayList *consume_statements(int ifElse);
+static ClmStmtNode *consume_loop();
+static ClmStmtNode *consume_function_decl();
 static ClmStmtNode *consume_statement();
 static int consume_int();
 static float consume_float();
@@ -191,6 +193,104 @@ static ClmExpNode *consume_lhs() {
   return node;
 }
 
+/*
+  for id in exp[,exp]..exp do
+    statements
+  end
+*/
+static ClmStmtNode *consume_loop(){
+  int lineNo = curr()->lineNo, colNo = curr()->colNo;
+  
+  expect(KEYWORD_FOR);
+  
+  expect(LITERAL_ID);
+  char *name = data.prevTokenRaw;
+
+  expect(KEYWORD_IN);    
+
+  ClmExpNode *start = consume_expression();
+  
+  ClmExpNode *delta;
+  if (accept(TOKEN_COMMA)) {
+    delta = consume_expression();
+  } else {
+    delta = clm_exp_new_int(1);
+  }    
+
+  expect(TOKEN_PERIOD);
+  expect(TOKEN_PERIOD);
+
+  ClmExpNode *end = consume_expression();
+
+  expect(KEYWORD_DO);
+
+  ArrayList *body = consume_statements(0);
+
+  ClmStmtNode *stmt = clm_stmt_new_loop(name, start, end, delta, body);
+  stmt->lineNo = lineNo;
+  stmt->colNo = colNo;
+
+  return stmt;
+}
+
+/*
+  \id [param]* [-> returnType] =
+    statements
+  end
+*/
+static ClmStmtNode *consume_function_decl(){
+  int lineNo = curr()->lineNo, colNo = curr()->colNo;
+
+  expect(TOKEN_BSLASH);
+
+  expect(LITERAL_ID);
+  char *name = data.prevTokenRaw;
+
+  ArrayList *params = array_list_new(clm_exp_free);
+  
+  ClmExpNode *param = consume_parameter();
+  while (param) {
+    array_list_push(params, param);
+
+    if (curr()->sym == TOKEN_MINUS || curr()->sym == TOKEN_EQ)
+      break;
+
+    param = consume_parameter();
+  }
+
+  int rows = -1, cols = -1;
+  char *rowVar = NULL, *colVar = NULL;
+  ClmType returnType = CLM_TYPE_NONE;
+  if (accept(TOKEN_MINUS)) {
+    expect(TOKEN_GT);
+    if (accept(KEYWORD_INT)) { //\x ... -> int
+      returnType = CLM_TYPE_INT;
+    } else if (accept(KEYWORD_FLOAT)) { //\x ... -> float
+      returnType = CLM_TYPE_FLOAT;
+    } else if (accept(KEYWORD_STRING)) { //\x ... -> string
+      returnType = CLM_TYPE_STRING;
+    } else { //\x ... -> [m:n]
+      expect(TOKEN_LBRACK);
+      rows = consume_int_or_id(&rowVar);
+      expect(TOKEN_COLON);
+      cols = consume_int_or_id(&colVar);
+      expect(TOKEN_RBRACK);
+
+      returnType = CLM_TYPE_MATRIX;
+    }
+  }
+
+  expect(TOKEN_EQ);
+
+  ArrayList *body = consume_statements(0);
+
+  ClmStmtNode *stmt = clm_stmt_new_dec(name, params, returnType, rows, cols,
+                                       rowVar, colVar, body);
+  stmt->lineNo = lineNo;
+  stmt->colNo = colNo;
+  return stmt;
+}
+
 static ClmStmtNode *consume_statement() {
   int lineNo = curr()->lineNo, colNo = curr()->colNo;
 
@@ -218,44 +318,8 @@ static ClmStmtNode *consume_statement() {
     stmt->lineNo = lineNo;
     stmt->colNo = colNo;
     return stmt;
-  } else if (accept(KEYWORD_FOR)) {
-    expect(LITERAL_ID);
-    char *name = data.prevTokenRaw;
-
-    expect(TOKEN_EQ);
-
-    int startInclusive = 0;
-    if (accept(TOKEN_LBRACK))
-      startInclusive = 1;
-    else
-      expect(TOKEN_LPAREN);
-
-    ClmExpNode *start = consume_expression();
-    expect(TOKEN_COMMA);
-    ClmExpNode *end = consume_expression();
-
-    int endInclusive = 0;
-    if (accept(TOKEN_RBRACK))
-      endInclusive = 1;
-    else
-      expect(TOKEN_RPAREN);
-
-    ClmExpNode *delta;
-    if (accept(KEYWORD_BY)) {
-      delta = consume_expression();
-    } else {
-      delta = clm_exp_new_int(1);
-    }
-
-    expect(KEYWORD_DO);
-    ArrayList *body = consume_statements(0);
-
-    ClmStmtNode *stmt = clm_stmt_new_loop(name, start, end, delta, body,
-                                          startInclusive, endInclusive);
-    stmt->lineNo = lineNo;
-    stmt->colNo = colNo;
-
-    return stmt;
+  } else if (curr()->sym == KEYWORD_FOR) {
+    return consume_loop();
   } else if (accept(KEYWORD_IF)) {
     ClmExpNode *condition = consume_expression();
 
@@ -277,53 +341,8 @@ static ClmStmtNode *consume_statement() {
     stmt->lineNo = lineNo;
     stmt->colNo = colNo;
     return stmt;
-  } else if (accept(TOKEN_BSLASH)) {
-    expect(LITERAL_ID);
-    char *name = data.prevTokenRaw;
-
-    ArrayList *params = array_list_new(clm_exp_free);
-    ClmExpNode *param = consume_parameter();
-    while (param) {
-      array_list_push(params, param);
-
-      if (curr()->sym == TOKEN_MINUS || curr()->sym == TOKEN_EQ)
-        break;
-      // else
-      //   expect(TOKEN_COMMA);
-
-      param = consume_parameter();
-    }
-
-    int rows = -1, cols = -1;
-    char *rowVar = NULL, *colVar = NULL;
-    ClmType returnType = CLM_TYPE_NONE;
-    if (accept(TOKEN_MINUS)) {
-      expect(TOKEN_GT);
-      if (accept(KEYWORD_INT)) { //\x ... -> int
-        returnType = CLM_TYPE_INT;
-      } else if (accept(KEYWORD_FLOAT)) { //\x ... -> float
-        returnType = CLM_TYPE_FLOAT;
-      } else if (accept(KEYWORD_STRING)) { //\x ... -> string
-        returnType = CLM_TYPE_STRING;
-      } else { //\x ... -> [m:n]
-        expect(TOKEN_LBRACK);
-        rows = consume_int_or_id(&rowVar);
-        expect(TOKEN_COLON);
-        cols = consume_int_or_id(&colVar);
-        expect(TOKEN_RBRACK);
-
-        returnType = CLM_TYPE_MATRIX;
-      }
-    }
-
-    expect(TOKEN_EQ);
-    ArrayList *body = consume_statements(0);
-
-    ClmStmtNode *stmt = clm_stmt_new_dec(name, params, returnType, rows, cols,
-                                         rowVar, colVar, body);
-    stmt->lineNo = lineNo;
-    stmt->colNo = colNo;
-    return stmt;
+  } else if (curr()->sym == TOKEN_BSLASH) {
+    consume_function_decl();
   } else {
     clm_error(curr()->lineNo, curr()->colNo, "Unexpected symbol %s",
               clmLexerSymbolStrings[curr()->sym]);

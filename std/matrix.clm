@@ -20,7 +20,6 @@ end
 end
 
 \max_ele_row A[m:n] -> int =
-  // todo make indexing 1 based
   max = A[1,1]
   row = 1
   for (i, j) in A do
@@ -58,7 +57,6 @@ end
 
 \reduce A[m:n] =
 	q = min(m, n)
-  // todo change for loops
 	for k in 1..q do
 		// todo slices
 		i_max = max_ele_row(A[k..m,k])

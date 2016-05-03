@@ -385,8 +385,7 @@ ClmStmtNode *clm_stmt_new_dec(char *name, ArrayList *params, ClmType returnType,
 }
 
 ClmStmtNode *clm_stmt_new_loop(char *varId, ClmExpNode *start, ClmExpNode *end,
-                               ClmExpNode *delta, ArrayList *body,
-                               int startInclusive, int endInclusive) {
+                               ClmExpNode *delta, ArrayList *body) {
   ClmStmtNode *node = malloc(sizeof(*node));
   node->type = STMT_TYPE_LOOP;
   node->loopStmt.varId = string_copy(varId);
@@ -394,8 +393,6 @@ ClmStmtNode *clm_stmt_new_loop(char *varId, ClmExpNode *start, ClmExpNode *end,
   node->loopStmt.end = end;
   node->loopStmt.delta = delta;
   node->loopStmt.body = body;
-  node->loopStmt.startInclusive = startInclusive;
-  node->loopStmt.endInclusive = endInclusive;
   return node;
 }
 

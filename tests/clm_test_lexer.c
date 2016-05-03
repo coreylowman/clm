@@ -84,7 +84,6 @@ int clm_test_lexer_numbers() {
 
 int clm_test_lexer_keywords() {
   const char *program = "and\n"
-                        "by\n"
                         "call\n"
                         "do\n"
                         "else\n"
@@ -131,7 +130,6 @@ int clm_test_lexer_keywords() {
 
   int i = 0;
   CLM_ASSERT(tokens[i++]->sym == KEYWORD_AND);
-  CLM_ASSERT(tokens[i++]->sym == KEYWORD_BY);
   CLM_ASSERT(tokens[i++]->sym == KEYWORD_CALL);
   CLM_ASSERT(tokens[i++]->sym == KEYWORD_DO);
   CLM_ASSERT(tokens[i++]->sym == KEYWORD_ELSE);
