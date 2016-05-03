@@ -20,4 +20,7 @@ static void eliminateDeadCode(ArrayList *statements, int *changed);
 static void reduceConditionals(ArrayList *statements, int *changed);
 
 // TODO
+static void propagateConstants(ArrayList *statements, int *changed);
+
+// TODO
 void clm_optimizer_main(ArrayList *statements, ClmScope *globalScope) {}

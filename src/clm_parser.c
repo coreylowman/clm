@@ -126,7 +126,7 @@ static int consume_int_or_id(char **dest) {
   return 0;
 }
 
-// id:[r:c]
+// id[r:c]
 // id:type
 static ClmExpNode *consume_parameter() {
   ClmExpNode *node = NULL;
@@ -137,8 +137,7 @@ static ClmExpNode *consume_parameter() {
 
   if (accept(LITERAL_ID)) {
     name = data.prevTokenRaw;
-
-    expect(TOKEN_COLON);
+    
     if (accept(TOKEN_LBRACK)) {
       rows = consume_int_or_id(&rowVar);
 
@@ -150,6 +149,7 @@ static ClmExpNode *consume_parameter() {
 
       type = CLM_TYPE_MATRIX;
     } else {
+      expect(TOKEN_COLON);
       if (accept(KEYWORD_INT)) {
         type = CLM_TYPE_INT;
       } else if (accept(KEYWORD_FLOAT)) {

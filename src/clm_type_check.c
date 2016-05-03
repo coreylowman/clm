@@ -323,6 +323,7 @@ static void type_check_stmts(ArrayList *statements, ClmScope *scope) {
     case STMT_TYPE_FUNC_DEC: {
       ClmScope *function_scope = clm_scope_find_child(scope, node);
       type_check_stmts(node->funcDecStmt.body, function_scope);
+      // todo check return type
       break;
     }
     case STMT_TYPE_LOOP: {

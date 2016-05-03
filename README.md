@@ -20,25 +20,10 @@ A[,2..3] //a [4:2] slice
 
 ###For loops
 ```
-for i = [0,5] do
+for i in 0..5 do
   print i
 end
 => 012345
-
-for i = [0,5) do
-  print i
-end
-=> 01234
-
-for i = (0,5] do
-  print i
-end
-=> 12345
-
-for i = (0,5) do
-  print i
-end
-=> 1234
 
 A = [2:2]
 for (i,j) in A do
@@ -51,13 +36,13 @@ end
 =>22
 ```
 
-In addition, you can specify the delta of the range by using the 'by' keyword:
+In addition, you can specify the delta of the range by specifying the second value:
 
 ```
-for i = (5, 0] by -1 do
+for i in 5,-1..0 do
   print i
 end
-=> 43210
+=> 543210
 ```
 
 ###Function Declarations
@@ -80,7 +65,7 @@ end
 // a function taking an integer parameter and return a size by size identity matrix
 \foo size:int -> [size:size] =
   I = [size:size]
-  for i = [1, size] do
+  for i in 1..size do
     I[i,i] = 1
   end
   return I
