@@ -1,13 +1,6 @@
 clm
 ===
 
-(In Progress!)Compiler for matrix based programming language called clm
-
-To Do:
-
-1. code generation
-2. optimization
-
 ###Matrix Creation
 
 ```
@@ -18,10 +11,11 @@ B = {1 2, 3 4} // creates 2x2 matrix with row 1 as {1 2} and row 2 as {3 4}
 ###Matrix Indexing
 ```
 A = [4:4]
-A[0,1] //first row, second column
-A[2,] //third row
-A[,3] //fourth column
-
+A[1,2] //first row, second column
+A[3,] //third row
+A[,4] //fourth column
+A[2..4,4] //a [3:1] slice
+A[,2..3] //a [4:2] slice
 ```
 
 ###For loops
@@ -45,6 +39,16 @@ for i = (0,5) do
   print i
 end
 => 1234
+
+A = [2:2]
+for (i,j) in A do
+  print i
+  printl j
+end
+=>11
+=>12
+=>21
+=>22
 ```
 
 In addition, you can specify the delta of the range by using the 'by' keyword:
@@ -75,17 +79,17 @@ end
 ```
 // a function taking an integer parameter and return a size by size identity matrix
 \foo size:int -> [size:size] =
-	I = [size:size]
-	for i = [0, size) do
-		I[i,i] = 1
-	end
-	return I
+  I = [size:size]
+  for i = [1, size] do
+    I[i,i] = 1
+  end
+  return I
 ;
 ```
 
 ```
 //a function taking an m by n matrix and return a size n column vector
-\foo A:[m:n] -> [n:1] =
+\foo A[m:n] -> [n:1] =
   B = [n:1]
   // some code here...
   return B
@@ -94,11 +98,11 @@ end
 
 ```
 //a function taking an m by n matrix and return an matrix with n rows and an unknown amount of columns
-\foo A:[m:n] -> [n:q] =
+\foo A[m:n] -> [n:q] =
   ...
-  q = (...)
+  q = ...
   ...
-  T = (...)
+  T = ...
   ...
   return T
 ;
