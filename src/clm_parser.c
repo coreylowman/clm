@@ -137,7 +137,7 @@ static ClmExpNode *consume_parameter() {
 
   if (accept(LITERAL_ID)) {
     name = data.prevTokenRaw;
-    
+
     if (accept(TOKEN_LBRACK)) {
       rows = consume_int_or_id(&rowVar);
 
