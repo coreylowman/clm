@@ -290,7 +290,7 @@ static void push_whole_matrix(ClmExpNode *node){
   // push type info
   asm_push(EDX); // cols
   asm_push(EBX); // rows
-  asm_push((int)CLM_TYPE_MATRIX);
+  asm_push_const_i((int)CLM_TYPE_MATRIX);
 }
 
 // pops a matrix from the stack into a row or column of a matrix identified by node
@@ -709,7 +709,7 @@ static void gen_func_dec(ClmStmtNode *node) {
     sym = funcScope->symbols->data[i];
     dec = sym->declaration;
 
-    if (sym->location = LOCATION_PARAMETER)
+    if (sym->location == LOCATION_PARAMETER)
       continue;
     
     // setting the type of the local var

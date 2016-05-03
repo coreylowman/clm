@@ -11,11 +11,12 @@ B = {1 2, 3 4} // creates 2x2 matrix with row 1 as {1 2} and row 2 as {3 4}
 ###Matrix Indexing
 ```
 A = [4:4]
-A[1,2] //first row, second column
-A[3,] //third row
-A[,4] //fourth column
-A[2..4,4] //a [3:1] slice
-A[,2..3] //a [4:2] slice
+A[1, 2] //first row, second column
+A[3, ] //third row
+A[, 4] //fourth column
+A[2..4, 4] //a [3:1] slice
+A[, 2..3] //a [4:2] slice
+A[2..3, 2..3] //a [2:2] submatrix slice
 ```
 
 ###For loops

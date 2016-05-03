@@ -92,6 +92,7 @@ int clm_test_lexer_keywords() {
                         "float\n"
                         "for\n"
                         "if\n"
+                        "in\n"
                         "int\n"
                         "or\n"
                         "print\n"
@@ -138,6 +139,7 @@ int clm_test_lexer_keywords() {
   CLM_ASSERT(tokens[i++]->sym == KEYWORD_FLOAT);
   CLM_ASSERT(tokens[i++]->sym == KEYWORD_FOR);
   CLM_ASSERT(tokens[i++]->sym == KEYWORD_IF);
+  CLM_ASSERT(tokens[i++]->sym == KEYWORD_IN);
   CLM_ASSERT(tokens[i++]->sym == KEYWORD_INT);
   CLM_ASSERT(tokens[i++]->sym == KEYWORD_OR);
   CLM_ASSERT(tokens[i++]->sym == KEYWORD_PRINT);
