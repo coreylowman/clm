@@ -10,3 +10,23 @@ end
 \abs<T> a:T -> T =
   return a < 0 ? -a : a
 end
+
+\pow<T> base:T exp:T -> T =
+  // todo
+end
+
+\to_int val:float -> int =
+  // todo
+end
+
+\to_float val:int -> float =
+  // todo
+end
+
+\floor val:float -> float =
+  // todo
+end
+
+\ceil val:float -> float =
+  // todo
+end
