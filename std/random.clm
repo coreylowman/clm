@@ -45,7 +45,7 @@ end
   return y
 end
 
-\range<T> low:T high:T -> T =
+\range<T : int, float> low:T high:T -> T =
   val = random()
   val = val / 2147483647
   val = val + 1
