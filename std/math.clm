@@ -1,17 +1,17 @@
-//todo generics
-\min<T> a:T b:T -> T =
+//todo type pasting functions
+\min<T : int, float> a:T b:T -> T =
   return a < b ? a : b
 end
 
-\max<T> a:T b:T -> T =
+\max<T : int, float> a:T b:T -> T =
   return a > b ? a : b
 end
 
-\abs<T> a:T -> T =
+\abs<T : int, float> a:T -> T =
   return a < 0 ? -a : a
 end
 
-\pow<T> base:T exp:T -> T =
+\pow<T : int, float> base:T exp:T -> T =
   // todo
 end
 
