@@ -1,5 +1,5 @@
 // todo generics
-\min<T:number> a:T b:T -> T =
+\min<T : int, float> a:T b:T -> T =
   if a < b then
     return a
   else
@@ -7,7 +7,7 @@
   end
 end
 
-\max<T:number> a:T b:T -> T =
+\max<T:int, float> a:T b:T -> T =
   if a > b then
     return a
   else
@@ -15,7 +15,7 @@ end
   end
 end
 
-\abs<T:number> a:T -> T =
+\abs<T:int, float> a:T -> T =
   if a > 0 then
     return a
   else
@@ -23,7 +23,7 @@ end
   end
 end
 
-\pow<T:number> base:T exp:T -> T =
+\pow<T:int, float> base:T exp:T -> T =
   val = base
   exp = exp - 1
   while exp > 0 do

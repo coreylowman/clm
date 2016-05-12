@@ -30,7 +30,6 @@ end
 \toString val:int -> string =
     str = ""
     
-    // todo while loop
     while val > 0 do
         str = str + digToString(val % 10)
         val = val / 10
