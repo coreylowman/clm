@@ -1,4 +1,4 @@
-// todo generics
+// todo type pasting functions
 \min<T : int, float> a:T b:T -> T =
   if a < b then
     return a
@@ -23,7 +23,7 @@ end
   end
 end
 
-\pow<T:int, float> base:T exp:T -> T =
+\pow<T:int, float> base:T exp:int -> T =
   val = base
   exp = exp - 1
   while exp > 0 do

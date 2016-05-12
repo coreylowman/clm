@@ -3,7 +3,7 @@ import to_int, pow, floor from math
 \digToString dig:int -> string =
     // todo else if
     if dig == 0 then
-	    return "0"
+	return "0"
     else if dig == 1 then
     	return "1"
     else if dig == 2 then
@@ -24,7 +24,6 @@ import to_int, pow, floor from math
     	return "9"
     end
 end
-
 
 // todo method overloading
 \toString val:int -> string =
