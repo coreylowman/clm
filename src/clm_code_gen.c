@@ -775,43 +775,63 @@ static void gen_func_dec(ClmStmtNode *node) {
   asm_ret();
 }
 
-static void gen_loop(ClmStmtNode *node) {
+static void gen_for_loop(ClmStmtNode *node) {
   char cmp_label[LABEL_SIZE];
   char end_label[LABEL_SIZE];
   next_label(cmp_label);
   next_label(end_label);
 
-  ClmSymbol *var = clm_scope_find(data.scope, node->loopStmt.varId);
+  ClmSymbol *var = clm_scope_find(data.scope, node->forLoopStmt.varId);
   char loop_var[32];
   load_var_location(var, loop_var, 4, NULL);
 
   // don't need to store this - just evaluate and put into loop var
-  push_expression(node->loopStmt.start);  
+  push_expression(node->forLoopStmt.start);  
   pop_int_into(loop_var);
 
   asm_label(cmp_label);
 
   // don't need to store this - just evaulate every loop
-  push_expression(node->loopStmt.end);
+  push_expression(node->forLoopStmt.end);
   pop_int_into(EAX);
   asm_cmp(loop_var, EAX);
   asm_jmp_g(end_label);
 
-  gen_statements(node->loopStmt.body);
+  gen_statements(node->forLoopStmt.body);
 
-  if (node->loopStmt.delta->type == EXP_TYPE_INT &&
-      node->loopStmt.delta->ival == 1) {
+  if (node->forLoopStmt.delta->type == EXP_TYPE_INT &&
+      node->forLoopStmt.delta->ival == 1) {
     asm_inc(loop_var);
-  } else if (node->loopStmt.delta->type == EXP_TYPE_INT &&
-             node->loopStmt.delta->ival == -1) {
+  } else if (node->forLoopStmt.delta->type == EXP_TYPE_INT &&
+             node->forLoopStmt.delta->ival == -1) {
     asm_dec(loop_var);
-  } else if (node->loopStmt.delta->type == EXP_TYPE_INT) {
-    asm_add_i(loop_var, node->loopStmt.delta->ival);
+  } else if (node->forLoopStmt.delta->type == EXP_TYPE_INT) {
+    asm_add_i(loop_var, node->forLoopStmt.delta->ival);
   } else {
-    push_expression(node->loopStmt.delta);
+    push_expression(node->forLoopStmt.delta);
     asm_pop(EAX);
     asm_add(loop_var, EAX);
   }
+
+  asm_jmp(cmp_label);
+  asm_label(end_label);
+}
+
+static void gen_while_loop(ClmStmtNode *node) {
+  char cmp_label[LABEL_SIZE];
+  char end_label[LABEL_SIZE];
+  next_label(cmp_label);
+  next_label(end_label);
+
+  asm_label(cmp_label);
+
+  // don't need to store this - just evaulate every loop
+  push_expression(node->whileLoopStmt.condition);
+  pop_int_into(EAX);
+  asm_cmp(EAX, "0");
+  asm_jmp_eq(end_label);
+
+  gen_statements(node->whileLoopStmt.body);
 
   asm_jmp(cmp_label);
   asm_label(end_label);
@@ -832,8 +852,11 @@ static void gen_statement(ClmStmtNode *node) {
   case STMT_TYPE_FUNC_DEC:
     gen_func_dec(node);
     break;
-  case STMT_TYPE_LOOP:
-    gen_loop(node);
+  case STMT_TYPE_FOR_LOOP:
+    gen_for_loop(node);
+    break;
+  case STMT_TYPE_WHILE_LOOP:
+    gen_while_loop(node);
     break;
   case STMT_TYPE_PRINT:
     push_expression(node->printStmt.expression);

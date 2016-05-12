@@ -149,7 +149,8 @@ typedef enum StmtType {
   STMT_TYPE_CALL,
   STMT_TYPE_CONDITIONAL,
   STMT_TYPE_FUNC_DEC,
-  STMT_TYPE_LOOP,
+  STMT_TYPE_FOR_LOOP,
+  STMT_TYPE_WHILE_LOOP,
   STMT_TYPE_PRINT,
   STMT_TYPE_RET
 } StmtType;
@@ -185,7 +186,12 @@ typedef struct ClmStmtNode {
       ClmExpNode *end;
       ClmExpNode *delta;
       ArrayList *body; // array list of ClmStmtNode
-    } loopStmt;
+    } forLoopStmt;
+
+    struct {
+      ClmExpNode *condition;
+      ArrayList *body; //array list of ClmStmtNode
+    } whileLoopStmt;
 
     struct {
       ClmExpNode *expression;
@@ -207,8 +213,9 @@ ClmStmtNode *clm_stmt_new_dec(char *name, ArrayList *params, ClmType returnType,
                               int returnRows, int returnCols,
                               char *returnRowsVars, char *returnColsVar,
                               ArrayList *functionBody);
-ClmStmtNode *clm_stmt_new_loop(char *varId, ClmExpNode *start, ClmExpNode *end,
+ClmStmtNode *clm_stmt_new_for_loop(char *varId, ClmExpNode *start, ClmExpNode *end,
                                ClmExpNode *delta, ArrayList *loopBody);
+ClmStmtNode *clm_stmt_new_while_loop(ClmExpNode *condition, ArrayList *loopBody);
 ClmStmtNode *clm_stmt_new_print(ClmExpNode *expression, int appendNewline);
 ClmStmtNode *clm_stmt_new_return(ClmExpNode *returnExpr);
 

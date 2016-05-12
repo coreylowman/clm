@@ -326,35 +326,45 @@ static void type_check_stmts(ArrayList *statements, ClmScope *scope) {
       // todo check return type
       break;
     }
-    case STMT_TYPE_LOOP: {
-      type_check_expression(node->loopStmt.start, scope);
-      type_check_expression(node->loopStmt.end, scope);
-      type_check_expression(node->loopStmt.delta, scope);
+    case STMT_TYPE_WHILE_LOOP:
+    {
+      type_check_expression(node->whileLoopStmt.condition, scope);
+      ClmType conditionType = clm_type_of_exp(node->whileLoopStmt.condition, scope);
+      if(conditionType != CLM_TYPE_INT){
+        // error, condition should be a boolean value
+        clm_error(node->lineNo, node->colNo, "While loop condition should be a boolean, but got type %s", clm_type_to_string(conditionType));
+      }
+      break;
+    }
+    case STMT_TYPE_FOR_LOOP: {
+      type_check_expression(node->forLoopStmt.start, scope);
+      type_check_expression(node->forLoopStmt.end, scope);
+      type_check_expression(node->forLoopStmt.delta, scope);
 
-      if (clm_type_of_exp(node->loopStmt.start, scope) != CLM_TYPE_INT) {
+      if (clm_type_of_exp(node->forLoopStmt.start, scope) != CLM_TYPE_INT) {
         // error.. loop var should be an int
         clm_error(
             node->lineNo, node->colNo,
             "Loop starting expression should be an int, but got type %s",
-            clm_type_to_string(clm_type_of_exp(node->loopStmt.start, scope)));
+            clm_type_to_string(clm_type_of_exp(node->forLoopStmt.start, scope)));
       }
-      if (clm_type_of_exp(node->loopStmt.end, scope) != CLM_TYPE_INT) {
+      if (clm_type_of_exp(node->forLoopStmt.end, scope) != CLM_TYPE_INT) {
         // error.. loop var should be a number
         clm_error(
             node->lineNo, node->colNo,
             "Loop ending expression should be an int, but got type %s",
-            clm_type_to_string(clm_type_of_exp(node->loopStmt.end, scope)));
+            clm_type_to_string(clm_type_of_exp(node->forLoopStmt.end, scope)));
       }
-      if (clm_type_of_exp(node->loopStmt.delta, scope) != CLM_TYPE_INT) {
+      if (clm_type_of_exp(node->forLoopStmt.delta, scope) != CLM_TYPE_INT) {
         // error.. loop var should be a number
         clm_error(
             node->lineNo, node->colNo,
             "Loop delta expression should be an int, but got type %s",
-            clm_type_to_string(clm_type_of_exp(node->loopStmt.delta, scope)));
+            clm_type_to_string(clm_type_of_exp(node->forLoopStmt.delta, scope)));
       }
 
       ClmScope *loop_scope = clm_scope_find_child(scope, node);
-      type_check_stmts(node->loopStmt.body, loop_scope);
+      type_check_stmts(node->forLoopStmt.body, loop_scope);
       break;
     }
     case STMT_TYPE_PRINT:
@@ -379,6 +389,7 @@ static int check_function_returns(ArrayList *body, ClmScope *scope,
     case STMT_TYPE_CALL:
       break;
     case STMT_TYPE_CONDITIONAL: {
+      // todo are these scopes real?
       ClmScope *true_scope =
           clm_scope_find_child(scope, node->conditionStmt.trueBody);
       int true_return = check_function_returns(node->conditionStmt.trueBody,
@@ -400,12 +411,13 @@ static int check_function_returns(ArrayList *body, ClmScope *scope,
     case STMT_TYPE_FUNC_DEC:
       // func dec in a function dec?
       break;
-    case STMT_TYPE_LOOP: {
-      ClmScope *loop_scope = clm_scope_find_child(scope, node);
-      has_return |=
-          check_function_returns(node->loopStmt.body, loop_scope, returnType);
+    case STMT_TYPE_WHILE_LOOP:
+      has_return |= check_function_returns(node->whileLoopStmt.body, scope, returnType);
       break;
-    }
+    case STMT_TYPE_FOR_LOOP:
+      has_return |=
+          check_function_returns(node->forLoopStmt.body, scope, returnType);
+      break;
     case STMT_TYPE_PRINT:
       break;
     case STMT_TYPE_RET:
@@ -460,11 +472,12 @@ static void check_returns(ArrayList *statements, ClmScope *scope) {
       }
       break;
     }
-    case STMT_TYPE_LOOP: {
-      ClmScope *loop_scope = clm_scope_find_child(scope, node);
-      check_returns(node->loopStmt.body, loop_scope);
+    case STMT_TYPE_WHILE_LOOP:
+      check_returns(node->whileLoopStmt.body, scope);
       break;
-    }
+    case STMT_TYPE_FOR_LOOP:
+      check_returns(node->forLoopStmt.body, scope);
+      break;
     case STMT_TYPE_PRINT:
       break;
     case STMT_TYPE_RET:

@@ -20,7 +20,8 @@ static ClmLexerToken *prev() { return data.tokens[data.curInd - 1]; }
 static ClmLexerToken *next() { return data.tokens[data.curInd + 1]; }
 
 static ArrayList *consume_statements(int ifElse);
-static ClmStmtNode *consume_loop();
+static ClmStmtNode *consume_for_loop();
+static ClmStmtNode *consume_while_loop();
 static ClmStmtNode *consume_function_decl();
 static ClmStmtNode *consume_statement();
 static int consume_int();
@@ -198,7 +199,7 @@ static ClmExpNode *consume_lhs() {
     statements
   end
 */
-static ClmStmtNode *consume_loop(){
+static ClmStmtNode *consume_for_loop(){
   int lineNo = curr()->lineNo, colNo = curr()->colNo;
   
   expect(KEYWORD_FOR);
@@ -226,7 +227,30 @@ static ClmStmtNode *consume_loop(){
 
   ArrayList *body = consume_statements(0);
 
-  ClmStmtNode *stmt = clm_stmt_new_loop(name, start, end, delta, body);
+  ClmStmtNode *stmt = clm_stmt_new_for_loop(name, start, end, delta, body);
+  stmt->lineNo = lineNo;
+  stmt->colNo = colNo;
+
+  return stmt;
+}
+
+/*
+  while exp do
+    statements
+  end
+*/
+static ClmStmtNode *consume_while_loop(){
+  int lineNo = curr()->lineNo, colNo = curr()->colNo;
+  
+  expect(KEYWORD_WHILE);   
+
+  ClmExpNode *condition = consume_expression();
+  
+  expect(KEYWORD_DO);
+
+  ArrayList *body = consume_statements(0);
+
+  ClmStmtNode *stmt = clm_stmt_new_while_loop(condition, body);
   stmt->lineNo = lineNo;
   stmt->colNo = colNo;
 
@@ -319,7 +343,9 @@ static ClmStmtNode *consume_statement() {
     stmt->colNo = colNo;
     return stmt;
   } else if (curr()->sym == KEYWORD_FOR) {
-    return consume_loop();
+    return consume_for_loop();
+  } else if (curr()->sym == KEYWORD_WHILE) {
+    return consume_while_loop();
   } else if (accept(KEYWORD_IF)) {
     ClmExpNode *condition = consume_expression();
 
