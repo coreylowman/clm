@@ -368,3 +368,28 @@ int clm_size_of_exp(ClmExpNode *node, ClmScope *scope, int *out_rows,
 
   return *out_rows > 0 && *out_cols > 0;
 }
+
+ClmLocation clm_location_of_exp(ClmExpNode *node, ClmScope *scope){
+  switch(node->type){
+    case EXP_TYPE_INT:
+    case EXP_TYPE_FLOAT:
+    case EXP_TYPE_ARITH:
+    case EXP_TYPE_BOOL:
+    case EXP_TYPE_CALL:
+    case EXP_TYPE_STRING:
+    case EXP_TYPE_MAT_DEC:
+      return LOCATION_STACK;
+    case EXP_TYPE_INDEX:
+      if(node->indExp.rowIndex == NULL && node->indExp.colIndex == NULL){
+        // its just a var name...
+        return clm_scope_find(scope, node->indExp.id)->location;
+      }
+      // there are indexes, it will be pushed onto the stack
+      return LOCATION_STACK;
+    case EXP_TYPE_PARAM:
+      return LOCATION_PARAMETER;
+    case EXP_TYPE_UNARY:
+      return clm_location_of_exp(node->unaryExp.node, scope);
+  }
+}
+

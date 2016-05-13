@@ -18,6 +18,8 @@ typedef struct {
   ClmScope *scope;
   int labelID;
   int inFunction;
+
+  int temporaryID;
 } CodeGenData;
 
 static CodeGenData data;
@@ -25,6 +27,11 @@ static CodeGenData data;
 void next_label(char *buffer) {
   int id = data.labelID++;
   sprintf(buffer, "label%d", id);
+}
+
+void next_temporary(char *buffer) {
+  int id = ++data.temporaryID;
+  sprintf(buffer, "temporary%d", id);
 }
 
 void writeLine(const char *line) {
@@ -60,6 +67,7 @@ static void load_var_location(ClmSymbol *sym, char *out_buffer, int offset,
     case LOCATION_LOCAL:
       sprintf(temp_buffer, "ebp+%d", sym->offset + offset);
       break;
+    case LOCATION_STACK: //fallthrough
     default:
       //shouldn't get here
       break;
@@ -578,11 +586,61 @@ static void push_expression(ClmExpNode *node) {
     gen_bool(node);
     break;
   case EXP_TYPE_CALL: {
+    // first push everything thats not a matrix... and for matrices push a pointer
+    int tempStartID = data.temporaryID;
     int i;
+    ClmExpNode *param;
+    char temporary[256];
+
+    // first for any matrices that are parameters that will be pushed through
+    // the stack, push them on the stack and save their location into a temporary
+    // global
     for (i = node->callExp.params->length - 1; i >= 0; i--) {
-      // TODO make sure matrices are pushed correctly
-      push_expression(node->callExp.params->data[i]);
+      param = node->callExp.params->data[i];
+      if(param->type == CLM_TYPE_MATRIX){
+        ClmLocation location = clm_location_of_exp(param, data.scope);
+        switch(location){
+            case LOCATION_STACK:
+              push_expression(param);
+              next_temporary(temporary);
+              asm_mov(temporary, ESP);
+              break;
+            default:
+              break;
+        }
+      }
     }
+
+    // then push every expression.. when we get to a matrix, push the pointer
+    // to its location
+    int tempOffset = 1;
+    char index_str[256];
+    for (i = node->callExp.params->length - 1; i >= 0; i--) {
+      param = node->callExp.params->data[i];
+      if(param->type == CLM_TYPE_MATRIX){
+        ClmLocation location = clm_location_of_exp(param, data.scope);
+        switch(location){
+            case LOCATION_STACK:
+              sprintf(temporary, "dword [temporary%d]", tempStartID + tempOffset);
+              asm_push(temporary);
+              tempOffset++;
+              break;
+            default:
+            {
+              // the only way its a matrix and not on the stack is if its an
+              // ind exp with no indices
+              ClmSymbol *symbol = clm_scope_find(data.scope, param->indExp.id);
+              load_var_location(symbol, index_str, 0, NULL);
+              asm_push(index_str);
+              break;
+            }
+        }
+        asm_push_const_i((int) CLM_TYPE_MATRIX);
+      }else{
+        push_expression(param);
+      }
+    }
+
     asm_call(node->callExp.name);
     break;
   }
@@ -906,6 +964,13 @@ static void gen_globals(ClmScope *globalScope) {
       break;
     }
   }
+
+  // temporaries are integers used for pushing matrices into functions
+  while(data.temporaryID > 0){
+    sprintf(buffer, "temporary%d dd %d, 0\n", data.temporaryID, (int)CLM_TYPE_INT);
+    writeLine(buffer);
+    data.temporaryID--;
+  }
 }
 
 static void gen_functions(ArrayList *statements) {
@@ -933,6 +998,7 @@ static void gen_macros() {}
 const char *clm_code_gen_main(ArrayList *statements, ClmScope *globalScope) {
   data.scope = globalScope;
   data.labelID = 0;
+  data.temporaryID = 0;
   data.inFunction = 0;
   data.size = strlen(ASM_HEADER) + 1;
   data.capacity = data.size;
