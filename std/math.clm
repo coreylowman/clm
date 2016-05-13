@@ -1,12 +1,50 @@
-//todo generics
-\min<T> a:T b:T -> T =
-  return a < b ? a : b
+// todo type pasting functions
+\min<T : int, float> a:T b:T -> T =
+  if a < b then
+    return a
+  else
+    return b
+  end
 end
 
-\max<T> a:T b:T -> T =
-  return a > b ? a : b
+\max<T:int, float> a:T b:T -> T =
+  if a > b then
+    return a
+  else
+    return b
+  end
 end
 
-\abs<T> a:T -> T =
-  return a < 0 ? -a : a
+\abs<T:int, float> a:T -> T =
+  if a > 0 then
+    return a
+  else
+    return -a
+  end
+end
+
+\pow<T:int, float> base:T exp:int -> T =
+  val = base
+  exp = exp - 1
+  while exp > 0 do
+    val = val * base 
+    exp = exp - 1
+  end
+  return val
+end
+
+\to_int val:float -> int =
+  // todo
+end
+
+\to_float val:int -> float =
+  return val + 0.0
+end
+
+\floor val:float -> int =
+  return to_int(val)
+end
+
+\ceil val:float -> int =
+  return floor(val) + 1
 end

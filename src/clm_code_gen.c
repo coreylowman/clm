@@ -35,7 +35,7 @@ void next_temporary(char *buffer) {
 }
 
 void writeLine(const char *line) {
-  if(data.size == data.capacity){
+  if (data.size == data.capacity) {
     data.capacity *= 2;
     data.code = realloc(data.code, data.capacity * sizeof(*data.code));
   }
@@ -48,7 +48,7 @@ void writeLine(const char *line) {
 #define LOAD_COLS(sym, out_buffer) load_var_location(sym, out_buffer, 8, NULL)
 
 static void load_var_location(ClmSymbol *sym, char *out_buffer, int offset,
-                             const char *offset_loc) {
+                              const char *offset_loc) {
   char temp_buffer[64];
 
   sprintf(out_buffer, "dword [");
@@ -87,6 +87,8 @@ static void load_var_location(ClmSymbol *sym, char *out_buffer, int offset,
  *  FUNCTION FORWARD DECLARATIONS
  *
  */
+static void gen_index_into(const char *dest, ClmExpNode *index);
+
 static void gen_arith(ClmExpNode *node);
 static void gen_bool(ClmExpNode *node);
 static void gen_unary(ClmExpNode *node);
@@ -98,6 +100,12 @@ static void gen_statement(ClmStmtNode *node);
 
 static void gen_functions(ArrayList *statements);
 static void gen_statements(ArrayList *statements);
+
+static void gen_index_into(const char *dest, ClmExpNode *index){
+  push_expression(index);
+  pop_int_into(dest);
+  asm_dec(dest);
+}
 
 static void gen_arith(ClmExpNode *node) {
   ClmType left_type = clm_type_of_exp(node->arithExp.left, data.scope);
@@ -171,68 +179,67 @@ static void gen_unary(ClmExpNode *node) {
 static void gen_exp_size(ClmExpNode *node) {
   char index_str[32];
 
-  switch(node->type){
-    case EXP_TYPE_INT: //falthrough
-    case EXP_TYPE_FLOAT: //fallthrough
-    case EXP_TYPE_BOOL:
-      asm_push_const_i(1);
-      asm_push_const_i(1);
-      break;
-    case EXP_TYPE_STRING:
-      // TODO
-      break;
-    case EXP_TYPE_ARITH:
-      // TODO
-      break;
-    case EXP_TYPE_INDEX:
-      // TODO
-      break;
-    case EXP_TYPE_CALL: //fallthrough
-    case EXP_TYPE_MAT_DEC: //fallthrough
-    case EXP_TYPE_PARAM:
-    {
-      MatrixSize size;
-      if (node->type == EXP_TYPE_MAT_DEC) {
-        size = node->matDecExp.size;
-      } else if (node->type == EXP_TYPE_PARAM) {
-        size = node->paramExp.size;
-      } else if(node->type == EXP_TYPE_CALL) {
-        ClmSymbol *sym = clm_scope_find(data.scope, node->callExp.name);
-        ClmStmtNode *decl = sym->declaration;
-        size = decl->funcDecStmt.returnSize;
-      }
-
-      if (size.colVar != NULL) {
-        // push dword [ebp+offset]
-        ClmSymbol *sym = clm_scope_find(data.scope, size.colVar);
-        load_var_location(sym, index_str, 8, NULL);
-        asm_push(index_str);
-      } else {
-        // push $colInd
-        asm_push_const_i(size.cols);
-      }
-
-      if (size.rowVar != NULL) {
-        // push dword [ebp+offset]
-        ClmSymbol *sym = clm_scope_find(data.scope, size.rowVar);
-        load_var_location(sym, index_str, 4, NULL);
-        asm_push(index_str);
-      } else {
-        // push $rowInd
-        asm_push_const_i(size.rows);
-      }
-      break;
+  switch (node->type) {
+  case EXP_TYPE_INT: // falthrough
+  case EXP_TYPE_FLOAT: // fallthrough
+  case EXP_TYPE_BOOL:
+    asm_push_const_i(1);
+    asm_push_const_i(1);
+    break;
+  case EXP_TYPE_STRING:
+    // TODO
+    break;
+  case EXP_TYPE_ARITH:
+    // TODO
+    break;
+  case EXP_TYPE_INDEX:
+    // TODO
+    break;
+  case EXP_TYPE_CALL: // fallthrough
+  case EXP_TYPE_MAT_DEC: // fallthrough
+  case EXP_TYPE_PARAM: {
+    MatrixSize size;
+    if (node->type == EXP_TYPE_MAT_DEC) {
+      size = node->matDecExp.size;
+    } else if (node->type == EXP_TYPE_PARAM) {
+      size = node->paramExp.size;
+    } else if (node->type == EXP_TYPE_CALL) {
+      ClmSymbol *sym = clm_scope_find(data.scope, node->callExp.name);
+      ClmStmtNode *decl = sym->declaration;
+      size = decl->funcDecStmt.returnSize;
     }
-    case EXP_TYPE_UNARY:
-      gen_exp_size(node->unaryExp.node);
-      break;
-    default:
-      break;
+
+    if (size.colVar != NULL) {
+      // push dword [ebp+offset]
+      ClmSymbol *sym = clm_scope_find(data.scope, size.colVar);
+      load_var_location(sym, index_str, 8, NULL);
+      asm_push(index_str);
+    } else {
+      // push $colInd
+      asm_push_const_i(size.cols);
+    }
+
+    if (size.rowVar != NULL) {
+      // push dword [ebp+offset]
+      ClmSymbol *sym = clm_scope_find(data.scope, size.rowVar);
+      load_var_location(sym, index_str, 4, NULL);
+      asm_push(index_str);
+    } else {
+      // push $rowInd
+      asm_push_const_i(size.rows);
+    }
+    break;
+  }
+  case EXP_TYPE_UNARY:
+    gen_exp_size(node->unaryExp.node);
+    break;
+  default:
+    break;
   }
 }
 
 // pops a matrix that is on the stack, into the variable contained in node
-static void pop_into_whole_matrix(ClmExpNode *node){
+static void pop_into_whole_matrix(ClmExpNode *node) {
   // TODO case where matrix on stack is actually a pointer
   char index_str[64];
   ClmSymbol *var = clm_scope_find(data.scope, node->indExp.id);
@@ -241,9 +248,9 @@ static void pop_into_whole_matrix(ClmExpNode *node){
   next_label(cmp_label);
   next_label(end_label);
 
-  asm_pop(EAX);       // pop type
-  asm_pop(ECX);       // pop rows
-  asm_pop(EBX);       // pop cols;
+  asm_pop(EAX); // pop type
+  asm_pop(ECX); // pop rows
+  asm_pop(EBX); // pop cols;
   // todo assert rows == A.rows && cols == A.cols
   asm_imul(ECX, EBX); // ecx now contains rows * cols
   asm_dec(ECX);
@@ -264,7 +271,7 @@ static void pop_into_whole_matrix(ClmExpNode *node){
 }
 
 // pushes a matrix identified by the node onto the stack
-static void push_whole_matrix(ClmExpNode *node){
+static void push_whole_matrix(ClmExpNode *node) {
   // TODO case where matrix on stack is actually a pointer
   char index_str[64];
   ClmSymbol *var = clm_scope_find(data.scope, node->indExp.id);
@@ -298,11 +305,12 @@ static void push_whole_matrix(ClmExpNode *node){
   // push type info
   asm_push(EDX); // cols
   asm_push(EBX); // rows
-  asm_push((int)CLM_TYPE_MATRIX);
+  asm_push_const_i((int)CLM_TYPE_MATRIX);
 }
 
-// pops a matrix from the stack into a row or column of a matrix identified by node
-static void pop_into_row_or_col(ClmExpNode *node){
+// pops a matrix from the stack into a row or column of a matrix identified by
+// node
+static void pop_into_row_or_col(ClmExpNode *node) {
   // TODO case where matrix on stack is actually a pointer
   char index_str[64];
   ClmSymbol *var = clm_scope_find(data.scope, node->indExp.id);
@@ -311,18 +319,21 @@ static void pop_into_row_or_col(ClmExpNode *node){
   next_label(cmp_label);
   next_label(end_label);
 
-  push_expression(node->indExp.rowIndex);
-  push_expression(node->indExp.colIndex);
-  asm_pop(EDX); // edx now contains the index value
+  // put index value into EDX
+  if(node->indExp.rowIndex != NULL){
+    gen_index_into(EDX, node->indExp.rowIndex);
+  }else{
+    gen_index_into(EDX, node->indExp.colIndex);
+  }
 
-  asm_pop(EAX);       // pop type
-  asm_pop(EAX);       // pop rows
-  asm_pop(EBX);       // pop cols
-  //todo assert rows == A.rows or cols == A.cols
-  
+  asm_pop(EAX); // pop type
+  asm_pop(EAX); // pop rows
+  asm_pop(EBX); // pop cols
+  // todo assert rows == A.rows or cols == A.cols
+
   asm_mov(ECX, "0");
 
-  if(node->indExp.rowIndex != NULL){
+  if (node->indExp.rowIndex != NULL) {
     /*
       A[x,]
       for i in 1..A.cols do
@@ -331,7 +342,7 @@ static void pop_into_row_or_col(ClmExpNode *node){
     */
     LOAD_COLS(var, index_str);
     asm_imul(EDX, index_str);
-    
+
     asm_label(cmp_label);
     asm_cmp(ECX, index_str);
     asm_jmp_eq(end_label);
@@ -341,7 +352,7 @@ static void pop_into_row_or_col(ClmExpNode *node){
     asm_imul(EAX, "4");
     load_var_location(var, index_str, 12, EAX);
     asm_pop(index_str);
-  }else{
+  } else {
     /*
       A[,y]
       for i in 1..A.rows do
@@ -368,7 +379,7 @@ static void pop_into_row_or_col(ClmExpNode *node){
 }
 
 // pushes a row or col of the matrix identified by node onto the stack
-static void push_row_or_col(ClmExpNode *node){
+static void push_row_or_col(ClmExpNode *node) {
   // TODO case where matrix on stack is actually a pointer
   char index_str[64];
   ClmSymbol *var = clm_scope_find(data.scope, node->indExp.id);
@@ -377,11 +388,14 @@ static void push_row_or_col(ClmExpNode *node){
   next_label(cmp_label);
   next_label(end_label);
 
-  push_expression(node->indExp.rowIndex);
-  push_expression(node->indExp.colIndex);
-  asm_pop(EDX); // edx now contains the index value
-
+  // put index value into EDX
   if(node->indExp.rowIndex != NULL){
+    gen_index_into(EDX, node->indExp.rowIndex);
+  }else{
+    gen_index_into(EDX, node->indExp.colIndex);
+  }
+
+  if (node->indExp.rowIndex != NULL) {
     /*
       push A[x,]
       for i in A.cols,-1..1 do
@@ -392,7 +406,7 @@ static void push_row_or_col(ClmExpNode *node){
     asm_mov(ECX, index_str);
     asm_imul(EDX, ECX);
     asm_dec(ECX);
-    
+
     asm_label(cmp_label);
     asm_cmp(ECX, "0");
     asm_jmp_l(end_label);
@@ -402,7 +416,7 @@ static void push_row_or_col(ClmExpNode *node){
     asm_imul(EAX, "4");
     load_var_location(var, index_str, 12, EAX);
     asm_push(index_str);
-  }else{
+  } else {
     /*
       push A[,y]
       for i in A.rows,-1..1 do
@@ -438,10 +452,8 @@ static void pop_matrix(ClmExpNode *node) {
   } else {
     char index_str[64];
     ClmSymbol *var = clm_scope_find(data.scope, node->indExp.id);
-    push_expression(node->indExp.colIndex);
-    push_expression(node->indExp.rowIndex);
-    pop_int_into(EAX); // pop rows into eax
-    pop_int_into(EBX); // pop cols into ebx
+    gen_index_into(EAX, node->indExp.rowIndex);
+    gen_index_into(EBX, node->indExp.colIndex);
 
     LOAD_COLS(var, index_str);
     asm_mov(ECX, index_str); // mov number of columns into ecx
@@ -453,7 +465,7 @@ static void pop_matrix(ClmExpNode *node) {
   }
 }
 
-static void push_matrix(ClmExpNode *node){
+static void push_matrix(ClmExpNode *node) {
   if (node->indExp.rowIndex == NULL && node->indExp.colIndex == NULL) {
     push_whole_matrix(node);
   } else if (node->indExp.rowIndex == NULL || node->indExp.colIndex == NULL) {
@@ -462,15 +474,13 @@ static void push_matrix(ClmExpNode *node){
     char index_str[64];
     ClmSymbol *var = clm_scope_find(data.scope, node->indExp.id);
     // A[x * nc + y]
-    push_expression(node->indExp.colIndex);
-    push_expression(node->indExp.rowIndex);
-    pop_int_into(EAX); // pop row index into eax
-    pop_int_into(EBX); // pop col index into ebx
+    gen_index_into(EAX, node->indExp.rowIndex);
+    gen_index_into(EBX, node->indExp.colIndex);
 
     LOAD_COLS(var, index_str);
     asm_imul(EAX, index_str); // EAX = rowIndex * nc
-    asm_add(EAX, EBX); // EAX = rowIndex * nc + colIndex
-    asm_imul(EAX, "4"); // EAX = 4 * rowIndex * nc + colIndex
+    asm_add(EAX, EBX);        // EAX = rowIndex * nc + colIndex
+    asm_imul(EAX, "4");       // EAX = 4 * rowIndex * nc + colIndex
     load_var_location(var, index_str, 12, EAX);
     asm_push(index_str);
     asm_push_const_i((int)CLM_TYPE_INT);
@@ -497,7 +507,7 @@ static void pop_into_lhs(ClmExpNode *node) {
   case CLM_TYPE_STRING:
     // uhh
     break;
-  case CLM_TYPE_FUNCTION: //fallthrough
+  case CLM_TYPE_FUNCTION: // fallthrough
   case CLM_TYPE_NONE:
     // shouldn't get here...
     break;
@@ -534,7 +544,8 @@ static void push_index(ClmExpNode *node) {
 // val
 // type
 static void push_expression(ClmExpNode *node) {
-  if(node == NULL) return;
+  if (node == NULL)
+    return;
 
   ClmType expression_type = clm_type_of_exp(node, data.scope);
   switch (node->type) {
@@ -652,7 +663,7 @@ static void push_expression(ClmExpNode *node) {
     if (node->matDecExp.arr != NULL) {
       for (i = node->matDecExp.length - 1; i >= 0; i--) {
         // TODO... push f or push i?
-        asm_push_const_i((int) node->matDecExp.arr[i]);
+        asm_push_const_i((int)node->matDecExp.arr[i]);
       }
       asm_push_const_i(node->matDecExp.size.cols);
       asm_push_const_i(node->matDecExp.size.rows);
@@ -767,9 +778,9 @@ static void gen_func_dec(ClmStmtNode *node) {
     sym = funcScope->symbols->data[i];
     dec = sym->declaration;
 
-    if (sym->location = LOCATION_PARAMETER)
+    if (sym->location == LOCATION_PARAMETER)
       continue;
-    
+
     // setting the type of the local var
     load_var_location(sym, index_str, 0, NULL);
     asm_mov_i(index_str, (int)sym->type);
@@ -822,57 +833,63 @@ static void gen_func_dec(ClmStmtNode *node) {
   asm_ret();
 }
 
-static void gen_loop(ClmStmtNode *node) {
+static void gen_for_loop(ClmStmtNode *node) {
   char cmp_label[LABEL_SIZE];
   char end_label[LABEL_SIZE];
   next_label(cmp_label);
   next_label(end_label);
 
-  ClmSymbol *var = clm_scope_find(data.scope, node->loopStmt.varId);
+  ClmSymbol *var = clm_scope_find(data.scope, node->forLoopStmt.varId);
   char loop_var[32];
   load_var_location(var, loop_var, 4, NULL);
 
   // don't need to store this - just evaluate and put into loop var
-  push_expression(node->loopStmt.start);
-
-  if (!node->loopStmt.startInclusive) {
-    push_expression(node->loopStmt.delta);
-    pop_int_into(EAX); // eax contains delta
-    pop_int_into(EBX); // ebx contains start
-    asm_add(EBX, EAX);
-
-    asm_push(EBX); // push start back on stack
-    asm_push_const_i((int)CLM_TYPE_INT);
-  }
+  push_expression(node->forLoopStmt.start);  
   pop_int_into(loop_var);
+
   asm_label(cmp_label);
 
   // don't need to store this - just evaulate every loop
-  push_expression(node->loopStmt.end);
-
+  push_expression(node->forLoopStmt.end);
   pop_int_into(EAX);
-
   asm_cmp(loop_var, EAX);
-  if (node->loopStmt.endInclusive)
-    asm_jmp_g(end_label);
-  else
-    asm_jmp_ge(end_label);
+  asm_jmp_g(end_label);
 
-  gen_statements(node->loopStmt.body);
+  gen_statements(node->forLoopStmt.body);
 
-  if (node->loopStmt.delta->type == EXP_TYPE_INT &&
-      node->loopStmt.delta->ival == 1) {
+  if (node->forLoopStmt.delta->type == EXP_TYPE_INT &&
+      node->forLoopStmt.delta->ival == 1) {
     asm_inc(loop_var);
-  } else if (node->loopStmt.delta->type == EXP_TYPE_INT &&
-             node->loopStmt.delta->ival == -1) {
+  } else if (node->forLoopStmt.delta->type == EXP_TYPE_INT &&
+             node->forLoopStmt.delta->ival == -1) {
     asm_dec(loop_var);
-  } else if (node->loopStmt.delta->type == EXP_TYPE_INT) {
-    asm_add_i(loop_var, node->loopStmt.delta->ival);
+  } else if (node->forLoopStmt.delta->type == EXP_TYPE_INT) {
+    asm_add_i(loop_var, node->forLoopStmt.delta->ival);
   } else {
-    push_expression(node->loopStmt.delta);
+    push_expression(node->forLoopStmt.delta);
     asm_pop(EAX);
     asm_add(loop_var, EAX);
   }
+
+  asm_jmp(cmp_label);
+  asm_label(end_label);
+}
+
+static void gen_while_loop(ClmStmtNode *node) {
+  char cmp_label[LABEL_SIZE];
+  char end_label[LABEL_SIZE];
+  next_label(cmp_label);
+  next_label(end_label);
+
+  asm_label(cmp_label);
+
+  // don't need to store this - just evaulate every loop
+  push_expression(node->whileLoopStmt.condition);
+  pop_int_into(EAX);
+  asm_cmp(EAX, "0");
+  asm_jmp_eq(end_label);
+
+  gen_statements(node->whileLoopStmt.body);
 
   asm_jmp(cmp_label);
   asm_label(end_label);
@@ -893,8 +910,11 @@ static void gen_statement(ClmStmtNode *node) {
   case STMT_TYPE_FUNC_DEC:
     gen_func_dec(node);
     break;
-  case STMT_TYPE_LOOP:
-    gen_loop(node);
+  case STMT_TYPE_FOR_LOOP:
+    gen_for_loop(node);
+    break;
+  case STMT_TYPE_WHILE_LOOP:
+    gen_while_loop(node);
     break;
   case STMT_TYPE_PRINT:
     push_expression(node->printStmt.expression);

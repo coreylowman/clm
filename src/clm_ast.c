@@ -4,6 +4,12 @@
 #include "clm.h"
 #include "clm_ast.h"
 
+static void insert_whitespace(int level){
+  while(level-- > 0){
+    printf("  ");
+  }
+}
+
 const char *arith_op_to_string(ArithOp op) {
   const char *strings[] = {"ADD", "SUB", "MULT", "DIV"};
   return strings[(int)op];
@@ -232,10 +238,7 @@ void clm_exp_unbox_unary(ClmExpNode *node) {
 
 void clm_exp_print(void *data, int level) {
   ClmExpNode *node = data;
-  int q = level;
-  printf("\n");
-  while (q-- > 0)
-    printf("  ");
+  insert_whitespace(level);
   printf("Expression ");
   switch (node->type) {
   case EXP_TYPE_INT:
@@ -249,32 +252,24 @@ void clm_exp_print(void *data, int level) {
     break;
   case EXP_TYPE_ARITH:
     printf("type : arith, op : %d\n", node->arithExp.operand);
-    q = level + 1;
-    while (q-- > 0)
-      printf("  ");
+    insert_whitespace(level + 1);
     printf("right:");
     clm_exp_print(node->arithExp.right, level + 2);
-
-    q = level + 1;
     printf("\n");
-    while (q-- > 0)
-      printf("  ");
+
+    insert_whitespace(level + 1);
     printf("left:");
     clm_exp_print(node->arithExp.left, level + 2);
     break;
   case EXP_TYPE_BOOL:
     printf("type : bool, op : %d\n", node->boolExp.operand);
 
-    q = level + 1;
-    while (q-- > 0)
-      printf("  ");
+    insert_whitespace(level + 1);
     printf("right:");
     clm_exp_print(node->boolExp.right, level + 2);
-
-    q = level + 1;
     printf("\n");
-    while (q-- > 0)
-      printf("  ");
+
+    insert_whitespace(level + 1);
     printf("left:");
     clm_exp_print(node->boolExp.left, level + 2);
     break;
@@ -286,16 +281,12 @@ void clm_exp_print(void *data, int level) {
   case EXP_TYPE_INDEX:
     printf("type : index, id : %s\n", node->indExp.id);
 
-    q = level + 1;
-    while (q-- > 0)
-      printf("  ");
+    insert_whitespace(level + 1);
     printf("rowIndex:");
     clm_exp_print(node->indExp.rowIndex, level + 2);
-
-    q = level + 1;
     printf("\n");
-    while (q-- > 0)
-      printf("  ");
+
+    insert_whitespace(level + 1);
     printf("colIndex:");
     clm_exp_print(node->indExp.colIndex, level + 2);
     break;
@@ -326,9 +317,8 @@ void clm_exp_print(void *data, int level) {
     break;
   case EXP_TYPE_UNARY:
     printf("type : unary, op : %d\n", node->unaryExp.operand);
-    q = level + 1;
-    while (q-- > 0)
-      printf("  ");
+    
+    insert_whitespace(level + 1);
     printf("expression:");
     clm_exp_print(node->unaryExp.node, level + 2);
     break;
@@ -384,18 +374,23 @@ ClmStmtNode *clm_stmt_new_dec(char *name, ArrayList *params, ClmType returnType,
   return node;
 }
 
-ClmStmtNode *clm_stmt_new_loop(char *varId, ClmExpNode *start, ClmExpNode *end,
-                               ClmExpNode *delta, ArrayList *body,
-                               int startInclusive, int endInclusive) {
+ClmStmtNode *clm_stmt_new_for_loop(char *varId, ClmExpNode *start, ClmExpNode *end,
+                               ClmExpNode *delta, ArrayList *body) {
   ClmStmtNode *node = malloc(sizeof(*node));
-  node->type = STMT_TYPE_LOOP;
-  node->loopStmt.varId = string_copy(varId);
-  node->loopStmt.start = start;
-  node->loopStmt.end = end;
-  node->loopStmt.delta = delta;
-  node->loopStmt.body = body;
-  node->loopStmt.startInclusive = startInclusive;
-  node->loopStmt.endInclusive = endInclusive;
+  node->type = STMT_TYPE_FOR_LOOP;
+  node->forLoopStmt.varId = string_copy(varId);
+  node->forLoopStmt.start = start;
+  node->forLoopStmt.end = end;
+  node->forLoopStmt.delta = delta;
+  node->forLoopStmt.body = body;
+  return node;
+}
+
+ClmStmtNode *clm_stmt_new_while_loop(ClmExpNode *condition, ArrayList *loopBody){
+  ClmStmtNode *node = malloc(sizeof(*node));
+  node->type = STMT_TYPE_WHILE_LOOP;
+  node->whileLoopStmt.condition = condition;
+  node->whileLoopStmt.body = loopBody;
   return node;
 }
 
@@ -438,12 +433,16 @@ void clm_stmt_free(void *data) {
     array_list_free(node->funcDecStmt.parameters);
     array_list_free(node->funcDecStmt.body);
     break;
-  case STMT_TYPE_LOOP:
-    free(node->loopStmt.varId);
-    clm_exp_free(node->loopStmt.start);
-    clm_exp_free(node->loopStmt.end);
-    clm_exp_free(node->loopStmt.delta);
-    array_list_free(node->loopStmt.body);
+  case STMT_TYPE_FOR_LOOP:
+    free(node->forLoopStmt.varId);
+    clm_exp_free(node->forLoopStmt.start);
+    clm_exp_free(node->forLoopStmt.end);
+    clm_exp_free(node->forLoopStmt.delta);
+    array_list_free(node->forLoopStmt.body);
+    break;
+  case STMT_TYPE_WHILE_LOOP:
+    clm_exp_free(node->whileLoopStmt.condition);
+    array_list_free(node->whileLoopStmt.body);
     break;
   case STMT_TYPE_PRINT:
     clm_exp_free(node->printStmt.expression);
@@ -457,58 +456,45 @@ void clm_stmt_free(void *data) {
 
 void clm_stmt_print(void *data, int level) {
   ClmStmtNode *node = data;
-  int q = level;
   printf("\n");
-  while (q-- > 0)
-    printf("  ");
+  insert_whitespace(level);
+
   printf("Statement ");
   switch (node->type) {
   case STMT_TYPE_ASSIGN:
     printf("type : assign\n");
 
-    q = level + 1;
-    while (q-- > 0)
-      printf("  ");
+    insert_whitespace(level + 1);
     printf("lhs:");
     clm_exp_print(node->assignStmt.lhs, level + 2);
-
-    q = level + 1;
     printf("\n");
-    while (q-- > 0)
-      printf("  ");
+
+    insert_whitespace(level + 1);
     printf("rhs:");
     clm_exp_print(node->assignStmt.rhs, level + 2);
     break;
   case STMT_TYPE_CALL:
     printf("type : func call\n");
 
-    int q = level + 1;
-    while (q-- > 0)
-      printf("  ");
+    insert_whitespace(level + 1);
     printf("expression: ");
     clm_exp_print(node->callExpr, level + 2);
     break;
   case STMT_TYPE_CONDITIONAL:
     printf("type : conditional\n");
 
-    q = level + 1;
-    while (q-- > 0)
-      printf("  ");
+    insert_whitespace(level + 1);
     printf("condition:");
     clm_exp_print(node->conditionStmt.condition, level + 2);
-
-    q = level + 1;
     printf("\n");
-    while (q-- > 0)
-      printf("  ");
+
+    insert_whitespace(level + 1);
     printf("truebody:");
     array_list_foreach_2(node->conditionStmt.trueBody, level + 2,
                          clm_stmt_print);
-
-    q = level + 1;
     printf("\n");
-    while (q-- > 0)
-      printf("  ");
+
+    insert_whitespace(level + 1);
     printf("falsebody:");
     array_list_foreach_2(node->conditionStmt.falseBody, level + 2,
                          clm_stmt_print);
@@ -516,73 +502,58 @@ void clm_stmt_print(void *data, int level) {
   case STMT_TYPE_FUNC_DEC:
     printf("type : func dec, name : %s\n", node->funcDecStmt.name);
 
-    q = level + 1;
-    while (q-- > 0)
-      printf("  ");
+    insert_whitespace(level + 1);
     printf("return type : %d, ", node->funcDecStmt.returnType);
     printf("ret rows : %d | %s, ", node->funcDecStmt.returnSize.rows,
            node->funcDecStmt.returnSize.rowVar);
     printf("ret cols : %d | %s", node->funcDecStmt.returnSize.cols,
            node->funcDecStmt.returnSize.colVar);
-
-    q = level + 1;
     printf("\n");
-    while (q-- > 0)
-      printf("  ");
+
+    insert_whitespace(level + 1);
     printf("parameters:");
     array_list_foreach_2(node->funcDecStmt.parameters, level + 2,
                          clm_exp_print);
-
-    q = level + 1;
     printf("\n");
-    while (q-- > 0)
-      printf("  ");
+
+    insert_whitespace(level + 1);
     printf("body:");
     array_list_foreach_2(node->funcDecStmt.body, level + 2, clm_stmt_print);
     break;
-  case STMT_TYPE_LOOP:
-    printf("type : loop, var : %s\n", node->loopStmt.varId);
+  case STMT_TYPE_FOR_LOOP:
+    printf("type : loop, var : %s\n", node->forLoopStmt.varId);
 
-    q = level + 1;
-    while (q-- > 0)
-      printf("  ");
+    insert_whitespace(level + 1);
     printf("start:");
-    clm_exp_print(node->loopStmt.start, level + 2);
-
-    q = level + 1;
+    clm_exp_print(node->forLoopStmt.start, level + 2);
     printf("\n");
-    while (q-- > 0)
-      printf("  ");
+
+    insert_whitespace(level + 1);
     printf("delta:");
-    clm_exp_print(node->loopStmt.delta, level + 2);
-
-    q = level + 1;
+    clm_exp_print(node->forLoopStmt.delta, level + 2);
     printf("\n");
-    while (q-- > 0)
-      printf("  ");
+
+    insert_whitespace(level + 1);
     printf("end:");
-    clm_exp_print(node->loopStmt.end, level + 2);
-
-    q = level + 1;
+    clm_exp_print(node->forLoopStmt.end, level + 2);
     printf("\n");
-    while (q-- > 0)
-      printf("  ");
+    
+    insert_whitespace(level + 1);
     printf("body:");
-    array_list_foreach_2(node->loopStmt.body, level + 2, clm_stmt_print);
+    array_list_foreach_2(node->forLoopStmt.body, level + 2, clm_stmt_print);
+    break;
+  case STMT_TYPE_WHILE_LOOP:
+    printf("type : while loop\n");
     break;
   case STMT_TYPE_PRINT:
     printf("type : print, newline : %d\n", node->printStmt.appendNewline);
-    q = level + 1;
-    while (q-- > 0)
-      printf("  ");
+    insert_whitespace(level + 1);
     printf("expression:");
     clm_exp_print(node->printStmt.expression, level + 2);
     break;
   case STMT_TYPE_RET:
     printf("type : return\n");
-    q = level + 1;
-    while (q-- > 0)
-      printf("  ");
+    insert_whitespace(level + 1);
     printf("expression: ");
     clm_exp_print(node->returnExpr, level + 2);
     break;

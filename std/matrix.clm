@@ -1,7 +1,17 @@
+// todo import
 import min, abs from math
+
+\rows A[m:n] -> int =
+  return m
+end
+
+\cols A[m:n] -> int =
+  return n
+end
 
 \max_ele A[m:n] -> float =
   max = A[1,1]
+  // todo iterator syntactic sugar
   for (i, j) in A do
     if A[i, j] > max then
       max = A[i, j]
@@ -48,7 +58,7 @@ end
 
 \reduce A[m:n] =
 	q = min(m, n)
-	for k = [1, q] do
+	for k in 1..q do
 		// todo slices
 		i_max = max_ele_row(A[k..m,k])
 
@@ -56,10 +66,10 @@ end
 
 		swap_rows(A, k, i_max)
 
-		for i = [k+1, m] do
+		for i in k+1 .. m do
 			t = A[i,k] / A[k,k]
 
-			for j = [k+1, n] do
+			for j in k+1 .. n do
 				A[i, j] = A[i, j] - A[k, j] * m
 			end
 
@@ -70,7 +80,7 @@ end
 
 \ident m:int -> [m:m] =
 	A = [m:m]
-	for i = [1,m] do
+	for i in 1..m do
 		A[i, i] = 1
 	end
 	return A

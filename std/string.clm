@@ -1,0 +1,67 @@
+import to_int, pow, floor from math
+
+\digToString dig:int -> string =
+    // todo else if
+    if dig == 0 then
+	return "0"
+    else if dig == 1 then
+    	return "1"
+    else if dig == 2 then
+    	return "2"
+    else if dig == 3 then
+    	return "3"
+    else if dig == 4 then
+    	return "4"
+    else if dig == 5 then
+    	return "5"
+    else if dig == 6 then
+    	return "6"
+    else if dig == 7 then
+    	return "7"
+    else if dig == 8 then
+    	return "8"
+    else
+    	return "9"
+    end
+end
+
+// todo method overloading
+\toString val:int -> string =
+    str = ""
+    
+    while val > 0 do
+        str = str + digToString(val % 10)
+        val = val / 10
+    end
+    
+    return str
+end
+
+\toString val:float -> string =
+    return toString(val, 3)
+end
+
+\toString val:float num_after:int -> string =
+    str = ""
+    
+    before_dec = to_int(val)
+    after_dec = to_int((val - before_dec) * pow(10, num_after))
+    
+    str = str + toString(before_dec)
+    str = str + "."
+    str = str + toString(after_dec)
+    
+    return str
+end
+
+\toString A[m:n] -> string =
+    str = "[ "
+    for i in 1..m do
+        for j in 1..n do
+            str = str + toString(A[i, j]) + " "
+        end
+        str = str + ", "
+    end
+    str = str + "]"
+    return str
+end

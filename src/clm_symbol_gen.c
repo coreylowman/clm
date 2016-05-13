@@ -144,15 +144,21 @@ static void gen_statement_symbols(ClmScope *scope, ClmStmtNode *node) {
                                       CLM_TYPE_FUNCTION, node, 0));
     break;
   }
-  case STMT_TYPE_LOOP: {
-    if (!clm_scope_contains(scope, node->loopStmt.varId)) {
-      clm_scope_push(scope, gen_new_sym(scope, node->loopStmt.varId,
+  case STMT_TYPE_WHILE_LOOP:
+    // todo should this generate a new scope?
+    gen_expnode_symbols(scope, node->whileLoopStmt.condition);
+    gen_statements_symbols(scope, node->whileLoopStmt.body);
+    break;
+  case STMT_TYPE_FOR_LOOP: {
+    // todo shoudl this generate a new scope?
+    if (!clm_scope_contains(scope, node->forLoopStmt.varId)) {
+      clm_scope_push(scope, gen_new_sym(scope, node->forLoopStmt.varId,
                                         CLM_TYPE_INT, node, 0));
     }
-    gen_expnode_symbols(scope, node->loopStmt.start);
-    gen_expnode_symbols(scope, node->loopStmt.end);
-    gen_expnode_symbols(scope, node->loopStmt.delta);
-    gen_statements_symbols(scope, node->loopStmt.body);
+    gen_expnode_symbols(scope, node->forLoopStmt.start);
+    gen_expnode_symbols(scope, node->forLoopStmt.end);
+    gen_expnode_symbols(scope, node->forLoopStmt.delta);
+    gen_statements_symbols(scope, node->forLoopStmt.body);
     break;
   }
   case STMT_TYPE_PRINT:

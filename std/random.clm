@@ -8,7 +8,7 @@ index = 0
   index = mt.cols + 1
   mt[1,1] = seed
   last = mt[1,1]
-  for i = [2,624] do
+  for i in 2..624 do
     // todo bitwise ops
     last = 1812433253 * (last ^ last >> 30) + i)
     mt[1, i] = last
@@ -16,7 +16,7 @@ index = 0
 end
 
 \twist =
-  for i = [1, 624) do
+  for i in 1..623 do
     y = mt[1, i] & 0x80000000 + mt[1, (i + 1) % 624] & 0x7fffffff
     
     mt[1, i] = mt[1, (i + 397) % 624] ^ y >> 1
@@ -45,7 +45,7 @@ end
   return y
 end
 
-\range<T> low:T high:T -> T =
+\range<T : int, float> low:T high:T -> T =
   val = random()
   val = val / 2147483647
   val = val + 1
