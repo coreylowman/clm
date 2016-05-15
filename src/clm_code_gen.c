@@ -558,7 +558,7 @@ static void push_expression(ClmExpNode *node) {
     asm_push_const_i((int)expression_type);
     break;
   case EXP_TYPE_STRING:
-    // TODO
+    // TODO push a string onto the stack
     break;
   case EXP_TYPE_ARITH: {
     ClmType right_type = clm_type_of_exp(node->arithExp.right, data.scope);
@@ -653,6 +653,8 @@ static void push_expression(ClmExpNode *node) {
     }
 
     asm_call(node->callExp.name);
+
+    // TODO pop off arguments from the stack
     break;
   }
   case EXP_TYPE_INDEX:
@@ -696,7 +698,6 @@ static void push_expression(ClmExpNode *node) {
     break;
   }
   case EXP_TYPE_PARAM:
-    // TODO ?
     break;
   case EXP_TYPE_UNARY:
     push_expression(node->unaryExp.node);
@@ -962,7 +963,7 @@ static void gen_globals(ClmScope *globalScope) {
       writeLine(buffer);
       break;
     case CLM_TYPE_STRING:
-      // TODO
+      // TODO gen global string
       break;
     case CLM_TYPE_MATRIX: {
       ClmStmtNode *node = symbol->declaration;
