@@ -1,6 +1,30 @@
 // todo import
 import min, abs from math
 
+\ident m:int -> [m:m] =
+	A = [m:m]
+	for i in 1..m do
+		A[i, i] = 1
+	end
+	return A
+end
+
+\size A[m:n] -> [2:1] =
+  return {m n}
+end
+
+// todo question mark
+\zeros dims[2:1] -> [?:?] =
+  return [dims[1,1]:dims[2,1]]
+end
+
+\ones dims[2:1] -> [?:?] =
+  A = [dims[1,1]:dims[2,1]]
+  for (i, j) in A do
+    A[i, k] = 1
+  end
+end
+
 \rows A[m:n] -> int =
   return m
 end
@@ -76,12 +100,4 @@ end
 			A[i, k] = 0
 		end
 	end
-end
-
-\ident m:int -> [m:m] =
-	A = [m:m]
-	for i in 1..m do
-		A[i, i] = 1
-	end
-	return A
 end
